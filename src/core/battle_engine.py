@@ -69,11 +69,20 @@ def process_turn(p1_team: List[Pokemon], p1_active_idx: int, p1_action: Action,
         
         if action.type == ActionType.SWITCH:
             if actor_id == 1:
-                new_p1_idx = action.target_index
-                switched_pokemon = p1_team[new_p1_idx]
+                candidate = p1_team[action.target_index]
+                if not candidate.is_fainted():
+                    new_p1_idx = action.target_index
+                    switched_pokemon = p1_team[new_p1_idx]
+                else:
+                    # Si falla, se queda el que estaba
+                    switched_pokemon = p1_team[new_p1_idx]
             else:
-                new_p2_idx = action.target_index
-                switched_pokemon = p2_team[new_p2_idx]
+                candidate = p2_team[action.target_index]
+                if not candidate.is_fainted():
+                    new_p2_idx = action.target_index
+                    switched_pokemon = p2_team[new_p2_idx]
+                else:
+                    switched_pokemon = p2_team[new_p2_idx]
                 
             outcomes.append(ActionOutcome(
                 actor=actor_id, action_type=ActionType.SWITCH, action_id=switched_pokemon.id,
