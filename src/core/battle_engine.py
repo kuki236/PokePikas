@@ -140,6 +140,24 @@ def process_turn(p1_team: List[Pokemon], p1_active_idx: int, p1_action: Action,
                 attacker_hp_remaining=attacker.current_hp, status_applied=status_applied
             ))
 
+    active_pokemons = [
+        (1, p1_team[new_p1_idx]),
+        (2, p2_team[new_p2_idx])
+    ]
+
+    for owner_id, pkmn in active_pokemons:
+        if not pkmn.is_fainted():
+            if pkmn.status_ailment in [AilmentType.BURN, AilmentType.POISON, AilmentType.LEECH_SEED]:
+                
+                residual_damage = max(1, pkmn.max_hp // 8)
+                pkmn.take_damage(residual_damage)
+
+                if pkmn.status_ailment == AilmentType.LEECH_SEED:
+                    if owner_id == 1 and not p2_team[new_p2_idx].is_fainted():
+                        p2_team[new_p2_idx].heal(residual_damage)
+                    elif owner_id == 2 and not p1_team[new_p1_idx].is_fainted():
+                        p1_team[new_p1_idx].heal(residual_damage)
+
     p1_lost = all(p.is_fainted() for p in p1_team)
     p2_lost = all(p.is_fainted() for p in p2_team)
     

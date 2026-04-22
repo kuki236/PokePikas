@@ -19,11 +19,15 @@ class PokemonType(Enum):
     STEEL    = "steel"
     FAIRY    = "fairy"
 
+
 class AilmentType(Enum):
-    NONE = "none"
-    PARALYSIS = "paralysis"
-    SLEEP = "sleep"
-    POISON = "poison"
-    BURN = "burn"
-    FREEZE = "freeze"
-    CONFUSION = "confusion"
+    BURN = "BURN"
+    CONFUSION = "CONFUSION"
+    FREEZE = "FREEZE"
+    LEECH_SEED = "LEECH-SEED"
+    NONE = "NONE"
+    PARALYSIS = "PARALYSIS"
+    POISON = "POISON"
+    SILENCE = "SILENCE"
+    SLEEP = "SLEEP"
+    UNKNOWN = "UNKNOWN"

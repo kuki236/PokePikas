@@ -2,6 +2,7 @@ from dataclasses import replace
 from typing import List
 from .enums import PokemonType, AilmentType
 from .move import Move
+from src.core.interfaces import PokemonState
 
 class Pokemon:
     """Molde base de las criaturas en el motor lógico."""
@@ -51,3 +52,14 @@ class Pokemon:
         cloned.current_hp     = self.current_hp
         cloned.status_ailment = self.status_ailment
         return cloned
+
+    def to_state(self) -> PokemonState:
+        return PokemonState(
+            id=self.id,
+            max_hp=self.max_hp,
+            current_hp=self.current_hp,
+            attack=self.attack,
+            defense=self.defense,
+            speed=self.speed,
+            move_ids=[m.id for m in self.moves if m.current_pp > 0] 
+        )
