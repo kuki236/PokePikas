@@ -20,11 +20,38 @@ FPS = 60
 
 def main():
     pygame.init()
+    pygame.mixer.init() # Inicializa el módulo de música
+
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("Pokémon Pikas - Menú")
     clock = pygame.time.Clock()
 
     renderer = Renderer(screen)
+
+    # --- RUTAS DE MÚSICA Y SONIDOS ---
+    ruta_musica_menu = os.path.join('assets', 'music', 'menu_theme.mp3')
+    ruta_musica_batalla = os.path.join('assets', 'music', 'battle_theme.mp3')
+    ruta_sonido_select = os.path.join('assets', 'music', 'select.wav.mp3')
+
+    # --- CARGA DE SONIDOS ---
+    sonido_select = None
+    if os.path.exists(ruta_sonido_select):
+        sonido_select = pygame.mixer.Sound(ruta_sonido_select)
+        sonido_select.set_volume(1.0) # <--- VOLUMEN AL MÁXIMO
+    else:
+        print(f"Advertencia: No se encontró el sonido de selección en {ruta_sonido_select}")
+
+    def reproducir_sonido_select():
+        if sonido_select:
+            sonido_select.play()
+
+    # --- CARGA Y REPRODUCCIÓN DE MÚSICA DEL MENÚ ---
+    if os.path.exists(ruta_musica_menu):
+        pygame.mixer.music.load(ruta_musica_menu)
+        pygame.mixer.music.set_volume(0.3) # Volumen de 0.0 a 1.0
+        pygame.mixer.music.play(-1) # -1 hace que se repita en bucle infinito
+    else:
+        print(f"Advertencia: No se encontró la música del menú en {ruta_musica_menu}")
 
     # 1. CARGAR DATOS Y SPRITES
     pokemon_pool = []
@@ -88,15 +115,25 @@ def main():
 
             if current_state == GameState.START:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                    reproducir_sonido_select()
                     current_state = GameState.MODE_SELECT
 
             elif current_state == GameState.MODE_SELECT:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if btn_pve.collidepoint(mouse_pos): selected_mode = "Humano vs PC"
-                    elif btn_pvp.collidepoint(mouse_pos): selected_mode = "PC vs PC"
-                    elif btn_3v3.collidepoint(mouse_pos): team_size = 3
-                    elif btn_4v4.collidepoint(mouse_pos): team_size = 4
+                    if btn_pve.collidepoint(mouse_pos): 
+                        selected_mode = "Humano vs PC"
+                        reproducir_sonido_select()
+                    elif btn_pvp.collidepoint(mouse_pos): 
+                        selected_mode = "PC vs PC"
+                        reproducir_sonido_select()
+                    elif btn_3v3.collidepoint(mouse_pos): 
+                        team_size = 3
+                        reproducir_sonido_select()
+                    elif btn_4v4.collidepoint(mouse_pos): 
+                        team_size = 4
+                        reproducir_sonido_select()
                     elif btn_continue_mode.collidepoint(mouse_pos) and selected_mode and team_size:
+                        reproducir_sonido_select()
                         current_state = GameState.TEAM_SELECT
 
             elif current_state == GameState.TEAM_SELECT:
@@ -115,31 +152,58 @@ def main():
                         index = row * 6 + col
                         if index < len(pokemon_pool):
                             clicked_name = pokemon_pool[index]['name']
-                            if clicked_name in p1_team: p1_team.remove(clicked_name)
-                            elif len(p1_team) < team_size: p1_team.append(clicked_name)
+                            if clicked_name in p1_team: 
+                                p1_team.remove(clicked_name)
+                                reproducir_sonido_select()
+                            elif len(p1_team) < team_size: 
+                                p1_team.append(clicked_name)
+                                reproducir_sonido_select()
                             
                     if len(p1_team) == team_size and btn_confirm.collidepoint(mouse_pos):
+                        reproducir_sonido_select()
                         current_state = GameState.DIFFICULTY_SELECT
 
             elif current_state == GameState.DIFFICULTY_SELECT:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if btn_pc1_easy.collidepoint(mouse_pos): pc1_difficulty = 1
-                    elif btn_pc1_med.collidepoint(mouse_pos): pc1_difficulty = 2
-                    elif btn_pc1_hard.collidepoint(mouse_pos): pc1_difficulty = 3
+                    if btn_pc1_easy.collidepoint(mouse_pos): 
+                        pc1_difficulty = 1
+                        reproducir_sonido_select()
+                    elif btn_pc1_med.collidepoint(mouse_pos): 
+                        pc1_difficulty = 2
+                        reproducir_sonido_select()
+                    elif btn_pc1_hard.collidepoint(mouse_pos): 
+                        pc1_difficulty = 3
+                        reproducir_sonido_select()
                     
                     if selected_mode == "PC vs PC":
-                        if btn_pc2_easy.collidepoint(mouse_pos): pc2_difficulty = 1
-                        elif btn_pc2_med.collidepoint(mouse_pos): pc2_difficulty = 2
-                        elif btn_pc2_hard.collidepoint(mouse_pos): pc2_difficulty = 3
+                        if btn_pc2_easy.collidepoint(mouse_pos): 
+                            pc2_difficulty = 1
+                            reproducir_sonido_select()
+                        elif btn_pc2_med.collidepoint(mouse_pos): 
+                            pc2_difficulty = 2
+                            reproducir_sonido_select()
+                        elif btn_pc2_hard.collidepoint(mouse_pos): 
+                            pc2_difficulty = 3
+                            reproducir_sonido_select()
                         
                     can_start = False
                     if selected_mode == "Humano vs PC" and pc1_difficulty is not None: can_start = True
                     elif selected_mode == "PC vs PC" and pc1_difficulty is not None and pc2_difficulty is not None: can_start = True
                     
                     if can_start and btn_start_battle.collidepoint(mouse_pos):
+                        reproducir_sonido_select()
                         current_state = GameState.BATTLE
                         print("\n🔥 ¡DATOS LISTOS PARA EL MOTOR! 🔥")
                         print("="*35)
+                        
+                        # --- DETENER MÚSICA DE MENÚ Y REPRODUCIR LA DE BATALLA ---
+                        pygame.mixer.music.stop()
+                        if os.path.exists(ruta_musica_batalla):
+                            pygame.mixer.music.load(ruta_musica_batalla)
+                            pygame.mixer.music.play(-1)
+                        else:
+                            print(f"Advertencia: No se encontró la música de batalla en {ruta_musica_batalla}")
+
 
         # --- GESTOR DE RAYOS ---
         intensidad_rayo_actual = 0
@@ -221,23 +285,32 @@ def main():
                     if pc1_difficulty is not None and pc2_difficulty is not None: renderer.draw_button(btn_start_battle, "¡INICIAR SIMULACIÓN!", btn_start_battle.collidepoint(mouse_pos))
 
             elif current_state == GameState.BATTLE:
-                renderer.draw_background(bg_equipo, apply_dark_overlay=True)
-                if can_start and btn_start_battle.collidepoint(mouse_pos):
-                        current_state = GameState.BATTLE
-                        print("\n🔥 ¡TRANSICIÓN AL MODO BATALLA! 🔥")
-                        
-                        # --- CAMBIO AQUÍ: Importación directa ---
-                        from battle_ui import BattleScreen
-                        batalla = BattleScreen(screen, renderer, p1_team, pc1_difficulty, selected_mode)
-                        
-                        # Ejecutamos el bucle de la batalla
-                        batalla.run() 
-                        
-                        # Cuando la batalla termine (ej. presionando ESCAPE), volvemos al estado inicial
-                        current_state = GameState.START
-                        p1_team = [] 
-                        pc1_difficulty = None
-                        pc2_difficulty = None
+                # La lógica de cambio de música ya se ejecutó al entrar a este estado desde DIFFICULTY_SELECT
+                renderer.draw_background(bg_equipo, apply_dark_overlay=True) # Esto es solo un placeholder, la pantalla de batalla tendrá su propio fondo
+                
+                print("\n🔥 ¡TRANSICIÓN AL MODO BATALLA! 🔥")
+                
+                # --- CAMBIO AQUÍ: Importación directa ---
+                from battle_ui import BattleScreen
+                batalla = BattleScreen(screen, renderer, p1_team, pc1_difficulty, selected_mode)
+                
+                # Ejecutamos el bucle de la batalla
+                batalla.run() 
+                
+                # Cuando la batalla termine (ej. presionando ESCAPE), volvemos al estado inicial
+                current_state = GameState.START
+                p1_team = [] 
+                pc1_difficulty = None
+                pc2_difficulty = None
+
+                # --- DETENER MÚSICA DE BATALLA Y REPRODUCIR LA DEL MENÚ ---
+                pygame.mixer.music.stop()
+                if os.path.exists(ruta_musica_menu):
+                    pygame.mixer.music.load(ruta_musica_menu)
+                    pygame.mixer.music.play(-1)
+                else:
+                    print(f"Advertencia: No se encontró la música del menú en {ruta_musica_menu}")
+
         pygame.display.flip()
         clock.tick(FPS)
 

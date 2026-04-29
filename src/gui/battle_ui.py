@@ -16,8 +16,13 @@ class BattleScreen:
         self.running = True
         self.clock = pygame.time.Clock()
 
-        # Cargamos el fondo de la batalla (usa tu imagen del bosque o consigue una de estadio)
-        self.bg_battle = self.renderer.load_background(os.path.join('assets', 'bg_modos.jpg'), self.screen.get_width(), self.screen.get_height())
+        # Cargamos el fondo de la batalla desde 'assets/bg_battle.jpg'
+        self.bg_battle = self.renderer.load_background(os.path.join('assets', 'bg_battle.jpg'), self.screen.get_width(), self.screen.get_height())
+
+        # Si no se encuentra 'bg_battle.jpg', se usa 'bg_modos.jpg' como respaldo
+        if self.bg_battle is None:
+            self.bg_battle = self.renderer.load_background(os.path.join('assets', 'bg_modos.jpg'), self.screen.get_width(), self.screen.get_height())
+            print("Advertencia: No se encontró 'assets/bg_battle.jpg'. Usando imagen de respaldo.")
 
         # ==========================================
         # DATOS VISUALES FALSOS (MOCKUP) PARA LA UI
