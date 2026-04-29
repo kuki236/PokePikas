@@ -13,10 +13,12 @@ class Renderer:
             self.font_title = pygame.font.Font(ruta_fuente, 30)
             self.font_subtitle = pygame.font.Font(ruta_fuente, 16)
             self.font_small = pygame.font.Font(ruta_fuente, 10) # Letra pequeña para nombres
+            self.font_tiny = pygame.font.Font(ruta_fuente, 6) # Letra aún más pequeña
         else:
             self.font_title = pygame.font.SysFont("Arial", 45, bold=True)
             self.font_subtitle = pygame.font.SysFont("Arial", 26)
             self.font_small = pygame.font.SysFont("Arial", 12)
+            self.font_tiny = pygame.font.SysFont("Arial", 9)
         
         self.image_cache = {}
 
@@ -50,6 +52,7 @@ class Renderer:
     def draw_text(self, text, font_type, color, x, y, center=False):
         if font_type == 'title': font = self.font_title
         elif font_type == 'subtitle': font = self.font_subtitle
+        elif font_type == 'tiny': font = self.font_tiny
         else: font = self.font_small
 
         surface = font.render(text, True, color)
@@ -109,7 +112,7 @@ class Renderer:
                 # Ajuste para centrar el sprite en la nueva cajita
                 self.screen.blit(img, (x - 7, y - 10)) 
             # Ajuste de posición del nombre
-            self.draw_text(name.capitalize(), 'small', (200, 200, 200), x + 30, y + 65, center=True)
+            self.draw_text(name.capitalize(), 'tiny', (200, 200, 200), x + 30, y + 65, center=True)
     # ==========================================
     # NUEVAS FUNCIONES PARA EL MODO BATALLA
     # ==========================================
