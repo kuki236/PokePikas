@@ -301,22 +301,25 @@ def main():
                 from battle_ui import BattleScreen
                 batalla = BattleScreen(screen, renderer, p1_team, pc1_difficulty, selected_mode)
                 
-                # Ejecutamos el bucle de la batalla
-                batalla.run() 
+                # Ejecutamos el bucle de la batalla y capturamos qué quiere hacer el usuario
+                post_battle_action = batalla.run() 
                 
-                # Cuando la batalla termine (ej. presionando ESCAPE), volvemos al estado inicial
-                current_state = GameState.START
-                p1_team = [] 
-                pc1_difficulty = None
-                pc2_difficulty = None
-
-                # --- DETENER MÚSICA DE BATALLA Y REPRODUCIR LA DEL MENÚ ---
-                pygame.mixer.music.stop()
-                if os.path.exists(ruta_musica_menu):
-                    pygame.mixer.music.load(ruta_musica_menu)
-                    pygame.mixer.music.play(-1)
-                else:
-                    print(f"Advertencia: No se encontró la música del menú en {ruta_musica_menu}")
+                # --- DETENER MÚSICA DE BATALLA Y REPRODUCIR LA DEL MENÚ (solo si volvemos al menú) ---
+                if post_battle_action == "MENU":
+                    current_state = GameState.MODE_SELECT
+                    p1_team = [] 
+                    pc1_difficulty = None
+                    pc2_difficulty = None
+                    
+                    pygame.mixer.music.stop()
+                    if os.path.exists(ruta_musica_menu):
+                        pygame.mixer.music.load(ruta_musica_menu)
+                        pygame.mixer.music.play(-1)
+                    else:
+                        print(f"Advertencia: No se encontró la música del menú en {ruta_musica_menu}")
+                elif post_battle_action == "REPLAY":
+                    # Si quiere repetir, nos quedamos en GameState.BATTLE y en el siguiente frame volverá a instanciar la clase
+                    pass
 
         pygame.display.flip()
         clock.tick(FPS)

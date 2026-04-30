@@ -22,12 +22,23 @@ class BattleScreen:
 
         self.running = True
         self.clock = pygame.time.Clock()
+        self.action_after_battle = "MENU" # Por defecto vuelve al menú
 
+        # Cargamos el fondo de la batalla desde 'assets/bg_battle.jpg'
         self.bg_battle = self.renderer.load_background(
-            os.path.join('assets', 'bg_modos.jpg'),
+            os.path.join('assets', 'bg_battle.jpg'),
             self.screen.get_width(),
             self.screen.get_height()
         )
+
+        # Si no se encuentra 'bg_battle.jpg', se usa 'bg_modos.jpg' como respaldo
+        if self.bg_battle is None:
+            self.bg_battle = self.renderer.load_background(
+                os.path.join('assets', 'bg_modos.jpg'),
+                self.screen.get_width(),
+                self.screen.get_height()
+            )
+            print("Advertencia: No se encontró 'assets/bg_battle.jpg'. Usando imagen de respaldo.")
 
         self.loader = DataLoader('data/pokemon_pool.json', 'data/moves_pool.json')
 
@@ -73,11 +84,15 @@ class BattleScreen:
         self.agent_p2 = _agent_for_level(2, self.difficulty or 1)
         self._temp_agent_for_human = _agent_for_level(1, 1)
 
-        self.mensaje_batalla = "¡Un combate comienza!"
+        # Variables para la cola de mensajes
+        self.message_queue = []
+        self.current_message = ""
+        self.message_display_time = perf_counter()
+        self.message_duration = 1.5 # Duración de cada mensaje en segundos (ajustado para mayor fluidez)
 
         self.auto_mode = not self.human_player
         self.last_turn_time = perf_counter()
-        self.turn_interval = 1.2
+        self.turn_interval = 1.0
         self.turn_number = 1
 
         sw = self.screen.get_width()
@@ -97,9 +112,18 @@ class BattleScreen:
             pygame.Rect(right_x, top_y + btn_h + pad, btn_w, btn_h),
         ]
 
+        # Botones post-batalla
+        self.btn_replay = pygame.Rect(sw // 2 - 250, sh // 2, 200, 60)
+        self.btn_menu = pygame.Rect(sw // 2 + 50, sh // 2, 200, 60)
+
         self.waiting_for_player_action = False
+        self.waiting_for_player_switch = False
         self.player_pending_action = None
         self.battle_finished = False
+
+        if self.human_player and not self.auto_mode:
+            self.waiting_for_player_action = True
+            self.current_message = "Elige movimiento (haz click en un botón)."
 
     # ------------------------------------------------------------------
     # Estado
@@ -117,22 +141,23 @@ class BattleScreen:
     # Describir resultados del turno
     # ------------------------------------------------------------------
     def _describe_outcomes(self, outcomes):
-        lines = []
         for out in outcomes:
-            actor = 'Jugador' if out.actor == 1 else 'IA'
+            actor_name = self.p1_team[self.p1_active_idx].name if out.actor == 1 else self.p2_team[self.p2_active_idx].name
 
             if out.action_type == ActionType.SWITCH:
-                # action_id = pokemon.id del que entró
                 name = None
                 for p in (self.p1_team + self.p2_team):
                     if p.id == out.action_id:
                         name = p.name
                         break
                 name = name or f"#{out.action_id}"
-                lines.append(f"> {actor} cambió a {name}.")
+
+                if out.actor == 1:
+                    self.message_queue.append(f"¡Jugador cambió a {name.capitalize()}!")
+                else:
+                    self.message_queue.append(f"¡La IA cambió a {name.capitalize()}!")
 
             else:
-                # action_id = move.id del movimiento usado
                 mv_name = None
                 for p in (self.p1_team + self.p2_team):
                     for mv in getattr(p, 'moves', []):
@@ -145,17 +170,18 @@ class BattleScreen:
                 label = mv_name or f"Movimiento #{out.action_id}"
 
                 if not out.hit_success:
-                    lines.append(f"> {actor} usó {label} pero falló.")
+                    self.message_queue.append(f"¡{actor_name.capitalize()} usó {label} pero falló!")
                 elif out.damage_dealt > 0:
-                    lines.append(f"> {actor} usó {label} y causó {out.damage_dealt} de daño.")
+                    self.message_queue.append(f"¡{actor_name.capitalize()} usó {label} y causó {out.damage_dealt} de daño!")
                 else:
-                    lines.append(f"> {actor} usó {label}.")
+                    self.message_queue.append(f"¡{actor_name.capitalize()} usó {label}!")
 
                 if out.target_fainted:
-                    target_name = "rival" if out.actor == 1 else "tu Pokémon"
-                    lines.append(f"  ¡El {target_name} se ha debilitado!")
-
-        return '\n'.join(lines) if lines else "No pasó nada relevante este turno."
+                    target_name = self.p2_team[self.p2_active_idx].name if out.actor == 1 else self.p1_team[self.p1_active_idx].name
+                    self.message_queue.append(f"¡El {target_name.capitalize()} se ha debilitado!")
+        
+        if not outcomes:
+            self.message_queue.append("No pasó nada relevante este turno.")
 
     # ------------------------------------------------------------------
     # Labels de movimientos del activo del jugador
@@ -183,13 +209,9 @@ class BattleScreen:
     # Bucle principal
     # ------------------------------------------------------------------
     def run(self):
-        # Si el jugador es humano, arrancar el primer turno para activar
-        # el estado "esperando acción" inmediatamente
-        if self.human_player and not self.auto_mode:
-            self._process_full_turn()
-
         while self.running:
             now = perf_counter()
+            mouse_pos = pygame.mouse.get_pos()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -199,6 +221,7 @@ class BattleScreen:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.running = False
+                        self.action_after_battle = "MENU"
 
                     elif event.key == pygame.K_SPACE and not self.battle_finished:
                         self.auto_mode = not self.auto_mode
@@ -206,36 +229,62 @@ class BattleScreen:
                             if self.auto_mode:
                                 self.agent_p1 = self._temp_agent_for_human
                                 self.waiting_for_player_action = False
-                                self.mensaje_batalla = "Modo automático activado."
+                                self.waiting_for_player_switch = False
+                                self.message_queue.append("Modo automático activado.")
                             else:
                                 self.agent_p1 = None
                                 self.waiting_for_player_action = False
-                                self.mensaje_batalla = "Modo manual. Elige movimiento."
-                                self._process_full_turn()
+                                self.waiting_for_player_switch = False
+                                self.message_queue.append("Modo manual. Elige movimiento.")
 
-                    elif event.key == pygame.K_n and not self.battle_finished:
-                        self._process_full_turn()
-
-                # -------------------------------------------------------
-                # IMPORTANTE: MOUSEBUTTONDOWN al mismo nivel que KEYDOWN
-                # -------------------------------------------------------
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if (
-                        self.human_player
-                        and self.waiting_for_player_action
-                        and not self.battle_finished
-                    ):
-                        self._handle_move_click(event.pos)
+                    if self.battle_finished:
+                        if self.btn_replay.collidepoint(event.pos):
+                            self.action_after_battle = "REPLAY"
+                            self.running = False
+                        elif self.btn_menu.collidepoint(event.pos):
+                            self.action_after_battle = "MENU"
+                            self.running = False
+                    elif self.human_player and not self.battle_finished:
+                        if self.waiting_for_player_action:
+                            self._handle_move_click(event.pos)
+                        elif self.waiting_for_player_switch:
+                            self._handle_switch_click(event.pos)
 
-            # Avance automático con timer
-            if (
-                not self.battle_finished
-                and self.auto_mode
-                and (not self.human_player or self.agent_p1 is not None)
-                and (now - self.last_turn_time) >= self.turn_interval
-            ):
-                self._process_full_turn()
-                self.last_turn_time = now
+            # --- Lógica de visualización de mensajes y transición de estados ---
+            if self.message_queue:
+                if now - self.message_display_time > self.message_duration:
+                    self.current_message = self.message_queue.pop(0)
+                    self.message_display_time = now
+            else:
+                # Ya no hay mensajes en la cola. Esperamos a que el último se lea.
+                if now - self.message_display_time > self.message_duration:
+                    if not self.battle_finished:
+                        # 1. Chequeamos si el P2 (IA) necesita cambiar de Pokémon
+                        if self.p2_team[self.p2_active_idx].current_hp <= 0:
+                            self._ai_switch_pokemon(2)
+                            
+                        # 2. Chequeamos si el P1 necesita cambiar de Pokémon
+                        elif self.p1_team[self.p1_active_idx].current_hp <= 0:
+                            if self.human_player and not self.auto_mode:
+                                if not self.waiting_for_player_switch:
+                                    self.waiting_for_player_switch = True
+                                    self.waiting_for_player_action = False
+                                    self.current_message = "¡Tu Pokémon se ha debilitado! Elige un nuevo Pokémon."
+                            else:
+                                self._ai_switch_pokemon(1)
+                                
+                        # 3. Si nadie necesita cambiar y es el turno del humano en manual
+                        elif self.human_player and not self.auto_mode:
+                            if not self.waiting_for_player_action and not self.waiting_for_player_switch:
+                                self.waiting_for_player_action = True
+                                self.current_message = "Elige movimiento (haz click en un botón)."
+                                
+                        # 4. Si es auto_mode y ya pasó el intervalo, procesamos el turno
+                        elif self.auto_mode:
+                            if now - self.last_turn_time >= self.turn_interval:
+                                self._process_full_turn()
+                                self.last_turn_time = now
 
             # ----------------------------------------------------------
             # DIBUJO
@@ -256,9 +305,10 @@ class BattleScreen:
                 is_back=False
             )
 
-            if img_p2_front:
+            if img_p2_front and self.p2_team[self.p2_active_idx].current_hp > 0:
                 self.screen.blit(img_p2_front, (600, 150))
-            if img_p1_back:
+            
+            if img_p1_back and self.p1_team[self.p1_active_idx].current_hp > 0:
                 self.screen.blit(img_p1_back, (150, 350))
 
             p2_hp = self.p2_team[self.p2_active_idx].current_hp
@@ -269,34 +319,41 @@ class BattleScreen:
             self.renderer.draw_health_bar(50, 100, p2_name, p2_hp, p2_max, level=50, is_player=False)
             self.renderer.draw_health_bar(650, 420, p1_name, p1_hp, p1_max, level=50, is_player=True)
 
-            self.renderer.draw_dialog_box(self.mensaje_batalla)
+            self.renderer.draw_dialog_box(self.current_message)
 
-            if self.human_player:
-                move_labels = self._get_active_move_labels()
-                self._draw_move_buttons(pygame.mouse.get_pos(), move_labels)
+            if self.human_player and not self.battle_finished:
+                if self.waiting_for_player_action:
+                    move_labels = self._get_active_move_labels()
+                    self._draw_move_buttons(mouse_pos, move_labels)
+                elif self.waiting_for_player_switch:
+                    self._draw_switch_options(mouse_pos)
+
+            if self.battle_finished:
+                overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+                overlay.set_alpha(150)
+                overlay.fill((0, 0, 0))
+                self.screen.blit(overlay, (0, 0))
+                
+                self.renderer.draw_text("FIN DEL COMBATE", 'title', (255, 215, 0), self.screen.get_width()//2, self.screen.get_height()//2 - 100, center=True)
+
+                self.renderer.draw_button(self.btn_replay, "Repetir", self.btn_replay.collidepoint(mouse_pos))
+                self.renderer.draw_button(self.btn_menu, "Ir al Menú", self.btn_menu.collidepoint(mouse_pos))
 
             pygame.display.flip()
             self.clock.tick(60)
+            
+        return self.action_after_battle
 
-    # ------------------------------------------------------------------
-    # Procesar turno completo
-    # ------------------------------------------------------------------
     def _process_full_turn(self, player_action: Action = None):
         if self.battle_finished:
             return
 
         state = self._build_battle_state()
 
-        if self.human_player:
+        if self.human_player and not self.auto_mode:
+            # En modo manual esperamos que `player_action` ya venga al llamar a la función
             if player_action is None:
-                if self.agent_p1 is None:
-                    # Modo manual: esperar que el jugador haga click
-                    self.waiting_for_player_action = True
-                    self.mensaje_batalla = "Elige movimiento (haz click en un botón)."
-                    return
-                else:
-                    # Modo auto-play: agente temporal decide por el humano
-                    player_action = self.agent_p1.get_action(state)
+                return
         else:
             if player_action is None:
                 player_action = self.agent_p1.get_action(state)
@@ -315,36 +372,23 @@ class BattleScreen:
         self.p1_active_idx = new_p1_idx
         self.p2_active_idx = new_p2_idx
         self.turn_number += 1
+        
         self.waiting_for_player_action = False
+        self.waiting_for_player_switch = False
         self.player_pending_action = None
 
-        summary = self._describe_outcomes(result.outcomes)
+        self._describe_outcomes(result.outcomes)
 
         if result.match_over:
             self.battle_finished = True
             self.auto_mode = False
             if result.winner == 1:
-                summary += "\n\n¡El jugador ha ganado la batalla!"
+                self.message_queue.append("¡El jugador ha ganado la batalla!")
             elif result.winner == 2:
-                summary += "\n\n¡La IA ha ganado la batalla!"
+                self.message_queue.append("¡La IA ha ganado la batalla!")
             else:
-                summary += "\n\nResultado: empate."
-            self.mensaje_batalla = summary
-            return
+                self.message_queue.append("Resultado: empate.")
 
-        self.mensaje_batalla = summary
-
-        # ---------------------------------------------------------------
-        # CORRECCIÓN CLAVE: después de procesar un turno humano en modo
-        # manual, re-entrar automáticamente en estado "esperando acción"
-        # para el siguiente turno sin que el jugador tenga que hacer nada.
-        # ---------------------------------------------------------------
-        if self.human_player and not self.auto_mode and self.agent_p1 is None:
-            self._process_full_turn()
-
-    # ------------------------------------------------------------------
-    # Dibujar botones de movimientos
-    # ------------------------------------------------------------------
     def _draw_move_buttons(self, mouse_pos, labels=None):
         if labels is None:
             labels = self._get_active_move_labels()
@@ -354,6 +398,15 @@ class BattleScreen:
 
         enabled = self.waiting_for_player_action and not self.battle_finished
 
+        has_disabled_param = False
+        try:
+            from inspect import signature
+            sig = signature(self.renderer.draw_button)
+            if 'disabled' in sig.parameters:
+                has_disabled_param = True
+        except:
+            pass
+            
         for i, rect in enumerate(self.move_buttons):
             label = labels[i] if i < len(labels) else "-"
             has_move = i < len(moves)
@@ -365,11 +418,11 @@ class BattleScreen:
                 if pp is not None and pp <= 0:
                     disabled = True
 
-            self.renderer.draw_button(rect, label, hovered, disabled=disabled)
+            if has_disabled_param:
+                self.renderer.draw_button(rect, label, hovered, disabled=disabled)
+            else:
+                self.renderer.draw_button(rect, label, hovered)
 
-    # ------------------------------------------------------------------
-    # Manejar click en botón de movimiento
-    # ------------------------------------------------------------------
     def _handle_move_click(self, mouse_pos):
         active = self.p1_team[self.p1_active_idx]
         moves = getattr(active, 'moves', []) if active else []
@@ -382,10 +435,62 @@ class BattleScreen:
                 mv = moves[i]
                 pp = getattr(mv, 'current_pp', None)
                 if pp is not None and pp <= 0:
-                    self.mensaje_batalla = "¡Ese movimiento no tiene PP! Elige otro."
+                    self.message_queue.append("¡Ese movimiento no tiene PP! Elige otro.")
                     return
 
                 action = Action(type=ActionType.MOVE, target_index=i)
                 self.player_pending_action = action
+                # Ocultamos los botones de inmediato
+                self.waiting_for_player_action = False
+                # Procesamos el turno
                 self._process_full_turn(player_action=action)
                 return
+
+    def _draw_switch_options(self, mouse_pos):
+        available_pokemon = []
+        for i, pkm in enumerate(self.p1_team):
+            if pkm.current_hp > 0 and i != self.p1_active_idx:
+                available_pokemon.append((i, pkm))
+        
+        sw = self.screen.get_width()
+        sh = self.screen.get_height()
+        btn_w = 180
+        btn_h = 48
+        pad = 10
+        
+        start_x = (sw - (len(available_pokemon) * btn_w + (len(available_pokemon) - 1) * pad)) // 2
+        start_y = sh - 100
+
+        self.switch_buttons_rects = []
+        for i, (idx, pkm) in enumerate(available_pokemon):
+            rect = pygame.Rect(start_x + i * (btn_w + pad), start_y, btn_w, btn_h)
+            self.switch_buttons_rects.append((rect, idx))
+            
+            is_hovered = rect.collidepoint(mouse_pos)
+            self.renderer.draw_button(rect, pkm.name.capitalize(), is_hovered)
+
+    def _handle_switch_click(self, mouse_pos):
+        for rect, pkm_idx in self.switch_buttons_rects:
+            if rect.collidepoint(mouse_pos):
+                self.p1_active_idx = pkm_idx
+                self.message_queue.append(f"¡Adelante, {self.p1_team[pkm_idx].name.capitalize()}!")
+                self.waiting_for_player_switch = False
+                return
+
+    def _ai_switch_pokemon(self, player_id):
+        team = self.p1_team if player_id == 1 else self.p2_team
+        active_idx = self.p1_active_idx if player_id == 1 else self.p2_active_idx
+
+        available_switches = [
+            idx for idx, pkm in enumerate(team)
+            if pkm.current_hp > 0 and idx != active_idx
+        ]
+
+        if available_switches:
+            new_active_idx = random.choice(available_switches)
+            if player_id == 1:
+                self.p1_active_idx = new_active_idx
+            else:
+                self.p2_active_idx = new_active_idx
+                
+            self.message_queue.append(f"¡La IA envió a {team[new_active_idx].name.capitalize()}!")
