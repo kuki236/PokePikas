@@ -24,7 +24,7 @@ class AilmentType(Enum):
     BURN = "BURN"
     CONFUSION = "CONFUSION"
     FREEZE = "FREEZE"
-    LEECH_SEED = "LEECH-SEED"
+    LEECH_SEED = "leech_seed"
     NONE = "NONE"
     PARALYSIS = "PARALYSIS"
     POISON = "POISON"

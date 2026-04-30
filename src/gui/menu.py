@@ -5,7 +5,14 @@ import os
 import random
 from enum import Enum
 
-from renderer import Renderer 
+# Asegurar que la carpeta raíz del proyecto esté en `sys.path`
+# cuando se ejecuta `python src/gui/menu.py` directamente. Esto permite
+# que imports como `from src.utils.data_loader import ...` funcionen.
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from renderer import Renderer
 
 class GameState(Enum):
     START = 1
