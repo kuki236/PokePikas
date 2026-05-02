@@ -12,11 +12,11 @@ class Renderer:
         if os.path.exists(ruta_fuente):
             self.font_title = pygame.font.Font(ruta_fuente, 30)
             self.font_subtitle = pygame.font.Font(ruta_fuente, 16)
-            self.font_small = pygame.font.Font(ruta_fuente, 6)
+            self.font_small = pygame.font.Font(ruta_fuente, 7) # Aumentado para mejor legibilidad
         else:
             self.font_title = pygame.font.SysFont("Arial", 45, bold=True)
             self.font_subtitle = pygame.font.SysFont("Arial", 26)
-            self.font_small = pygame.font.SysFont("Arial", 12)
+            self.font_small = pygame.font.SysFont("Arial", 7)
 
         self.image_cache = {}
 
@@ -66,7 +66,7 @@ class Renderer:
         self.screen.blit(shadow_surface, (x + 2, y + 2))
         self.screen.blit(surface, (x, y))
 
-    def draw_button(self, rect, text, is_hovered, disabled=False):
+    def draw_button(self, rect, text, is_hovered, disabled=False, sub_text=None):
         button_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
 
         if disabled:
@@ -86,7 +86,14 @@ class Renderer:
         pygame.draw.rect(button_surface, border_color, button_surface.get_rect(), width=3, border_radius=10)
 
         self.screen.blit(button_surface, (rect.x, rect.y))
-        self.draw_text(text, 'subtitle', text_color, rect.centerx, rect.centery, center=True)
+        
+        if sub_text:
+            # Si hay subtexto, el texto principal va arriba y el subtexto abajo
+            self.draw_text(text, 'subtitle', text_color, rect.centerx, rect.centery - 10, center=True)
+            self.draw_text(sub_text, 'small', text_color, rect.centerx, rect.centery + 10, center=True)
+        else:
+            self.draw_text(text, 'subtitle', text_color, rect.centerx, rect.centery, center=True)
+
 
     def load_sprite(self, name, filepath):
         if name not in self.image_cache:
@@ -154,8 +161,8 @@ class Renderer:
         if fill_w > 0:
             pygame.draw.rect(self.screen, color, (bar_x, bar_y, fill_w, bar_h), border_radius=5)
 
-        if is_player:
-            self.draw_text(f"{hp}/{max_hp}", 'small', (30, 30, 30), bar_x + 130, bar_y + 18)
+        # SIEMPRE mostrar el texto de los puntos de vida
+        self.draw_text(f"{hp}/{max_hp}", 'small', (30, 30, 30), bar_x + 130, bar_y + 18)
 
     def _wrap_text(self, text, font, max_width):
         if not text:
