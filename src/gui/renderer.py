@@ -12,7 +12,7 @@ class Renderer:
         if os.path.exists(ruta_fuente):
             self.font_title = pygame.font.Font(ruta_fuente, 30)
             self.font_subtitle = pygame.font.Font(ruta_fuente, 16)
-            self.font_small = pygame.font.Font(ruta_fuente, 12) # Aumentado para mejor legibilidad
+            self.font_small = pygame.font.Font(ruta_fuente, 6) # Aumentado para mejor legibilidad
         else:
             self.font_title = pygame.font.SysFont("Arial", 45, bold=True)
             self.font_subtitle = pygame.font.SysFont("Arial", 26)
