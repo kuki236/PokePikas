@@ -108,14 +108,23 @@ class BattleScreen:
         self.btn_lucha = pygame.Rect(self.sw // 2, self.top_h + 10, btn_action_w, btn_action_h)
         self.btn_pokemon = pygame.Rect(self.sw // 2, self.top_h + 20 + btn_action_h, btn_action_w, btn_action_h)
         
-        # Botones de movimientos (2x2 ocupando casi toda la pantalla inferior)
-        move_btn_w = (self.sw - 60) // 2
-        move_btn_h = (self.bottom_h - 60) // 2
+        # Botones de movimientos (2x2 centrados y más compactos)
+        move_btn_w = 220 
+        move_btn_h = 55
+        pad_x = 15
+        pad_y = 15
+        
+        # Centrar el bloque de 2x2 en la pantalla inferior
+        total_w = (move_btn_w * 2) + pad_x
+        total_h = (move_btn_h * 2) + pad_y
+        start_x = (self.sw - total_w) // 2
+        start_y = self.top_h + (self.bottom_h - total_h) // 2 + 5
+
         self.move_buttons = [
-            pygame.Rect(20, self.top_h + 20, move_btn_w, move_btn_h),
-            pygame.Rect(40 + move_btn_w, self.top_h + 20, move_btn_w, move_btn_h),
-            pygame.Rect(20, self.top_h + 40 + move_btn_h, move_btn_w, move_btn_h),
-            pygame.Rect(40 + move_btn_w, self.top_h + 40 + move_btn_h, move_btn_w, move_btn_h),
+            pygame.Rect(start_x, start_y, move_btn_w, move_btn_h),
+            pygame.Rect(start_x + move_btn_w + pad_x, start_y, move_btn_w, move_btn_h),
+            pygame.Rect(start_x, start_y + move_btn_h + pad_y, move_btn_w, move_btn_h),
+            pygame.Rect(start_x + move_btn_w + pad_x, start_y + move_btn_h + pad_y, move_btn_w, move_btn_h),
         ]
 
         # Botones post-batalla
@@ -521,7 +530,7 @@ class BattleScreen:
         is_hovered_pokemon = self.btn_pokemon.collidepoint(mouse_pos)
         self._draw_colored_button(self.btn_pokemon, "POKéMON", is_hovered_pokemon, (60, 210, 60))
 
-    def _draw_colored_button(self, rect, text, is_hovered, base_color):
+    def _draw_colored_button(self, rect, text, is_hovered, base_color, sub_text=None, font_override=None, text_offset_y=0):
         button_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         
         if is_hovered:
@@ -536,14 +545,37 @@ class BattleScreen:
         
         self.screen.blit(button_surface, (rect.x, rect.y))
         
-        font = self.renderer.font_title
-        shadow_surface = font.render(text, True, (50, 50, 50))
-        text_surface = font.render(text, True, (255, 255, 255))
+        font = font_override if font_override else self.renderer.font_title
         
-        x = rect.centerx - text_surface.get_width() // 2
-        y = rect.centery - text_surface.get_height() // 2
-        self.screen.blit(shadow_surface, (x + 2, y + 2))
-        self.screen.blit(text_surface, (x, y))
+        if sub_text:
+            if not font_override:
+                font = self.renderer.font_subtitle
+                
+            shadow_surface = font.render(text, True, (50, 50, 50))
+            text_surface = font.render(text, True, (255, 255, 255))
+            
+            sub_font = self.renderer.font_small
+            sub_shadow = sub_font.render(sub_text, True, (50, 50, 50))
+            sub_surf = sub_font.render(sub_text, True, (255, 255, 255))
+            
+            x = rect.centerx - text_surface.get_width() // 2
+            y = rect.centery - text_surface.get_height() // 2 - 8 + text_offset_y
+            self.screen.blit(shadow_surface, (x + 2, y + 2))
+            self.screen.blit(text_surface, (x, y))
+            
+            sx = rect.centerx - sub_surf.get_width() // 2
+            sy = rect.centery - sub_surf.get_height() // 2 + 12 + text_offset_y
+            self.screen.blit(sub_shadow, (sx + 2, sy + 2))
+            self.screen.blit(sub_surf, (sx, sy))
+        else:
+            shadow_surface = font.render(text, True, (50, 50, 50))
+            text_surface = font.render(text, True, (255, 255, 255))
+            
+            x = rect.centerx - text_surface.get_width() // 2
+            y = rect.centery - text_surface.get_height() // 2 + text_offset_y
+            self.screen.blit(shadow_surface, (x + 2, y + 2))
+            self.screen.blit(text_surface, (x, y))
+
 
     def _process_full_turn(self, player_action: Action = None):
         if self.battle_finished:
@@ -624,18 +656,23 @@ class BattleScreen:
                 pp = getattr(mv, 'current_pp', 0)
                 max_pp = getattr(mv, 'max_pp', 0)
                 
-                # Botón base
-                self._draw_colored_button(rect, name, hovered, (200, 200, 200) if disabled else (240, 240, 240))
+                # Se eliminó la etiqueta 'TIPO' del UI y se movió el PP debajo del nombre
+                self._draw_colored_button(
+                    rect, 
+                    name, 
+                    hovered, 
+                    (200, 200, 200) if disabled else (240, 240, 240),
+                    font_override=self.renderer.font_subtitle,
+                    text_offset_y=-8
+                )
                 
-                # Textos adicionales: PP
                 if not disabled:
                     pp_str = f"PP {pp}/{max_pp}"
-                    
-                    font = self.renderer.font_small
+                    font = self.renderer.font_small 
                     pp_surf = font.render(pp_str, True, (60, 60, 60))
                     
-                    # Centramos los PP en la parte inferior del botón
-                    self.screen.blit(pp_surf, (rect.right - pp_surf.get_width() - 15, rect.bottom - pp_surf.get_height() - 8))
+                    # Dibujamos PP centrado abajo en lugar de a la derecha
+                    self.screen.blit(pp_surf, (rect.centerx - pp_surf.get_width() // 2, rect.bottom - pp_surf.get_height() - 8))
             else:
                 self._draw_colored_button(rect, "-", False, (200, 200, 200))
 
@@ -679,7 +716,7 @@ class BattleScreen:
         
         switch_bg = pygame.Rect(10, self.top_h + 10, self.sw - 20, self.bottom_h - 20)
         pygame.draw.rect(self.screen, (200, 240, 200), switch_bg, border_radius=10)
-        self.renderer.draw_text("Elige un Pokémon:", 'subtitle', (40, 40, 40), self.sw//2, self.top_h + 40, center=True, shadow=False)
+        self.renderer.draw_text("Elige un Pokémon:", 'subtitle', (50, 50, 50), self.sw//2, self.top_h + 30, center=True, shadow=False)
 
         for i, (idx, pkm) in enumerate(available_pokemon):
             rect = pygame.Rect(start_x + i * (btn_w + pad), start_y, btn_w, btn_h)
@@ -687,8 +724,9 @@ class BattleScreen:
             
             is_hovered = rect.collidepoint(mouse_pos)
             
-            hp_text = f"{pkm.name.capitalize()}  {pkm.current_hp}/{pkm.max_hp}"
-            self._draw_colored_button(rect, hp_text, is_hovered, (80, 200, 80))
+            hp_text = f"HP: {pkm.current_hp}/{pkm.max_hp}"
+            # Usar font_subtitle para el nombre del Pokémon para evitar que se salga del recuadro
+            self._draw_colored_button(rect, pkm.name.capitalize(), is_hovered, (80, 200, 80), sub_text=hp_text, font_override=self.renderer.font_subtitle)
 
     def _handle_switch_click(self, mouse_pos):
         for rect, pkm_idx in self.switch_buttons_rects:
