@@ -179,11 +179,12 @@ import random
 def calculate_damage(attacker_atk: int, defender_def: int, defender_spd: int, 
                      move_power: int, move_type: PokemonType, defender_types: list[PokemonType]) -> tuple[int, float]:
    
+    if move_power == 0:
+        return 0, 1.0 
     
     type_multiplier = get_type_multiplier(move_type, defender_types)
     
-    base_damage = (attacker_atk / max(1, defender_def)) * move_power
-    
+    base_damage = ((attacker_atk / max(1, defender_def)) * move_power) / 2.75    
     speed_factor = defender_spd * FACTOR_K
     
     raw_damage = base_damage - speed_factor

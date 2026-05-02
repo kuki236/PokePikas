@@ -36,7 +36,7 @@ class Pokemon:
         self.current_hp = min(self.max_hp, self.current_hp + amount)
 
     def is_fainted(self) -> bool:
-        return self.current_hp == 0
+        return self.current_hp <= 0
 
     def clone(self) -> "Pokemon":
         cloned = Pokemon(
@@ -54,7 +54,6 @@ class Pokemon:
         return cloned
 
     def to_state(self):
-        # Import local para evitar circular imports
         from src.core.interfaces import PokemonState, MoveState
 
         move_states = []
