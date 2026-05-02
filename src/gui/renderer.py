@@ -12,11 +12,11 @@ class Renderer:
         if os.path.exists(ruta_fuente):
             self.font_title = pygame.font.Font(ruta_fuente, 30)
             self.font_subtitle = pygame.font.Font(ruta_fuente, 16)
-            self.font_small = pygame.font.Font(ruta_fuente, 7) # Aumentado para mejor legibilidad
+            self.font_small = pygame.font.Font(ruta_fuente, 12) # Aumentado para mejor legibilidad
         else:
             self.font_title = pygame.font.SysFont("Arial", 45, bold=True)
             self.font_subtitle = pygame.font.SysFont("Arial", 26)
-            self.font_small = pygame.font.SysFont("Arial", 7)
+            self.font_small = pygame.font.SysFont("Arial", 14)
 
         self.image_cache = {}
 
@@ -54,7 +54,7 @@ class Renderer:
             return self.font_subtitle
         return self.font_small
 
-    def draw_text(self, text, font_type, color, x, y, center=False):
+    def draw_text(self, text, font_type, color, x, y, center=False, shadow=True):
         font = self._get_font(font_type)
         surface = font.render(str(text), True, color)
 
@@ -62,8 +62,10 @@ class Renderer:
             x = x - surface.get_width() // 2
             y = y - surface.get_height() // 2
 
-        shadow_surface = font.render(str(text), True, (20, 20, 20))
-        self.screen.blit(shadow_surface, (x + 2, y + 2))
+        if shadow:
+            shadow_surface = font.render(str(text), True, (20, 20, 20))
+            self.screen.blit(shadow_surface, (x + 2, y + 2))
+
         self.screen.blit(surface, (x, y))
 
     def draw_button(self, rect, text, is_hovered, disabled=False, sub_text=None):
