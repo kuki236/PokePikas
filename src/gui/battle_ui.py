@@ -10,7 +10,7 @@ from src.core.battle_engine import process_turn
 from src.core.interfaces import BattleState, Action, ActionType
 from src.ai.level1_agent import Level1Agent
 from src.ai.level2_agent import Level2Agent
-
+from src.entities.enums import AilmentType
 
 class BattleScreen:
     def __init__(self, screen, renderer, p1_team, difficulty, mode):
@@ -218,11 +218,16 @@ class BattleScreen:
                         self.p1_animating_damage = True
                         self.p1_animation_start = perf_counter()
                 else:
-                    self.message_queue.append(f"¡{actor_name.capitalize()} usó {label}!")
-                    print(f"[{actor_name.capitalize()}] usó {label} (Efecto)")
-                    if actual_move and getattr(actual_move, 'healing', 0) > 0:
-                            self.message_queue.append(f"¡{actor_name.capitalize()} restauró\nsu salud!")
-                            print(f"  -> [{actor_name.capitalize()}] se curó. HP actual: {out.attacker_hp_remaining}")
+                    if getattr(out, 'type_multiplier', 1.0) == 0.0:
+                        self.message_queue.append(f"¡No afectó a\n{current_p2_name.capitalize() if out.actor == 1 else current_p1_name.capitalize()}!")
+                        print(f"[{actor_name.capitalize()}] usó {label} -> NO TIENE EFECTO (Inmunidad)")
+                    else:
+                        self.message_queue.append(f"¡{actor_name.capitalize()} usó {label}!")
+                        print(f"[{actor_name.capitalize()}] usó {label} (Efecto)")
+                        
+                        if actual_move and getattr(actual_move, 'healing', 0) > 0:
+                            self.message_queue.append(f"¡{actor_name.capitalize()} restauró su salud!")
+                            print(f"  -> [{actor_name.capitalize()}] se curó. HP: {out.attacker_hp_remaining}")
                 if out.status_applied:
                     status_name = str(out.status_applied).split('.')[-1]
                     self.message_queue.append(f"¡El rival ahora sufre de\n{status_name}!")
@@ -247,6 +252,25 @@ class BattleScreen:
         
         if not outcomes:
             self.message_queue.append("No pasó nada relevante este turno.")
+        
+        
+        p1_active = next((p for p in self.p1_team if p.name == current_p1_name and getattr(p, 'current_hp', 0) > 0), None)
+        if p1_active and p1_active.status_ailment != AilmentType.NONE:
+            if p1_active.status_ailment == AilmentType.POISON:
+                self.message_queue.append(f"¡El veneno resta PS\na {current_p1_name.capitalize()}!")
+            elif p1_active.status_ailment == AilmentType.BURN:
+                self.message_queue.append(f"¡{current_p1_name.capitalize()} se resiente\nde la quemadura!")
+            elif p1_active.status_ailment == AilmentType.LEECH_SEED:
+                self.message_queue.append(f"¡Las drenadoras restan salud\na {current_p1_name.capitalize()}!")
+
+        p2_active = next((p for p in self.p2_team if p.name == current_p2_name and getattr(p, 'current_hp', 0) > 0), None)
+        if p2_active and p2_active.status_ailment != AilmentType.NONE:
+            if p2_active.status_ailment == AilmentType.POISON:
+                self.message_queue.append(f"¡El veneno resta PS\na {current_p2_name.capitalize()}!")
+            elif p2_active.status_ailment == AilmentType.BURN:
+                self.message_queue.append(f"¡{current_p2_name.capitalize()} se resiente\nde la quemadura!")
+            elif p2_active.status_ailment == AilmentType.LEECH_SEED:
+                self.message_queue.append(f"¡Las drenadoras restan salud\na {current_p2_name.capitalize()}!")
 
     def _get_active_move_data(self):
         active = self.p1_team[self.p1_active_idx] if self.p1_team else None

@@ -142,8 +142,12 @@ def process_turn(
 
             move = attacker.moves[action.target_index]
             can_attack = True
-            if attacker.status_ailment == AilmentType.SLEEP:
-                can_attack = False
+            
+            if attacker.status_ailment in [AilmentType.SLEEP, AilmentType.FREEZE]:
+                if random.randint(1, 100) <= 40:
+                    attacker.status_ailment = AilmentType.NONE
+                else:
+                    can_attack = False
             elif attacker.status_ailment == AilmentType.PARALYSIS:
                 if random.randint(1, 100) <= 25:
                     can_attack = False
@@ -170,10 +174,13 @@ def process_turn(
 
                 if move.drain > 0 and damage > 0:
                     attacker.heal(int(damage * (move.drain / 100.0)))
+                
                 if move.healing > 0:
                     attacker.heal(int(attacker.max_hp * (move.healing / 100.0)))
+                    if move.name.lower() == "rest":
+                        attacker.status_ailment = AilmentType.SLEEP
 
-                if move.ailment != AilmentType.NONE and defender.status_ailment == AilmentType.NONE:
+                if move.name.lower() != "rest" and move.ailment != AilmentType.NONE and defender.status_ailment == AilmentType.NONE:
                     if not defender.is_fainted() and random.randint(1, 100) <= move.ailment_chance:
                         defender.status_ailment = move.ailment
                         status_applied = move.ailment
@@ -183,7 +190,7 @@ def process_turn(
                 is_faster=is_faster, hit_success=hit_success, damage_dealt=damage,
                 type_multiplier=multi, target_hp_remaining=defender.current_hp,
                 target_fainted=defender.is_fainted(), attacker_hp_remaining=attacker.current_hp,
-                status_applied=status_applied
+                status_applied=status_applied if move.name.lower() != "rest" else AilmentType.SLEEP
             ))
 
     for owner_id, team, active_idx in [(1, p1_team, new_p1_idx), (2, p2_team, new_p2_idx)]:
@@ -191,6 +198,10 @@ def process_turn(
         if not pkmn.is_fainted() and pkmn.status_ailment in [AilmentType.BURN, AilmentType.POISON, AilmentType.LEECH_SEED]:
             residual = max(1, pkmn.max_hp // 8)
             pkmn.take_damage(residual)
+            
+            nombre_estado = pkmn.status_ailment.value.capitalize()
+            print(f"  -> [DAÑO RESIDUAL] {pkmn.name.capitalize()} perdió {residual} HP por {nombre_estado}. HP actual: {pkmn.current_hp}")
+            
             if pkmn.status_ailment == AilmentType.LEECH_SEED:
                 opponent_team = p2_team if owner_id == 1 else p1_team
                 opp_idx = new_p2_idx if owner_id == 1 else new_p1_idx

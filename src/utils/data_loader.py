@@ -51,3 +51,19 @@ class DataLoader:
             types=poke_types,
             moves=battle_moves
         )
+    def generate_random_team(self, team_size: int = 3) -> list[Pokemon]:
+        """
+        Genera un equipo de Pokémon sin repetir especies (nombres).
+        """
+        unique_species = {}
+        for p in self.pokemon_data:
+            if p["name"] not in unique_species:
+                unique_species[p["name"]] = p["poke_id"]
+
+        available_ids = list(unique_species.values())
+        if len(available_ids) < team_size:
+            raise ValueError(f"No hay suficientes especies únicas en el JSON para formar un equipo de {team_size}")
+
+        selected_ids = random.sample(available_ids, team_size)
+
+        return [self.create_battle_pokemon(poke_id) for poke_id in selected_ids]
