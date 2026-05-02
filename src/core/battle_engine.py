@@ -22,8 +22,7 @@ def _is_valid_move(pokemon: Pokemon, move_idx: int) -> bool:
     if move_idx < 0 or move_idx >= len(getattr(pokemon, "moves", [])):
         return False
     move = pokemon.moves[move_idx]
-    return move is not None
-
+    return move is not None and move.current_pp > 0
 
 def _first_available_alive(team: List[Pokemon], exclude_idx: int | None = None) -> int | None:
     for i, p in enumerate(team):
@@ -85,42 +84,22 @@ def process_turn(
     p2_active_idx: int,
     p2_action: Action
 ) -> tuple[TurnResult, int, int]:
-    """
-    Ejecuta un turno completo.
-    Retorna: (TurnResult para la interfaz, nuevo_idx_activo_p1, nuevo_idx_activo_p2)
-
-    Convención de Action.target_index:
-    - MOVE: índice del movimiento dentro de attacker.moves
-    - SWITCH: índice del pokémon dentro del equipo
-    """
     outcomes: List[ActionOutcome] = []
     match_over = False
     winner = None
 
-    new_p1_idx = p1_active_idx
-    new_p2_idx = p2_active_idx
+    new_p1_idx = max(0, min(p1_active_idx, len(p1_team) - 1))
+    new_p2_idx = max(0, min(p2_active_idx, len(p2_team) - 1))
 
-    if not (0 <= new_p1_idx < len(p1_team)):
-        new_p1_idx = 0
-    if not (0 <= new_p2_idx < len(p2_team)):
-        new_p2_idx = 0
-
-    p1_active = p1_team[new_p1_idx]
-    p2_active = p2_team[new_p2_idx]
-
-    turn_order = determine_turn_order(p1_active, p1_action, p2_active, p2_action)
+    turn_order = determine_turn_order(p1_team[new_p1_idx], p1_action, p2_team[new_p2_idx], p2_action)
 
     for actor_id, _current_pokemon, action in turn_order:
         if actor_id == 1:
-            attacker_team = p1_team
-            defender_team = p2_team
-            attacker_idx = new_p1_idx
-            defender_idx = new_p2_idx
+            attacker_team, defender_team = p1_team, p2_team
+            attacker_idx, defender_idx = new_p1_idx, new_p2_idx
         else:
-            attacker_team = p2_team
-            defender_team = p1_team
-            attacker_idx = new_p2_idx
-            defender_idx = new_p1_idx
+            attacker_team, defender_team = p2_team, p1_team
+            attacker_idx, defender_idx = new_p2_idx, new_p1_idx
 
         attacker = attacker_team[attacker_idx]
         defender = defender_team[defender_idx]
@@ -134,211 +113,117 @@ def process_turn(
             if _is_valid_switch(attacker_team, attacker_idx, action.target_index):
                 if actor_id == 1:
                     new_p1_idx = action.target_index
-                    switched_pokemon = p1_team[new_p1_idx]
                 else:
                     new_p2_idx = action.target_index
-                    switched_pokemon = p2_team[new_p2_idx]
+                
+                active_pkmn = attacker_team[action.target_index]
+                outcomes.append(ActionOutcome(
+                    actor=actor_id, action_type=ActionType.SWITCH, action_id=active_pkmn.id,
+                    is_faster=is_faster, hit_success=True, damage_dealt=0, type_multiplier=1.0,
+                    target_hp_remaining=defender.current_hp, target_fainted=False,
+                    attacker_hp_remaining=active_pkmn.current_hp, status_applied=None
+                ))
+            continue
+
+        if action.type == ActionType.MOVE:
+            if actor_id == 1:
+                attacker, defender = p1_team[new_p1_idx], p2_team[new_p2_idx]
             else:
-                switched_pokemon = attacker_team[attacker_idx]
+                attacker, defender = p2_team[new_p2_idx], p1_team[new_p1_idx]
 
-            outcomes.append(ActionOutcome(
-                actor=actor_id,
-                action_type=ActionType.SWITCH,
-                action_id=switched_pokemon.id,
-                is_faster=is_faster,
-                hit_success=True,
-                damage_dealt=0,
-                type_multiplier=1.0,
-                target_hp_remaining=0,
-                target_fainted=False,
-                attacker_hp_remaining=switched_pokemon.current_hp,
-                status_applied=None
-            ))
-            continue
+            if not _is_valid_move(attacker, action.target_index):
+                outcomes.append(ActionOutcome(
+                    actor=actor_id, action_type=ActionType.MOVE, action_id=-1,
+                    is_faster=is_faster, hit_success=False, damage_dealt=0, type_multiplier=0.0,
+                    target_hp_remaining=defender.current_hp, target_fainted=False,
+                    attacker_hp_remaining=attacker.current_hp, status_applied=None
+                ))
+                continue
 
-        if action.type != ActionType.MOVE:
-            continue
-
-        if actor_id == 1:
-            attacker = p1_team[new_p1_idx]
-            defender = p2_team[new_p2_idx]
-        else:
-            attacker = p2_team[new_p2_idx]
-            defender = p1_team[new_p1_idx]
-
-        if attacker.is_fainted():
-            continue
-
-        if defender.is_fainted():
-            continue
-
-        if not _is_valid_move(attacker, action.target_index):
-            outcomes.append(ActionOutcome(
-                actor=actor_id,
-                action_type=ActionType.MOVE,
-                action_id=-1,
-                is_faster=is_faster,
-                hit_success=False,
-                damage_dealt=0,
-                type_multiplier=0.0,
-                target_hp_remaining=defender.current_hp,
-                target_fainted=defender.is_fainted(),
-                attacker_hp_remaining=attacker.current_hp,
-                status_applied=None
-            ))
-            continue
-
-        move = attacker.moves[action.target_index]
-
-        can_attack = True
-        if attacker.status_ailment == AilmentType.SLEEP:
-            can_attack = False
-        elif attacker.status_ailment == AilmentType.PARALYSIS:
-            if random.randint(1, 100) <= 25:
+            move = attacker.moves[action.target_index]
+            can_attack = True
+            if attacker.status_ailment == AilmentType.SLEEP:
                 can_attack = False
+            elif attacker.status_ailment == AilmentType.PARALYSIS:
+                if random.randint(1, 100) <= 25:
+                    can_attack = False
 
-        if not move.is_usable() or not can_attack:
+            if not can_attack:
+                outcomes.append(ActionOutcome(
+                    actor=actor_id, action_type=ActionType.MOVE, action_id=move.id,
+                    is_faster=is_faster, hit_success=False, damage_dealt=0, type_multiplier=0.0,
+                    target_hp_remaining=defender.current_hp, target_fainted=False,
+                    attacker_hp_remaining=attacker.current_hp, status_applied=None
+                ))
+                continue
+
+            move.current_pp -= 1
+            hit_success = random.randint(1, 100) <= move.accuracy
+            damage, multi, status_applied = 0, 1.0, None
+
+            if hit_success:
+                damage, multi = calculate_damage(
+                    attacker.attack, defender.defense, defender.speed,
+                    move.power, move.move_type, defender.types
+                )
+                defender.take_damage(damage)
+
+                if move.drain > 0 and damage > 0:
+                    attacker.heal(int(damage * (move.drain / 100.0)))
+                if move.healing > 0:
+                    attacker.heal(int(attacker.max_hp * (move.healing / 100.0)))
+
+                if move.ailment != AilmentType.NONE and defender.status_ailment == AilmentType.NONE:
+                    if not defender.is_fainted() and random.randint(1, 100) <= move.ailment_chance:
+                        defender.status_ailment = move.ailment
+                        status_applied = move.ailment
+
             outcomes.append(ActionOutcome(
-                actor=actor_id,
-                action_type=ActionType.MOVE,
-                action_id=move.id,
-                is_faster=is_faster,
-                hit_success=False,
-                damage_dealt=0,
-                type_multiplier=0.0,
-                target_hp_remaining=defender.current_hp,
-                target_fainted=defender.is_fainted(),
-                attacker_hp_remaining=attacker.current_hp,
-                status_applied=None
+                actor=actor_id, action_type=ActionType.MOVE, action_id=move.id,
+                is_faster=is_faster, hit_success=hit_success, damage_dealt=damage,
+                type_multiplier=multi, target_hp_remaining=defender.current_hp,
+                target_fainted=defender.is_fainted(), attacker_hp_remaining=attacker.current_hp,
+                status_applied=status_applied
             ))
-            continue
 
-        move.current_pp -= 1
-
-        hit_success = random.randint(1, 100) <= move.accuracy
-
-        damage = 0
-        multi = 1.0
-        status_applied = None
-
-        if hit_success:
-            damage, multi = calculate_damage(
-                attacker.attack,
-                defender.defense,
-                defender.speed,
-                move.power,
-                move.move_type,
-                defender.types
-            )
-
-            defender.take_damage(damage)
-
-            if move.drain > 0 and damage > 0:
-                drained_hp = int(damage * (move.drain / 100.0))
-                attacker.heal(drained_hp)
-
-            if move.healing > 0:
-                healed_hp = int(attacker.max_hp * (move.healing / 100.0))
-                attacker.heal(healed_hp)
-
-            if (
-                move.ailment != AilmentType.NONE
-                and defender.status_ailment == AilmentType.NONE
-                and not defender.is_fainted()
-            ):
-                if random.randint(1, 100) <= move.ailment_chance:
-                    defender.status_ailment = move.ailment
-                    status_applied = move.ailment
-
-        outcomes.append(ActionOutcome(
-            actor=actor_id,
-            action_type=ActionType.MOVE,
-            action_id=move.id,
-            is_faster=is_faster,
-            hit_success=hit_success,
-            damage_dealt=damage,
-            type_multiplier=multi,
-            target_hp_remaining=defender.current_hp,
-            target_fainted=defender.is_fainted(),
-            attacker_hp_remaining=attacker.current_hp,
-            status_applied=status_applied
-        ))
-
-    active_pokemons = [
-        (1, p1_team[new_p1_idx]),
-        (2, p2_team[new_p2_idx]),
-    ]
-
-    for owner_id, pkmn in active_pokemons:
-        if pkmn.is_fainted():
-            continue
-
-        if pkmn.status_ailment in [AilmentType.BURN, AilmentType.POISON, AilmentType.LEECH_SEED]:
-            residual_damage = max(1, pkmn.max_hp // 8)
-            pkmn.take_damage(residual_damage)
-
+    for owner_id, team, active_idx in [(1, p1_team, new_p1_idx), (2, p2_team, new_p2_idx)]:
+        pkmn = team[active_idx]
+        if not pkmn.is_fainted() and pkmn.status_ailment in [AilmentType.BURN, AilmentType.POISON, AilmentType.LEECH_SEED]:
+            residual = max(1, pkmn.max_hp // 8)
+            pkmn.take_damage(residual)
             if pkmn.status_ailment == AilmentType.LEECH_SEED:
-                if owner_id == 1 and not p2_team[new_p2_idx].is_fainted():
-                    p2_team[new_p2_idx].heal(residual_damage)
-                elif owner_id == 2 and not p1_team[new_p1_idx].is_fainted():
-                    p1_team[new_p1_idx].heal(residual_damage)
+                opponent_team = p2_team if owner_id == 1 else p1_team
+                opp_idx = new_p2_idx if owner_id == 1 else new_p1_idx
+                if not opponent_team[opp_idx].is_fainted():
+                    opponent_team[opp_idx].heal(residual)
 
     p1_lost = all(p.is_fainted() for p in p1_team)
     p2_lost = all(p.is_fainted() for p in p2_team)
 
-    if p1_lost and p2_lost:
+    if p1_lost or p2_lost:
         match_over = True
-        winner = None
-    elif p1_lost:
-        match_over = True
-        winner = 2
-    elif p2_lost:
-        match_over = True
-        winner = 1
-
+        winner = 1 if p2_lost and not p1_lost else (2 if p1_lost and not p2_lost else None)
+    
     if not match_over:
         if p1_team[new_p1_idx].is_fainted():
-            candidate = _first_available_alive(p1_team, exclude_idx=new_p1_idx)
+            candidate = _first_available_alive(p1_team)
             if candidate is not None:
                 new_p1_idx = candidate
-                switched_pokemon = p1_team[new_p1_idx]
                 outcomes.append(ActionOutcome(
-                    actor=1,
-                    action_type=ActionType.SWITCH,
-                    action_id=switched_pokemon.id,
-                    is_faster=False,
-                    hit_success=True,
-                    damage_dealt=0,
-                    type_multiplier=1.0,
-                    target_hp_remaining=0,
-                    target_fainted=False,
-                    attacker_hp_remaining=switched_pokemon.current_hp,
-                    status_applied=None
+                    actor=1, action_type=ActionType.SWITCH, action_id=p1_team[new_p1_idx].id,
+                    is_faster=False, hit_success=True, damage_dealt=0, type_multiplier=1.0,
+                    target_hp_remaining=0, target_fainted=False,
+                    attacker_hp_remaining=p1_team[new_p1_idx].current_hp, status_applied=None
                 ))
-
         if p2_team[new_p2_idx].is_fainted():
-            candidate = _first_available_alive(p2_team, exclude_idx=new_p2_idx)
+            candidate = _first_available_alive(p2_team)
             if candidate is not None:
                 new_p2_idx = candidate
-                switched_pokemon = p2_team[new_p2_idx]
                 outcomes.append(ActionOutcome(
-                    actor=2,
-                    action_type=ActionType.SWITCH,
-                    action_id=switched_pokemon.id,
-                    is_faster=False,
-                    hit_success=True,
-                    damage_dealt=0,
-                    type_multiplier=1.0,
-                    target_hp_remaining=0,
-                    target_fainted=False,
-                    attacker_hp_remaining=switched_pokemon.current_hp,
-                    status_applied=None
+                    actor=2, action_type=ActionType.SWITCH, action_id=p2_team[new_p2_idx].id,
+                    is_faster=False, hit_success=True, damage_dealt=0, type_multiplier=1.0,
+                    target_hp_remaining=0, target_fainted=False,
+                    attacker_hp_remaining=p2_team[new_p2_idx].current_hp, status_applied=None
                 ))
 
-    turn_result = TurnResult(
-        outcomes=outcomes,
-        match_over=match_over,
-        winner=winner
-    )
-
-    return turn_result, new_p1_idx, new_p2_idx
+    return TurnResult(outcomes, match_over, winner), new_p1_idx, new_p2_idx

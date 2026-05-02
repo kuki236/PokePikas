@@ -184,13 +184,17 @@ class BattleScreen:
                     if not out.target_fainted:
                          self.message_queue.append(f"¡La IA cambió a {name.capitalize()}!")
                     current_p2_name = name
+                print(f"[CAMBIO] Actor {out.actor} sacó a {name.capitalize()}")
 
             else:
+                actual_move = None  
                 mv_name = None
+                
                 for p in (self.p1_team + self.p2_team):
                     for mv in getattr(p, 'moves', []):
                         if getattr(mv, 'id', None) == out.action_id:
                             mv_name = getattr(mv, 'name', None)
+                            actual_move = mv 
                             break
                     if mv_name:
                         break
@@ -199,9 +203,14 @@ class BattleScreen:
 
                 if not out.hit_success:
                     self.message_queue.append(f"¡{actor_name.capitalize()} usó {label}\npero falló!")
+                    print(f"[{actor_name.capitalize()}] usó {label} -> FALLÓ")
                 elif out.damage_dealt > 0:
                     self.message_queue.append(f"¡{actor_name.capitalize()} usó {label}\ny causó {out.damage_dealt} de daño!")
-                    print(f"[{actor_name.capitalize()}] usó {label}. Daño infligido: {out.damage_dealt}")
+                    print(f"[{actor_name.capitalize()}] usó {label}. Daño: {out.damage_dealt}")                    
+                    # --- NUEVO LOGICA DE CURACIÓN POR DRENADO (Ej. Leech Life / Giga Drain) ---
+                    if actual_move and getattr(actual_move, 'drain', 0) > 0:
+                        self.message_queue.append(f"¡{actor_name.capitalize()} absorbió\nenergía del rival!")
+                        print(f"  -> [{actor_name.capitalize()}] drenó vida. HP: {out.attacker_hp_remaining}")
                     if out.actor == 1:
                         self.p2_animating_damage = True
                         self.p2_animation_start = perf_counter()
@@ -210,10 +219,20 @@ class BattleScreen:
                         self.p1_animation_start = perf_counter()
                 else:
                     self.message_queue.append(f"¡{actor_name.capitalize()} usó {label}!")
+                    print(f"[{actor_name.capitalize()}] usó {label} (Efecto)")
+                    if actual_move and getattr(actual_move, 'healing', 0) > 0:
+                            self.message_queue.append(f"¡{actor_name.capitalize()} restauró\nsu salud!")
+                            print(f"  -> [{actor_name.capitalize()}] se curó. HP actual: {out.attacker_hp_remaining}")
+                if out.status_applied:
+                    status_name = str(out.status_applied).split('.')[-1]
+                    self.message_queue.append(f"¡El rival ahora sufre de\n{status_name}!")
+                    print(f"  -> [ESTADO] Se aplicó {status_name} al defensor.")
+            
 
                 if out.target_fainted:
                     target_name = current_p2_name if out.actor == 1 else current_p1_name
                     self.message_queue.append(f"¡El {target_name.capitalize()}\nse ha debilitado!")
+                    print(f"  -> [KO] {target_name.capitalize()} ha caído.")
                     self.animating_faint_blocking = True 
                     if out.actor == 1:
                         if not self.p2_fainted:

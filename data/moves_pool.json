@@ -138,7 +138,7 @@
         "max_pp": 10,
         "current_pp": 10,
         "ailment": "LEECH-SEED",
-        "ailment_chance": 0,
+        "ailment_chance": 100,
         "drain": 0,
         "healing": 0
     },
@@ -151,7 +151,7 @@
         "max_pp": 15,
         "current_pp": 15,
         "ailment": "SLEEP",
-        "ailment_chance": 0,
+        "ailment_chance": 100,
         "drain": 0,
         "healing": 0
     },
@@ -177,7 +177,7 @@
         "max_pp": 10,
         "current_pp": 10,
         "ailment": "POISON",
-        "ailment_chance": 0,
+        "ailment_chance": 100,
         "drain": 0,
         "healing": 0
     },
@@ -325,6 +325,20 @@
         "healing": 0
     },
     {
+        "id": 188,
+        "name": "sludge-bomb",
+        "power": 90,
+        "accuracy": 100,
+        "move_type": "POISON",
+        "max_pp": 10,
+        "current_pp": 10,
+        "ailment": "POISON",
+        "ailment_chance": 30,
+        "drain": 0,
+        "healing": 0
+    }
+    ,
+    {
         "id": 506,
         "name": "hex",
         "power": 65,
@@ -346,7 +360,7 @@
         "max_pp": 15,
         "current_pp": 15,
         "ailment": "BURN",
-        "ailment_chance": 0,
+        "ailment_chance": 100,
         "drain": 0,
         "healing": 0
     },
@@ -392,7 +406,7 @@
     {
         "id": 484,
         "name": "heavy-slam",
-        "power": 0,
+        "power": 80,
         "accuracy": 100,
         "move_type": "STEEL",
         "max_pp": 10,
@@ -413,7 +427,7 @@
         "ailment": "NONE",
         "ailment_chance": 0,
         "drain": 0,
-        "healing": 0
+        "healing": 100
     },
     {
         "id": 214,
@@ -425,6 +439,19 @@
         "current_pp": 10,
         "ailment": "NONE",
         "ailment_chance": 0,
+        "drain": 0,
+        "healing": 0
+    },
+    {
+        "id": 94,
+        "name": "psychic",
+        "power": 90,
+        "accuracy": 100,
+        "move_type": "PSYCHIC",
+        "max_pp": 10,
+        "current_pp": 10,
+        "ailment": "NONE",
+        "ailment_chance": 10,
         "drain": 0,
         "healing": 0
     },
@@ -1354,7 +1381,7 @@
     {
         "id": 594,
         "name": "water-shuriken",
-        "power": 15,
+        "power": 75,
         "accuracy": 100,
         "move_type": "WATER",
         "max_pp": 20,

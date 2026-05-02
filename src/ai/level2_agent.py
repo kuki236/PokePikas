@@ -116,7 +116,7 @@ class Level2Agent(BaseAgent):
             return Action(type=ActionType.MOVE, target_index=0)
 
         # Si la mejor diferencia es pobre, considerar cambiar
-        if best_diff < 5 and switch_candidates:
+        if best_diff < -20 and switch_candidates:
             return Action(type=ActionType.SWITCH, target_index=random.choice(switch_candidates))
 
         return Action(type=ActionType.MOVE, target_index=best_index)
