@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from .enums import PokemonType, AilmentType
+
 @dataclass
 class Move:
     """Representa un movimiento/ataque instanciado para un combate."""
@@ -8,6 +9,7 @@ class Move:
     power: int
     accuracy: int
     move_type: PokemonType
+    category: str    
     max_pp: int
     current_pp: int
     ailment: AilmentType
@@ -24,4 +26,3 @@ class Move:
         if not self.is_usable():
             raise ValueError(f"{self.name} no tiene PP disponibles.")
         self.current_pp -= 1
-

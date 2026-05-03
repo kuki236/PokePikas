@@ -6,7 +6,7 @@ from typing import List
 from .interfaces import Action, ActionType, TurnResult, ActionOutcome
 from src.entities.pokemon import Pokemon
 from src.entities.enums import AilmentType
-from .damage_calc import calculate_damage
+from .damage_calc import calculate_damage, get_type_multiplier
 
 
 def _is_valid_switch(team: List[Pokemon], current_idx: int, target_idx: int) -> bool:
@@ -130,6 +130,8 @@ def process_turn(
                 attacker, defender = p1_team[new_p1_idx], p2_team[new_p2_idx]
             else:
                 attacker, defender = p2_team[new_p2_idx], p1_team[new_p1_idx]
+            
+            if attacker.is_fainted(): continue 
 
             if not _is_valid_move(attacker, action.target_index):
                 outcomes.append(ActionOutcome(
@@ -166,31 +168,57 @@ def process_turn(
             damage, multi, status_applied = 0, 1.0, None
 
             if hit_success:
-                damage, multi = calculate_damage(
-                    attacker.attack, defender.defense, defender.speed,
-                    move.power, move.move_type, defender.types
-                )
-                defender.take_damage(damage)
-
-                if move.drain > 0 and damage > 0:
-                    attacker.heal(int(damage * (move.drain / 100.0)))
-                
-                if move.healing > 0:
-                    attacker.heal(int(attacker.max_hp * (move.healing / 100.0)))
+                if move.category == "STATUS":
+                    multi = get_type_multiplier(move.move_type, defender.types)
+                    
                     if move.name.lower() == "rest":
+                        attacker.heal(attacker.max_hp) 
                         attacker.status_ailment = AilmentType.SLEEP
+                        status_applied = AilmentType.SLEEP
+                    
+                    elif move.healing > 0:
+                        attacker.heal(int(attacker.max_hp * (move.healing / 100.0)))
+                    
+                    if move.ailment != AilmentType.NONE and defender.status_ailment == AilmentType.NONE and multi > 0:
+                        if not defender.is_fainted():
+                            defender.status_ailment = move.ailment
+                            status_applied = move.ailment
+                
+                else:
+                    stat_atk = attacker.attack if move.category == "PHYSICAL" else attacker.special_attack
+                    stat_def = defender.defense if move.category == "PHYSICAL" else defender.special_defense
 
-                if move.name.lower() != "rest" and move.ailment != AilmentType.NONE and defender.status_ailment == AilmentType.NONE:
-                    if not defender.is_fainted() and random.randint(1, 100) <= move.ailment_chance:
-                        defender.status_ailment = move.ailment
-                        status_applied = move.ailment
+                    hits = random.randint(3, 5) if move.id == 594 else 1
+                    total_damage = 0
+                    last_multi = 1.0
+                    
+                    for _ in range(hits):
+                        hit_damage, m = calculate_damage(
+                            stat_atk, stat_def, defender.speed,
+                            move.power, move.move_type, defender.types
+                        )
+                        total_damage += hit_damage
+                        last_multi = m
+                    
+                    damage = total_damage
+                    multi = last_multi
+                    defender.take_damage(damage)
+
+                    if move.drain > 0 and damage > 0:
+                        attacker.heal(int(damage * (move.drain / 100.0)))
+                    
+                    # Estados secundarios de ataques de daño (con chequeo de inmunidad multi > 0)[cite: 3]
+                    if move.ailment != AilmentType.NONE and defender.status_ailment == AilmentType.NONE and multi > 0:
+                        if not defender.is_fainted() and random.randint(1, 100) <= move.ailment_chance:
+                            defender.status_ailment = move.ailment
+                            status_applied = move.ailment
 
             outcomes.append(ActionOutcome(
                 actor=actor_id, action_type=ActionType.MOVE, action_id=move.id,
                 is_faster=is_faster, hit_success=hit_success, damage_dealt=damage,
                 type_multiplier=multi, target_hp_remaining=defender.current_hp,
                 target_fainted=defender.is_fainted(), attacker_hp_remaining=attacker.current_hp,
-                status_applied=status_applied if move.name.lower() != "rest" else AilmentType.SLEEP
+                status_applied=status_applied
             ))
 
     for owner_id, team, active_idx in [(1, p1_team, new_p1_idx), (2, p2_team, new_p2_idx)]:
@@ -198,9 +226,6 @@ def process_turn(
         if not pkmn.is_fainted() and pkmn.status_ailment in [AilmentType.BURN, AilmentType.POISON, AilmentType.LEECH_SEED]:
             residual = max(1, pkmn.max_hp // 8)
             pkmn.take_damage(residual)
-            
-            nombre_estado = pkmn.status_ailment.value.capitalize()
-            print(f"  -> [DAÑO RESIDUAL] {pkmn.name.capitalize()} perdió {residual} HP por {nombre_estado}. HP actual: {pkmn.current_hp}")
             
             if pkmn.status_ailment == AilmentType.LEECH_SEED:
                 opponent_team = p2_team if owner_id == 1 else p1_team
