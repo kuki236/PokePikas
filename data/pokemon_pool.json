@@ -2,477 +2,433 @@
     {
         "poke_id": 6,
         "name": "charizard",
-        "max_hp": 78,
-        "attack": 84,
-        "defense": 78,
-        "speed": 100,
         "types": [
             "FIRE",
             "FLYING"
         ],
-        "move_ids": [
-            53,
-            126,
-            337,
-            403,
-            355,
-            412,
-            89,
-            394
+        "max_hp": 78,
+        "attack": 84,
+        "defense": 78,
+        "special_attack": 109,
+        "special_defense": 85,
+        "speed": 100,
+        "moves": [
+            5,
+            7,
+            9,
+            10
         ]
     },
     {
         "poke_id": 3,
         "name": "venusaur",
-        "max_hp": 80,
-        "attack": 82,
-        "defense": 83,
-        "speed": 80,
         "types": [
             "GRASS",
             "POISON"
         ],
-        "move_ids": [
-            188,
-            412,
-            235,
-            73,
-            89,
-            79,
-            202,
-            92
+        "max_hp": 80,
+        "attack": 82,
+        "defense": 83,
+        "special_attack": 100,
+        "special_defense": 100,
+        "speed": 80,
+        "moves": [
+            15,
+            20,
+            22,
+            29
         ]
     },
     {
         "poke_id": 9,
         "name": "blastoise",
-        "max_hp": 79,
-        "attack": 83,
-        "defense": 100,
-        "speed": 78,
         "types": [
             "WATER"
         ],
-        "move_ids": [
-            56,
-            57,
-            58,
-            430,
-            396,
-            323,
-            229,
-            89
+        "max_hp": 79,
+        "attack": 83,
+        "defense": 100,
+        "special_attack": 85,
+        "special_defense": 105,
+        "speed": 78,
+        "moves": [
+            5,
+            8,
+            25,
+            29
         ]
     },
     {
         "poke_id": 94,
         "name": "gengar",
-        "max_hp": 60,
-        "attack": 65,
-        "defense": 60,
-        "speed": 110,
         "types": [
             "GHOST",
             "POISON"
         ],
-        "move_ids": [
-            247,
-            188,
-            411,
-            85,
-            188,
-            506,
-            261,
-            399
+        "max_hp": 60,
+        "attack": 65,
+        "defense": 60,
+        "special_attack": 130,
+        "special_defense": 75,
+        "speed": 110,
+        "moves": [
+            5,
+            7,
+            8,
+            9
         ]
     },
     {
         "poke_id": 143,
         "name": "snorlax",
-        "max_hp": 160,
-        "attack": 110,
-        "defense": 65,
-        "speed": 30,
         "types": [
             "NORMAL"
         ],
-        "move_ids": [
-            34,
-            89,
-            242,
-            484,
-            156,
-            94,
-            428,
-            667
+        "max_hp": 160,
+        "attack": 110,
+        "defense": 65,
+        "special_attack": 65,
+        "special_defense": 110,
+        "speed": 30,
+        "moves": [
+            5,
+            6,
+            7,
+            8
         ]
     },
     {
         "poke_id": 254,
         "name": "sceptile",
-        "max_hp": 70,
-        "attack": 85,
-        "defense": 65,
-        "speed": 120,
         "types": [
             "GRASS"
         ],
-        "move_ids": [
-            348,
-            406,
-            411,
-            202,
-            412,
-            89,
-            404,
-            437
+        "max_hp": 70,
+        "attack": 85,
+        "defense": 65,
+        "special_attack": 105,
+        "special_defense": 85,
+        "speed": 120,
+        "moves": [
+            1,
+            5,
+            9,
+            15
         ]
     },
     {
         "poke_id": 257,
         "name": "blaziken",
-        "max_hp": 80,
-        "attack": 120,
-        "defense": 70,
-        "speed": 80,
         "types": [
             "FIRE",
             "FIGHTING"
         ],
-        "move_ids": [
-            394,
-            136,
-            413,
-            89,
-            444,
-            421,
-            299,
-            370
+        "max_hp": 80,
+        "attack": 120,
+        "defense": 70,
+        "special_attack": 110,
+        "special_defense": 70,
+        "speed": 80,
+        "moves": [
+            5,
+            7,
+            9,
+            10
         ]
     },
     {
         "poke_id": 260,
         "name": "swampert",
-        "max_hp": 100,
-        "attack": 110,
-        "defense": 90,
-        "speed": 60,
         "types": [
             "WATER",
             "GROUND"
         ],
-        "move_ids": [
-            127,
-            89,
+        "max_hp": 100,
+        "attack": 110,
+        "defense": 90,
+        "special_attack": 85,
+        "special_defense": 90,
+        "speed": 60,
+        "moves": [
+            5,
             8,
-            444,
-            57,
-            330,
-            276,
-            56
+            23,
+            25
         ]
     },
     {
         "poke_id": 282,
         "name": "gardevoir",
-        "max_hp": 68,
-        "attack": 65,
-        "defense": 65,
-        "speed": 80,
         "types": [
             "PSYCHIC",
             "FAIRY"
         ],
-        "move_ids": [
-            585,
-            94,
-            473,
-            247,
-            85,
-            412,
-            595,
-            411
+        "max_hp": 68,
+        "attack": 65,
+        "defense": 65,
+        "special_attack": 125,
+        "special_defense": 115,
+        "speed": 80,
+        "moves": [
+            5,
+            7,
+            8,
+            9
         ]
     },
     {
         "poke_id": 376,
         "name": "metagross",
-        "max_hp": 80,
-        "attack": 135,
-        "defense": 130,
-        "speed": 70,
         "types": [
             "STEEL",
             "PSYCHIC"
         ],
-        "move_ids": [
-            309,
-            428,
-            89,
-            418,
+        "max_hp": 80,
+        "attack": 135,
+        "defense": 130,
+        "special_attack": 95,
+        "special_defense": 90,
+        "speed": 70,
+        "moves": [
             8,
             9,
-            359,
-            94
+            15,
+            29
         ]
     },
     {
         "poke_id": 448,
         "name": "lucario",
-        "max_hp": 70,
-        "attack": 110,
-        "defense": 70,
-        "speed": 90,
         "types": [
             "FIGHTING",
             "STEEL"
         ],
-        "move_ids": [
-            396,
-            430,
-            370,
-            309,
-            245,
-            399,
-            406,
-            94
+        "max_hp": 70,
+        "attack": 110,
+        "defense": 70,
+        "special_attack": 115,
+        "special_defense": 70,
+        "speed": 90,
+        "moves": [
+            5,
+            8,
+            9,
+            25
         ]
     },
     {
         "poke_id": 445,
         "name": "garchomp",
-        "max_hp": 108,
-        "attack": 130,
-        "defense": 95,
-        "speed": 102,
         "types": [
             "DRAGON",
             "GROUND"
         ],
-        "move_ids": [
-            89,
-            337,
-            200,
-            444,
-            424,
-            242,
-            442,
-            398
+        "max_hp": 108,
+        "attack": 130,
+        "defense": 95,
+        "special_attack": 80,
+        "special_defense": 85,
+        "speed": 102,
+        "moves": [
+            15,
+            29,
+            33,
+            34
         ]
     },
     {
         "poke_id": 392,
         "name": "infernape",
-        "max_hp": 76,
-        "attack": 104,
-        "defense": 71,
-        "speed": 108,
         "types": [
             "FIRE",
             "FIGHTING"
         ],
-        "move_ids": [
-            394,
-            370,
-            183,
+        "max_hp": 76,
+        "attack": 104,
+        "defense": 71,
+        "special_attack": 104,
+        "special_defense": 71,
+        "speed": 108,
+        "moves": [
+            7,
             9,
-            89,
-            404,
-            126,
-            411
+            10,
+            15
         ]
     },
     {
         "poke_id": 468,
         "name": "togekiss",
-        "max_hp": 85,
-        "attack": 50,
-        "defense": 95,
-        "speed": 80,
         "types": [
             "FAIRY",
             "FLYING"
         ],
-        "move_ids": [
-            403,
-            605,
-            396,
-            53,
-            355,
-            304,
-            247,
-            94
+        "max_hp": 85,
+        "attack": 50,
+        "defense": 95,
+        "special_attack": 120,
+        "special_defense": 115,
+        "speed": 80,
+        "moves": [
+            1,
+            5,
+            19,
+            25
         ]
     },
     {
         "poke_id": 466,
         "name": "electivire",
-        "max_hp": 75,
-        "attack": 123,
-        "defense": 67,
-        "speed": 95,
         "types": [
             "ELECTRIC"
         ],
-        "move_ids": [
-            85,
-            528,
-            8,
+        "max_hp": 75,
+        "attack": 123,
+        "defense": 67,
+        "special_attack": 95,
+        "special_defense": 85,
+        "speed": 95,
+        "moves": [
+            5,
             7,
-            89,
-            238,
-            53,
+            8,
             9
         ]
     },
     {
         "poke_id": 663,
         "name": "talonflame",
-        "max_hp": 78,
-        "attack": 81,
-        "defense": 71,
-        "speed": 126,
         "types": [
             "FIRE",
             "FLYING"
         ],
-        "move_ids": [
-            413,
-            394,
-            355,
-            404,
-            211,
-            261,
-            512,
-            488
+        "max_hp": 78,
+        "attack": 81,
+        "defense": 71,
+        "special_attack": 74,
+        "special_defense": 69,
+        "speed": 126,
+        "moves": [
+            13,
+            19,
+            33,
+            36
         ]
     },
     {
         "poke_id": 700,
         "name": "sylveon",
-        "max_hp": 95,
-        "attack": 65,
-        "defense": 65,
-        "speed": 60,
         "types": [
             "FAIRY"
         ],
-        "move_ids": [
-            585,
-            304,
-            473,
-            247,
-            595,
-            98,
-            577,
-            156
+        "max_hp": 95,
+        "attack": 65,
+        "defense": 65,
+        "special_attack": 110,
+        "special_defense": 130,
+        "speed": 60,
+        "moves": [
+            6,
+            15,
+            33,
+            34
         ]
     },
     {
         "poke_id": 706,
         "name": "goodra",
-        "max_hp": 90,
-        "attack": 100,
-        "defense": 70,
-        "speed": 80,
         "types": [
             "DRAGON"
         ],
-        "move_ids": [
-            406,
-            434,
-            53,
-            85,
-            58,
-            188,
-            330,
-            438
+        "max_hp": 90,
+        "attack": 100,
+        "defense": 70,
+        "special_attack": 110,
+        "special_defense": 150,
+        "speed": 80,
+        "moves": [
+            5,
+            7,
+            9,
+            25
         ]
     },
     {
         "poke_id": 701,
         "name": "hawlucha",
-        "max_hp": 78,
-        "attack": 92,
-        "defense": 75,
-        "speed": 118,
         "types": [
             "FIGHTING",
             "FLYING"
         ],
-        "move_ids": [
-            560,
-            136,
-            512,
-            398,
-            404,
-            444,
-            428,
-            413
+        "max_hp": 78,
+        "attack": 92,
+        "defense": 75,
+        "special_attack": 74,
+        "special_defense": 63,
+        "speed": 118,
+        "moves": [
+            2,
+            5,
+            7,
+            9
         ]
     },
     {
         "poke_id": 715,
         "name": "noivern",
-        "max_hp": 85,
-        "attack": 70,
-        "defense": 80,
-        "speed": 123,
         "types": [
             "FLYING",
             "DRAGON"
         ],
-        "move_ids": [
-            406,
-            542,
-            53,
-            586,
-            355,
-            404,
-            399,
-            247
+        "max_hp": 85,
+        "attack": 70,
+        "defense": 80,
+        "special_attack": 97,
+        "special_defense": 80,
+        "speed": 123,
+        "moves": [
+            13,
+            15,
+            16,
+            17
         ]
     },
     {
         "poke_id": 724,
         "name": "decidueye",
-        "max_hp": 78,
-        "attack": 107,
-        "defense": 75,
-        "speed": 70,
         "types": [
             "GRASS",
             "GHOST"
         ],
-        "move_ids": [
-            662,
-            348,
-            413,
-            389,
-            404,
-            421,
-            355,
-            412
+        "max_hp": 78,
+        "attack": 107,
+        "defense": 75,
+        "special_attack": 100,
+        "special_defense": 100,
+        "speed": 70,
+        "moves": [
+            31,
+            33,
+            36,
+            63
         ]
     },
     {
         "poke_id": 727,
         "name": "incineroar",
-        "max_hp": 95,
-        "attack": 115,
-        "defense": 90,
-        "speed": 60,
         "types": [
             "FIRE",
             "DARK"
         ],
-        "move_ids": [
-            394,
-            663,
-            89,
-            404,
-            370,
-            126,
+        "max_hp": 95,
+        "attack": 115,
+        "defense": 90,
+        "special_attack": 80,
+        "special_defense": 90,
+        "speed": 60,
+        "moves": [
+            5,
+            6,
             7,
             9
         ]
@@ -480,151 +436,137 @@
     {
         "poke_id": 730,
         "name": "primarina",
-        "max_hp": 80,
-        "attack": 74,
-        "defense": 74,
-        "speed": 60,
         "types": [
             "WATER",
             "FAIRY"
         ],
-        "move_ids": [
-            664,
-            585,
-            56,
-            58,
-            412,
-            94,
-            247,
-            57
+        "max_hp": 80,
+        "attack": 74,
+        "defense": 74,
+        "special_attack": 126,
+        "special_defense": 116,
+        "speed": 60,
+        "moves": [
+            1,
+            3,
+            34,
+            55
         ]
     },
     {
         "poke_id": 768,
         "name": "golisopod",
-        "max_hp": 75,
-        "attack": 125,
-        "defense": 140,
-        "speed": 40,
         "types": [
             "BUG",
             "WATER"
         ],
-        "move_ids": [
-            404,
-            710,
-            141,
-            389,
-            398,
-            529,
-            370,
-            404
+        "max_hp": 75,
+        "attack": 125,
+        "defense": 140,
+        "special_attack": 60,
+        "special_defense": 90,
+        "speed": 40,
+        "moves": [
+            42,
+            57,
+            58,
+            59
         ]
     },
     {
         "poke_id": 784,
         "name": "kommo-o",
-        "max_hp": 75,
-        "attack": 110,
-        "defense": 125,
-        "speed": 85,
         "types": [
             "DRAGON",
             "FIGHTING"
         ],
-        "move_ids": [
-            691,
-            370,
-            53,
-            398,
-            337,
-            430,
-            396,
-            89
+        "max_hp": 75,
+        "attack": 110,
+        "defense": 125,
+        "special_attack": 100,
+        "special_defense": 105,
+        "speed": 85,
+        "moves": [
+            5,
+            7,
+            8,
+            9
         ]
     },
     {
         "poke_id": 815,
         "name": "cinderace",
-        "max_hp": 80,
-        "attack": 116,
-        "defense": 75,
-        "speed": 119,
         "types": [
             "FIRE"
         ],
-        "move_ids": [
-            780,
-            136,
-            404,
-            389,
-            428,
-            442,
-            441,
-            53
+        "max_hp": 80,
+        "attack": 116,
+        "defense": 75,
+        "special_attack": 65,
+        "special_defense": 75,
+        "speed": 119,
+        "moves": [
+            7,
+            24,
+            25,
+            29
         ]
     },
     {
         "poke_id": 887,
         "name": "dragapult",
-        "max_hp": 88,
-        "attack": 120,
-        "defense": 75,
-        "speed": 142,
         "types": [
             "DRAGON",
             "GHOST"
         ],
-        "move_ids": [
-            337,
-            247,
-            404,
-            53,
-            85,
-            406,
-            57,
-            94
+        "max_hp": 88,
+        "attack": 120,
+        "defense": 75,
+        "special_attack": 100,
+        "special_defense": 75,
+        "speed": 142,
+        "moves": [
+            19,
+            34,
+            36,
+            38
         ]
     },
     {
         "poke_id": 823,
         "name": "corviknight",
-        "max_hp": 98,
-        "attack": 87,
-        "defense": 105,
-        "speed": 67,
         "types": [
             "FLYING",
             "STEEL"
         ],
-        "move_ids": [
-            413,
-            442,
-            355,
-            404,
-            776,
-            211,
-            65,
-            371
+        "max_hp": 98,
+        "attack": 87,
+        "defense": 105,
+        "special_attack": 53,
+        "special_defense": 85,
+        "speed": 67,
+        "moves": [
+            19,
+            31,
+            34,
+            36
         ]
     },
     {
         "poke_id": 861,
         "name": "grimmsnarl",
-        "max_hp": 95,
-        "attack": 120,
-        "defense": 65,
-        "speed": 60,
         "types": [
             "DARK",
             "FAIRY"
         ],
-        "move_ids": [
-            789,
-            663,
-            389,
-            583,
-            409,
+        "max_hp": 95,
+        "attack": 120,
+        "defense": 65,
+        "special_attack": 95,
+        "special_defense": 75,
+        "speed": 60,
+        "moves": [
+            5,
             7,
             8,
             9
@@ -633,23 +575,21 @@
     {
         "poke_id": 10117,
         "name": "greninja-ash",
-        "max_hp": 72,
-        "attack": 145,
-        "defense": 67,
-        "speed": 132,
         "types": [
             "WATER",
             "DARK"
         ],
-        "move_ids": [
-            594,
-            399,
-            56,
-            58,
-            404,
-            326,
-            441,
-            400
+        "max_hp": 72,
+        "attack": 145,
+        "defense": 67,
+        "special_attack": 153,
+        "special_defense": 71,
+        "speed": 132,
+        "moves": [
+            1,
+            8,
+            36,
+            55
         ]
     }
 ]

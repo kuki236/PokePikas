@@ -1,6 +1,7 @@
 # src/gui/renderer.py
 import pygame
 import os
+from src.entities.enums import AilmentType
 
 
 class Renderer:
@@ -12,7 +13,7 @@ class Renderer:
         if os.path.exists(ruta_fuente):
             self.font_title = pygame.font.Font(ruta_fuente, 30)
             self.font_subtitle = pygame.font.Font(ruta_fuente, 16)
-            self.font_small = pygame.font.Font(ruta_fuente,12) 
+            self.font_small = pygame.font.Font(ruta_fuente, 6) # Aumentado para mejor legibilidad
         else:
             self.font_title = pygame.font.SysFont("Arial", 45, bold=True)
             self.font_subtitle = pygame.font.SysFont("Arial", 26)
@@ -137,13 +138,49 @@ class Renderer:
                 self.image_cache[cache_key] = None
         return self.image_cache.get(cache_key)
 
-    def draw_health_bar(self, x, y, name, hp, max_hp, level, is_player=False):
+    def draw_health_bar(self, x, y, name, hp, max_hp, level, is_player=False, status=AilmentType.NONE):
         box_rect = pygame.Rect(x, y, 280, 80)
         pygame.draw.rect(self.screen, (240, 240, 230), box_rect, border_radius=10)
         pygame.draw.rect(self.screen, (50, 50, 50), box_rect, width=3, border_radius=10)
 
         self.draw_text(name.upper(), 'subtitle', (30, 30, 30), x + 15, y + 10)
         self.draw_text(f"Lv{level}", 'subtitle', (50, 50, 50), x + 210, y + 10)
+
+        # Dibujar icono de estado si existe
+        if status != AilmentType.NONE and status != AilmentType.UNKNOWN:
+            status_colors = {
+                AilmentType.BURN: (240, 80, 48),      # Rojo anaranjado
+                AilmentType.FREEZE: (152, 216, 216),  # Azul claro
+                AilmentType.PARALYSIS: (248, 208, 48),# Amarillo
+                AilmentType.POISON: (160, 64, 160),   # Morado
+                AilmentType.SLEEP: (140, 136, 140),   # Gris
+                AilmentType.CONFUSION: (248, 88, 136),# Rosa
+                AilmentType.LEECH_SEED: (120, 200, 80)# Verde
+            }
+            
+            status_names = {
+                AilmentType.BURN: "BRN",
+                AilmentType.FREEZE: "FRZ",
+                AilmentType.PARALYSIS: "PAR",
+                AilmentType.POISON: "PSN",
+                AilmentType.SLEEP: "SLP",
+                AilmentType.CONFUSION: "CNF",
+                AilmentType.LEECH_SEED: "LCH"
+            }
+
+            bg_color = status_colors.get(status, (150, 150, 150))
+            text = status_names.get(status, "???")
+
+            # Posición de la etiqueta de estado (a la izquierda de la barra de HP)
+            status_rect = pygame.Rect(x + 10, y + 45, 35, 15)
+            pygame.draw.rect(self.screen, bg_color, status_rect, border_radius=3)
+            
+            # Texto de estado centrado en su cajita sin sombra
+            font = self.font_small
+            text_surf = font.render(text, True, (255, 255, 255))
+            text_rect = text_surf.get_rect(center=status_rect.center)
+            self.screen.blit(text_surf, text_rect)
+
 
         bar_x, bar_y = x + 50, y + 45
         bar_w, bar_h = 200, 15
