@@ -11,11 +11,6 @@ class ActionType(Enum):
 
 @dataclass
 class Action:
-    """
-    Representa la decisión de un jugador o de la IA en su turno.
-    - MOVE:   target_index = índice del movimiento en la lista del Pokémon activo (0-3)
-    - SWITCH: target_index = índice del Pokémon en el equipo (0-2)
-    """
     type: ActionType
     target_index: int
 
@@ -25,7 +20,8 @@ class MoveState:
     id: int
     name: str
     power: int
-    move_type: str   # nombre del enum como string, ej: "FIRE"
+    category: str   
+    move_type: str   
     current_pp: int
     max_pp: int
 
@@ -38,8 +34,10 @@ class PokemonState:
     current_hp: int
     attack: int
     defense: int
+    special_attack: int   
+    special_defense: int 
     speed: int
-    types: List[str]       # nombres del enum como strings, ej: ["WATER", "FLYING"]
+    types: List[str]      
     moves: List[MoveState]
 
 
@@ -56,7 +54,7 @@ class BattleState:
 class ActionOutcome:
     actor: int
     action_type: ActionType
-    action_id: int         # MOVE → move.id  |  SWITCH → pokemon.id del que entró
+    action_id: int         
     is_faster: bool
     hit_success: bool
     damage_dealt: int
@@ -71,4 +69,4 @@ class ActionOutcome:
 class TurnResult:
     outcomes: List[ActionOutcome]
     match_over: bool
-    winner: Optional[int]   # 1, 2, o None (empate / en curso)
+    winner: Optional[int]

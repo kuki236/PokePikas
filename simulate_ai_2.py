@@ -1,4 +1,3 @@
-# src/tools/auto_battler.py
 
 import sys
 import copy
@@ -19,7 +18,7 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
     winner = None
     turn_count = 0
 
-    while not match_over and turn_count < 100:  # Límite de 100 turnos para evitar bucles infinitos
+    while not match_over and turn_count < 100:  # Límite de 100 turnos
         turn_count += 1
         
         # 1. Preparar el estado para los agentes
@@ -39,77 +38,84 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
             p2_team, p2_active_idx, p2_action
         )
 
-        p1_active_idx = new_p1_idx
-        p2_active_idx = new_p2_idx
-        match_over = turn_result.match_over
-        winner = turn_result.winner
-
         if print_logs:
             print(f"\n--- TURNO {turn_count} ---")
             
-            # Guardamos los nombres al inicio del turno para saber quién es quién
-            current_p1 = p1_team[p1_active_idx].name.capitalize()
-            current_p2 = p2_team[p2_active_idx].name.capitalize()
+            # Referencias temporales para el log antes de actualizar los índices globales
+            # Esto ayuda a rastrear quién empezó el turno
+            p1_pkmn = p1_team[p1_active_idx]
+            p2_pkmn = p2_team[p2_active_idx]
 
             for out in turn_result.outcomes:
-                actor_name = current_p1 if out.actor == 1 else current_p2
-                target_name = current_p2 if out.actor == 1 else current_p1
+                # Determinamos atacante y defensor REALES basándonos en el actor_id
+                attacker = p1_pkmn if out.actor == 1 else p2_pkmn
+                defender = p2_pkmn if out.actor == 1 else p1_pkmn
+                
+                actor_name = attacker.name.capitalize()
+                target_name = defender.name.capitalize()
 
                 # --- CASO 1: CAMBIO (SWITCH) ---
                 if out.action_type == ActionType.SWITCH:
                     switched_pkmn = next((p for p in (p1_team if out.actor == 1 else p2_team) if p.id == out.action_id), None)
-                    name = switched_pkmn.name.capitalize() if switched_pkmn else f"#{out.action_id}"
+                    name = switched_pkmn.name.capitalize() if switched_pkmn else "???"
                     print(f"[CAMBIO] Actor {out.actor} sacó a {name}")
                     
-                    # Actualizamos el nombre en memoria para los siguientes mensajes
-                    if out.actor == 1:
-                        current_p1 = name
-                    else:
-                        current_p2 = name
+                    # Sincronizamos la referencia local para los siguientes outcomes del turno
+                    if out.actor == 1: p1_pkmn = switched_pkmn
+                    else: p2_pkmn = switched_pkmn
 
                 # --- CASO 2: ATAQUE (MOVE) ---
                 else:
-                    # Buscar el nombre y datos del movimiento
-                    team = p1_team if out.actor == 1 else p2_team
-                    active_pkmn = next((p for p in team if p.name.capitalize() == actor_name), None)
-                    
-                    mv_name = "Movimiento Desconocido"
+                    # Búsqueda segura del movimiento para evitar AttributeError
                     actual_move = None
-                    if active_pkmn:
-                        for mv in getattr(active_pkmn, 'moves', []):
-                            if getattr(mv, 'id', None) == out.action_id:
-                                mv_name = getattr(mv, 'name', '???')
-                                actual_move = mv
-                                break
+                    if attacker and hasattr(attacker, 'moves'):
+                        actual_move = next((m for m in attacker.moves if m.id == out.action_id), None)
                     
-                    label = mv_name
-
-                    # 2.1 Fallo o Bloqueo
+                    if actual_move is None:
+                        mv_label = "Movimiento Desconocido"
+                        cat_icon = "❓"
+                    else:
+                        mv_label = actual_move.name
+                        # Verificación segura de categoría
+                        category = getattr(actual_move, 'category', 'PHYSICAL')
+                        cat_icon = "💥" if category == "PHYSICAL" else ("🔮" if category == "SPECIAL" else "🛡️")
+                    
+                    # 2.1 Fallo o incapacidad (Parálisis, Sueño, Fallo de precisión)
                     if not out.hit_success:
-                        print(f"[{actor_name}] intentó usar {label} pero falló (o no pudo moverse).")
+                        print(f"[{actor_name}] intentó usar {mv_label} pero falló o está incapacitado.")
                     
                     # 2.2 Ataque con Daño
                     elif out.damage_dealt > 0:
-                        print(f"[{actor_name}] usó {label}. Daño: {out.damage_dealt}")
-                        if getattr(actual_move, 'drain', 0) > 0:
+                        print(f"[{actor_name}] usó {mv_label} {cat_icon}. Daño: {out.damage_dealt}")
+                        if actual_move and getattr(actual_move, 'drain', 0) > 0:
                             print(f"  -> [{actor_name}] drenó vida. HP actual: {out.attacker_hp_remaining}")
                     
-                    # 2.3 Efecto de Estado, Curación o Inmunidad (Daño 0)
+                    # 2.3 Efecto Puro o Inmunidad
                     else:
                         if getattr(out, 'type_multiplier', 1.0) == 0.0:
-                            print(f"[{actor_name}] usó {label} -> NO TIENE EFECTO (Inmunidad de {target_name})")
+                            print(f"[{actor_name}] usó {mv_label} -> 🚫 NO TIENE EFECTO (Inmunidad de {target_name})")
                         else:
-                            print(f"[{actor_name}] usó {label} (Efecto)")
-                            if getattr(actual_move, 'healing', 0) > 0:
+                            print(f"[{actor_name}] usó {mv_label} (Efecto)")
+                            # Lógica de curación para Roost/Synthesis
+                            if actual_move and getattr(actual_move, 'healing', 0) > 0:
                                 print(f"  -> [{actor_name}] se curó. HP actual: {out.attacker_hp_remaining}")
 
-                    # --- LOG DE ESTADOS Y DEBILITAMIENTO ---
-                    if getattr(out, 'status_applied', None):
-                        status_name = str(out.status_applied).split('.')[-1].replace('_', ' ')
-                        print(f"  -> [ESTADO] ¡Se aplicó {status_name} a {target_name}!")
+                    # Logs de Estado (Toxic, Burn, Sleep, etc.)
+                    if out.status_applied:
+                        status_str = str(out.status_applied).split('.')[-1].replace('_', ' ')
+                        # Rest aplica el estado al actor, los demás al objetivo
+                        final_target = actor_name if mv_label.lower() == "rest" else target_name
+                        print(f"  -> [ESTADO] ¡{status_str} aplicado a {final_target}!")
 
                     if out.target_fainted:
                         print(f"  -> [KO] {target_name} ha caído.")
+
+        # Actualizar índices activos para el siguiente turno
+        p1_active_idx = new_p1_idx
+        p2_active_idx = new_p2_idx
+        match_over = turn_result.match_over
+        winner = turn_result.winner
+        
     return winner, turn_count
 
 def run_tournament(n_battles: int, AgentClass1, AgentClass2):
@@ -196,6 +202,6 @@ if __name__ == "__main__":
     CANTIDAD_BATALLAS = 1000
     CANTIDAD_BATALLAS_DEBUG = 100
 
-    #run_tournament(CANTIDAD_BATALLAS, Level1Agent, Level2Agent)
+    run_tournament(CANTIDAD_BATALLAS, Level1Agent, Level2Agent)
     
-    run_debug_batch(CANTIDAD_BATALLAS_DEBUG, Level1Agent, Level2Agent, "debug_logs.txt")
+    #run_debug_batch(CANTIDAD_BATALLAS_DEBUG, Level1Agent, Level2Agent, "debug_logs.txt")
