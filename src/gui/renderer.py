@@ -55,13 +55,15 @@ class Renderer:
             return self.font_subtitle
         return self.font_small
 
-    def draw_text(self, text, font_type, color, x, y, center=False, shadow=True):
+    def draw_text(self, text, font_type, color, x, y, center=False, shadow=True, right_align=False):
         font = self._get_font(font_type)
         surface = font.render(str(text), True, color)
 
         if center:
             x = x - surface.get_width() // 2
             y = y - surface.get_height() // 2
+        elif right_align:
+            x = x - surface.get_width()
 
         if shadow:
             shadow_surface = font.render(str(text), True, (20, 20, 20))
@@ -139,13 +141,16 @@ class Renderer:
         return self.image_cache.get(cache_key)
 
     def draw_health_bar(self, x, y, name, hp, max_hp, level, is_player=False, status=AilmentType.NONE):
-        box_rect = pygame.Rect(x, y, 280, 80)
+        box_rect = pygame.Rect(x, y, 320, 80) # Ensanchado para que quepa bien todo
         pygame.draw.rect(self.screen, (240, 240, 230), box_rect, border_radius=10)
         pygame.draw.rect(self.screen, (50, 50, 50), box_rect, width=3, border_radius=10)
 
         self.draw_text(name.upper(), 'subtitle', (30, 30, 30), x + 15, y + 10)
-        self.draw_text(f"Lv{level}", 'subtitle', (50, 50, 50), x + 210, y + 10)
+        self.draw_text(f"Lv{level}", 'subtitle', (50, 50, 50), x + 250, y + 10)
 
+        # La barra ahora no se superpone si hay estado
+        bar_x, bar_y = x + 15, y + 45
+        
         # Dibujar icono de estado si existe
         if status != AilmentType.NONE and status != AilmentType.UNKNOWN:
             status_colors = {
@@ -171,8 +176,8 @@ class Renderer:
             bg_color = status_colors.get(status, (150, 150, 150))
             text = status_names.get(status, "???")
 
-            # Posición de la etiqueta de estado (a la izquierda de la barra de HP)
-            status_rect = pygame.Rect(x + 10, y + 45, 35, 15)
+            # Posición de la etiqueta de estado
+            status_rect = pygame.Rect(x + 15, y + 45, 35, 15)
             pygame.draw.rect(self.screen, bg_color, status_rect, border_radius=3)
             
             # Texto de estado centrado en su cajita sin sombra
@@ -180,10 +185,14 @@ class Renderer:
             text_surf = font.render(text, True, (255, 255, 255))
             text_rect = text_surf.get_rect(center=status_rect.center)
             self.screen.blit(text_surf, text_rect)
+            
+            # Ajustar el inicio de la barra de vida si hay estado
+            bar_x += 45 
+            bar_w = 170 # Reducimos el ancho de la barra si hay estado
+        else:
+            bar_w = 215
 
-
-        bar_x, bar_y = x + 50, y + 45
-        bar_w, bar_h = 200, 15
+        bar_h = 15
         pygame.draw.rect(self.screen, (100, 100, 100), (bar_x, bar_y, bar_w, bar_h), border_radius=5)
 
         safe_max_hp = max(1, max_hp)
@@ -200,8 +209,9 @@ class Renderer:
         if fill_w > 0:
             pygame.draw.rect(self.screen, color, (bar_x, bar_y, fill_w, bar_h), border_radius=5)
 
-        # SIEMPRE mostrar el texto de los puntos de vida
-        self.draw_text(f"{hp}/{max_hp}", 'small', (30, 30, 30), bar_x + 130, bar_y + 18)
+        # Mostrar el texto de los puntos de vida alineado a la derecha de la caja para que NUNCA se superponga
+        # Movemos la x para que quede bien a la derecha, cerca del borde de la caja
+        self.draw_text(f"{hp}/{max_hp}", 'subtitle', (30, 30, 30), x + 310, bar_y + 8, center=False, shadow=False, right_align=True)
 
     def _wrap_text(self, text, font, max_width):
         if not text:

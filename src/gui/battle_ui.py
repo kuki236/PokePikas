@@ -74,7 +74,7 @@ class BattleScreen:
         self.p1_active_idx = 0
         self.p2_active_idx = 0
         
-        # --- NUEVO: Índices visuales independientes de la lógica ---
+        # Índices visuales independientes de la lógica
         self.p1_visual_idx = 0
         self.p2_visual_idx = 0
 
@@ -147,7 +147,7 @@ class BattleScreen:
         self.p2_fainted_anim_start = 0
         self.faint_anim_duration = 1.0 
         
-        # --- Variables de la Pokéball (Animación de Cambio) ---
+        # Variables de la Pokéball
         self.pokeball_img = self.renderer.load_sprite("pokeball", os.path.join('assets', 'sprites', 'pokeball.png'))
         self.p1_switching_anim = False
         self.p2_switching_anim = False
@@ -161,7 +161,7 @@ class BattleScreen:
         self.p1_next_id = None
         self.p2_next_id = None
 
-        # --- BARRAS DE VIDA FLUIDAS ---
+        # BARRAS DE VIDA FLUIDAS
         self.p1_display_hp = -1
         self.p2_display_hp = -1
         self.p1_target_hp = -1
@@ -194,7 +194,7 @@ class BattleScreen:
             msg = self.message_queue.pop(0)
             
             if isinstance(msg, dict):
-                # --- Sincronizar metas de HP visual ---
+                # Sincronizar metas de HP visual
                 if "p1_target_hp" in msg:
                     self.p1_target_hp = int(msg["p1_target_hp"])
                 if "p2_target_hp" in msg:
@@ -209,7 +209,7 @@ class BattleScreen:
                     if self.p2_target_hp <= 0 and not self.p2_fainted:
                         self.message_queue.insert(0, {"text": f"¡El {self.p2_team[self.p2_visual_idx].name.capitalize()}\nrival se ha debilitado por su estado!", "trigger_anim": "p2_fainted", "id": self.p2_team[self.p2_visual_idx].name})
                 
-                # --- Activar animaciones ---
+                # Activar animaciones
                 if "trigger_anim" in msg:
                     trigger = msg["trigger_anim"]
                     if trigger == "p1_damage":
@@ -229,7 +229,6 @@ class BattleScreen:
                         self.p2_fainted_id = msg.get("id")
                         self.animating_blocking = True
                     elif trigger == "p1_switch":
-                        # Aquí, justo ANTES de activar la animación de la bola, reseteamos fainted y visual idx
                         self.p1_fainted = False 
                         self.p1_visual_idx = msg.get("idx")
                         self.p1_switching_anim = True
@@ -237,7 +236,6 @@ class BattleScreen:
                         self.animating_blocking = True
                         self.p1_next_id = msg.get("id")
                     elif trigger == "p2_switch":
-                         # Aquí, justo ANTES de activar la animación de la bola, reseteamos fainted y visual idx
                         self.p2_fainted = False 
                         self.p2_visual_idx = msg.get("idx")
                         self.p2_switching_anim = True
@@ -405,7 +403,6 @@ class BattleScreen:
             elif p2_active.status_ailment == AilmentType.LEECH_SEED:
                 self.message_queue.append({"text": f"¡Las drenadoras restan salud\na {current_p2_name.capitalize()}!"})
 
-
     def _get_active_move_data(self):
         active = self.p1_team[self.p1_active_idx] if self.p1_team else None
         moves = getattr(active, 'moves', []) if active else []
@@ -430,46 +427,52 @@ class BattleScreen:
                             self.action_after_battle = "MENU"
                             
                     elif event.key == pygame.K_SPACE:
-                        if self.human_player and not self.battle_finished:
+                        if self.human_player:
                             if self.animating_blocking:
                                 pass 
                             elif self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch):
                                 self._advance_message()
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if self.battle_finished:
+                    # Pantalla final de botones (Ir al Menú / Repetir)
+                    if self.battle_finished and not self.message_queue and not self.animating_blocking:
                         if self.btn_replay.collidepoint(event.pos):
                             self.action_after_battle = "REPLAY"
                             self.running = False
                         elif self.btn_menu.collidepoint(event.pos):
                             self.action_after_battle = "MENU"
                             self.running = False
-                    elif self.human_player and not self.battle_finished:
+                            
+                    # Lógica mientras juegas y lees mensajes
+                    elif self.human_player:
                         if self.animating_blocking:
                             continue
                             
+                        # Permitimos avanzar mensajes INCLUSO si la batalla ya terminó (para ver quién ganó)
                         if self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch):
                              self._advance_message()
                              
-                        elif self.waiting_for_player_action:
-                            if not self.showing_moves:
-                                if self.btn_lucha.collidepoint(event.pos):
-                                    self.showing_moves = True
-                                elif self.btn_pokemon.collidepoint(event.pos):
-                                    self.waiting_for_player_switch = True
-                                    self.waiting_for_player_action = False
-                            else:
-                                clicked_move = False
-                                for rect in self.move_buttons:
-                                    if rect.collidepoint(event.pos):
-                                        clicked_move = True
-                                        break
-                                if not clicked_move:
-                                    self.showing_moves = False
+                        # Las acciones de combate (Lucha/Cambio) SOLO si la batalla sigue activa
+                        elif not self.battle_finished:
+                            if self.waiting_for_player_action:
+                                if not self.showing_moves:
+                                    if self.btn_lucha.collidepoint(event.pos):
+                                        self.showing_moves = True
+                                    elif self.btn_pokemon.collidepoint(event.pos):
+                                        self.waiting_for_player_switch = True
+                                        self.waiting_for_player_action = False
                                 else:
-                                    self._handle_move_click(event.pos)
-                        elif self.waiting_for_player_switch:
-                            self._handle_switch_click(event.pos)
+                                    clicked_move = False
+                                    for rect in self.move_buttons:
+                                        if rect.collidepoint(event.pos):
+                                            clicked_move = True
+                                            break
+                                    if not clicked_move:
+                                        self.showing_moves = False
+                                    else:
+                                        self._handle_move_click(event.pos)
+                            elif self.waiting_for_player_switch:
+                                self._handle_switch_click(event.pos)
 
             if self.animating_blocking:
                 anim_p1_done = True
@@ -494,6 +497,8 @@ class BattleScreen:
                         
                 if anim_p1_done and anim_p2_done:
                     self.animating_blocking = False
+                    if self.battle_finished and not self.message_queue:
+                         pass
 
             if not self.animating_blocking:
                 if self.auto_mode:
@@ -516,7 +521,7 @@ class BattleScreen:
             pygame.draw.line(self.screen, (0, 0, 0), (0, self.top_h), (self.sw, self.top_h), 10)
             pygame.draw.rect(self.screen, (230, 240, 245), (0, self.top_h + 5, self.sw, self.bottom_h))
 
-            # --- Capturar Pokémon Visual ---
+            # Capturar Pokémon Visual
             active_p1 = self.p1_team[self.p1_visual_idx]
             active_p2 = self.p2_team[self.p2_visual_idx]
             
@@ -527,6 +532,7 @@ class BattleScreen:
                 self.p2_display_hp = active_p2.current_hp
                 self.p2_target_hp = active_p2.current_hp
 
+            # Disminución progresiva del HP
             hp_speed_1 = max(1, active_p1.max_hp // 50)
             if self.p1_display_hp > self.p1_target_hp:
                 self.p1_display_hp = max(self.p1_target_hp, self.p1_display_hp - hp_speed_1)
@@ -561,7 +567,7 @@ class BattleScreen:
                 if elapsed_faint < self.faint_anim_duration:
                     p2_y_offset = int((elapsed_faint / self.faint_anim_duration) * 200)
                 else:
-                    show_p2 = False
+                    show_p2 = False # <--- CORRECCIÓN ZOMBIE P2: El Pokémon ya no resucita.
             elif self.p2_animating_damage:
                 elapsed = now - self.p2_animation_start
                 if elapsed > self.animation_duration:
@@ -589,7 +595,7 @@ class BattleScreen:
                 if elapsed_faint < self.faint_anim_duration:
                     p1_y_offset = int((elapsed_faint / self.faint_anim_duration) * 200)
                 else:
-                    show_p1 = False
+                    show_p1 = False # <--- CORRECCIÓN ZOMBIE P1: El Pokémon ya no resucita.
             elif self.p1_animating_damage:
                 elapsed = now - self.p1_animation_start
                 if elapsed > self.animation_duration:
@@ -627,7 +633,7 @@ class BattleScreen:
             else:
                 self._draw_full_dialog_box()
 
-            if self.battle_finished:
+            if self.battle_finished and not self.message_queue and not self.animating_blocking:
                 overlay = pygame.Surface((self.sw, self.sh))
                 overlay.set_alpha(150)
                 overlay.fill((0, 0, 0))
@@ -774,11 +780,17 @@ class BattleScreen:
         self.waiting_for_player_switch = False
         self.player_pending_action = None
         self.showing_moves = False
+        
+        if self.p1_team[self.p1_active_idx].current_hp > 0:
+             self.p1_fainted = False
+        if self.p2_team[self.p2_active_idx].current_hp > 0:
+             self.p2_fainted = False
 
         self._describe_outcomes(result.outcomes, pre_turn_p1_name, pre_turn_p2_name)
 
         if result.match_over:
-            self.message_queue.append({"text": None, "end_battle": True})
+            self.battle_finished = True
+            self.auto_mode = False
             if result.winner == 1:
                 self.message_queue.append({"text": "¡El jugador ha ganado la batalla!"})
             elif result.winner == 2:
@@ -872,7 +884,7 @@ class BattleScreen:
         
         switch_bg = pygame.Rect(10, self.top_h + 10, self.sw - 20, self.bottom_h - 20)
         pygame.draw.rect(self.screen, (200, 240, 200), switch_bg, border_radius=10)
-        self.renderer.draw_text("Elige un Pokémon:", 'subtitle', (40, 40, 40), self.sw//2, self.top_h + 40, center=True, shadow=False)
+        self.renderer.draw_text("Elige un Pokémon:", 'subtitle', (40, 40, 40), self.sw//2, self.top_h + 30, center=True, shadow=False)
 
         for i, (idx, pkm) in enumerate(available_pokemon):
             rect = pygame.Rect(start_x + i * (btn_w + pad), start_y, btn_w, btn_h)
