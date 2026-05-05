@@ -558,7 +558,7 @@
         "special_defense": 90,
         "speed": 40,
         "move_ids": [
-            404,
+            127,
             710,
             141,
             389,
