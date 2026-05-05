@@ -1,4 +1,4 @@
-from src.entities.enums import PokemonType
+from src.entities.enums import PokemonType, AilmentType
 from config import FACTOR_K
 TYPE_CHART: dict[PokemonType, dict[PokemonType, float]] = {
     PokemonType.NORMAL: {
@@ -161,30 +161,40 @@ TYPE_CHART: dict[PokemonType, dict[PokemonType, float]] = {
 
 
 def get_type_multiplier(attack_type: PokemonType, defender_types: list[PokemonType]) -> float:
-    """Calcula el multiplicador total cruzando el ataque contra los tipos del defensor."""
     multiplier = 1.0
-    
     if attack_type not in TYPE_CHART:
         return multiplier
-
     for def_type in defender_types:
         multiplier *= TYPE_CHART[attack_type].get(def_type, 1.0)
-        
     return multiplier
 
-import random
-
-
+def get_modified_stat(base_value: int, stage: int, ailment: AilmentType = AilmentType.NONE, is_speed: bool = False) -> int:
+    if stage >= 0:
+        multiplier = (2 + stage) / 2
+    else:
+        multiplier = 2 / (2 + abs(stage))
+    
+    final_stat = int(base_value * multiplier)
+    
+    if is_speed and ailment == AilmentType.PARALYSIS:
+        final_stat = int(final_stat * 0.5)
+    
+    if not is_speed and ailment == AilmentType.BURN:
+        final_stat = int(final_stat * 0.5)
+        
+    return final_stat
 
 def calculate_damage(
-    attacker_stat: int,      
-    defender_stat: int,     
+    attacker_base_stat: int,      
+    defender_base_stat: int,     
     defender_spd: int, 
     move_power: int, 
     move_type: PokemonType, 
-    defender_types: list[PokemonType]
+    defender_types: list[PokemonType],
+    attacker_stage: int = 0,    
+    defender_stage: int = 0,   
+    attacker_ailment: AilmentType = AilmentType.NONE
 ) -> tuple[int, float]:
-
     
     if move_power == 0:
         return 0, 1.0 
@@ -194,7 +204,10 @@ def calculate_damage(
     if type_multiplier == 0.0:
         return 0, 0.0
 
-    base_damage = ((attacker_stat / max(1, defender_stat)) * move_power) / 2.75     
+    atk = get_modified_stat(attacker_base_stat, attacker_stage, attacker_ailment)
+    dfe = get_modified_stat(defender_base_stat, defender_stage)
+
+    base_damage = ((atk / max(1, dfe)) * move_power) / 2.75     
     speed_factor = defender_spd * FACTOR_K
     
     raw_damage = base_damage - speed_factor

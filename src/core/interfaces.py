@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import List, Dict,Optional
 from src.entities.enums import AilmentType
 
 
@@ -39,6 +39,7 @@ class PokemonState:
     speed: int
     types: List[str]      
     moves: List[MoveState]
+    stat_stages: Dict[str, int]
 
 
 @dataclass

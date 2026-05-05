@@ -65,18 +65,23 @@ class Level2Agent(BaseAgent):
             if pp is not None and pp <= 0: continue
 
             is_physical = getattr(move, 'category', 'PHYSICAL') == 'PHYSICAL'
-            
+            atk_key = 'attack' if is_physical else 'special_attack'
+            def_key = 'defense' if is_physical else 'special_defense'
+
             atk_stat = getattr(active, 'attack', 0) if is_physical else getattr(active, 'special_attack', 0)
             def_stat = getattr(opp, 'defense', 1) if is_physical else getattr(opp, 'special_defense', 1)
 
             move_type_enum = self._to_move_type(move)
+            
             damage, type_mult = calculate_damage(
-                attacker_stat=atk_stat,
-                defender_stat=def_stat,
+                attacker_base_stat=atk_stat,
+                defender_base_stat=def_stat,
                 defender_spd=getattr(opp, 'speed', 0) if opp else 0,
                 move_power=getattr(move, 'power', 0),
                 move_type=move_type_enum,
-                defender_types=defender_types
+                defender_types=defender_types,
+                attacker_stage=active.stat_stages.get(atk_key, 0),
+                defender_stage=opp.stat_stages.get(def_key, 0)
             )
 
             possible_cure = 0
@@ -90,6 +95,7 @@ class Level2Agent(BaseAgent):
             opp_hp = getattr(opp, 'current_hp', 0) if opp else 0
             
             diff = (my_hp + possible_cure) - (opp_hp - damage)
+            
             if type_mult == 0.0:
                 diff -= 500
 
