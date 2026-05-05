@@ -3,9 +3,8 @@ from typing import List
 from .enums import PokemonType, AilmentType
 from .move import Move
 
-
 class Pokemon:
-    """Molde base de las criaturas en el motor lógico con soporte para stats especiales."""
+    """Molde base de las criaturas en el motor lógico con soporte para stats especiales y stages."""
 
     def __init__(
         self,
@@ -32,6 +31,19 @@ class Pokemon:
         self.types           = types
         self.moves           = moves
         self.status_ailment: AilmentType = AilmentType.NONE
+        
+        self.stat_stages = {
+            "attack": 0,
+            "defense": 0,
+            "special_attack": 0,
+            "special_defense": 0,
+            "speed": 0
+        }
+
+    def reset_stages(self):
+        """Reinicia las estadísticas al cambiar de Pokémon"""
+        for stat in self.stat_stages:
+            self.stat_stages[stat] = 0
 
     def take_damage(self, amount: int) -> None:
         self.current_hp = max(0, self.current_hp - amount)
@@ -43,6 +55,7 @@ class Pokemon:
         return self.current_hp <= 0
 
     def clone(self) -> "Pokemon":
+        """Crea una copia exacta incluyendo los niveles de stats actuales."""
         cloned = Pokemon(
             poke_id         = self.id,
             name            = self.name,
@@ -57,9 +70,11 @@ class Pokemon:
         )
         cloned.current_hp     = self.current_hp
         cloned.status_ailment = self.status_ailment
+        cloned.stat_stages    = dict(self.stat_stages)
         return cloned
 
     def to_state(self):
+        """Convierte el objeto a una estructura de datos plana para la IA."""
         from src.core.interfaces import PokemonState, MoveState
 
         move_states = []
@@ -85,5 +100,6 @@ class Pokemon:
             special_defense = self.special_defense, 
             speed           = self.speed,
             types           = [t.name for t in self.types],
-            moves           = move_states
+            moves           = move_states,
+            stat_stages     = dict(self.stat_stages) 
         )

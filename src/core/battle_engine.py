@@ -1,5 +1,3 @@
-# src/core/battle_engine.py
-
 import random
 from typing import List
 
@@ -39,14 +37,6 @@ def determine_turn_order(
     p2_pokemon: Pokemon,
     p2_action: Action
 ) -> list[tuple[int, Pokemon, Action]]:
-    """
-    Determina el orden de ejecución basado en el tipo de acción y la velocidad.
-    Retorna una lista con el orden: [(actor_id, pokemon, action), ...]
-    Reglas:
-    - SWITCH ocurre antes que MOVE.
-    - Si ambos usan MOVE, decide por speed.
-    - En empate de speed, orden aleatorio.
-    """
     order = []
 
     if p1_action.type == ActionType.SWITCH:
@@ -74,7 +64,6 @@ def determine_turn_order(
         order.append(moves_to_order[0])
 
     return order
-
 
 
 def process_turn(
@@ -118,6 +107,8 @@ def process_turn(
                     new_p2_idx = action.target_index
                 
                 active_pkmn = attacker_team[action.target_index]
+                active_pkmn.reset_stages()
+                
                 outcomes.append(ActionOutcome(
                     actor=actor_id, action_type=ActionType.SWITCH, action_id=active_pkmn.id,
                     is_faster=is_faster, hit_success=True, damage_dealt=0, type_multiplier=1.0,
@@ -187,26 +178,43 @@ def process_turn(
                             status_applied = move.ailment
                 
                 else:
-                    burn_multiplier = 0.5 if attacker.status_ailment == AilmentType.BURN else 1.0
-                    stat_atk = int((attacker.attack if move.category == "PHYSICAL" else attacker.special_attack) * burn_multiplier)
-                    stat_def = defender.defense if move.category == "PHYSICAL" else defender.special_defense
-
-                    move_power = max(1, int(move.power * (attacker.current_hp / attacker.max_hp))) if move.id == 523 else (110 if move.id == 512 else move.power)
-                    hits = random.randint(3, 5) if move.id == 594 else 1
-                    total_damage, last_multi = 0, 1.0
+                    is_phys = move.category == "PHYSICAL"
                     
+                    atk_key = "attack" if is_phys else "special_attack"
+                    def_key = "defense" if is_phys else "special_defense"
+                    
+                    atk_stage = attacker.stat_stages[atk_key]
+                    def_stage = defender.stat_stages[def_key]
+
+                    move_power = max(1, int(move.power * (attacker.current_hp / attacker.max_hp))) if move.id == 323 else (110 if move.id == 512 else move.power)
+
+                    hits = random.randint(3, 5) if move.id == 594 else 1
+                    total_damage_accumulator = 0
+                    last_multi = 1.0
+               
                     for _ in range(hits):
-                        hit_damage, m = calculate_damage(stat_atk, stat_def, defender.speed, move_power, move.move_type, defender.types)
-                        total_damage += hit_damage
+                        hit_damage, m = calculate_damage(
+                            attacker.attack if is_phys else attacker.special_attack,
+                            defender.defense if is_phys else defender.special_defense,
+                            defender.speed, 
+                            move_power, 
+                            move.move_type, 
+                            defender.types,
+                            attacker_stage=atk_stage,
+                            defender_stage=def_stage,
+                            attacker_ailment=attacker.status_ailment
+                        )
+                        total_damage_accumulator += hit_damage
                         last_multi = m
                     
-                    damage, multi = total_damage, last_multi
+                    damage = total_damage_accumulator
+                    multi = last_multi
                     defender.take_damage(damage)
-
+               
                     if move.drain > 0 and damage > 0:
                         attacker.heal(int(damage * (move.drain / 100.0)))
                     
-                    if move.id in [438, 413] and damage > 0:
+                    if move.id in [528, 413] and damage > 0:
                         recoil = max(1, damage // 4)
                         attacker.take_damage(recoil)
                     
@@ -215,6 +223,12 @@ def process_turn(
                         if not defender.is_fainted() and random.randint(1, 100) <= move.ailment_chance:
                             defender.status_ailment = move.ailment
                             status_applied = move.ailment
+
+                    if attacker.id == 10117 and defender.is_fainted():
+                        for stat in ["attack", "special_attack", "speed"]:
+                            if attacker.stat_stages[stat] < 6:
+                                attacker.stat_stages[stat] += 1
+                        print(f"  -> ¡El Vínculo Afectivo de {attacker.name} se fortalece! (Stats +1)")
 
             if move.id == 136 and not hit_success:
                 attacker.take_damage(attacker.max_hp // 2)
@@ -250,6 +264,7 @@ def process_turn(
                 if c is not None:
                     if tid == 1: new_p1_idx = c
                     else: new_p2_idx = c
+                    team[c].reset_stages()
                     outcomes.append(ActionOutcome(tid, ActionType.SWITCH, team[c].id, False, True, 0, 1.0, 0, False, team[c].current_hp, None))
 
     return TurnResult(outcomes, match_over, winner), new_p1_idx, new_p2_idx
