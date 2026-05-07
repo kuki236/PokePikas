@@ -1,8 +1,9 @@
 
 import sys
-import copy
 from time import perf_counter
 
+import sys
+import os
 # Importa tu motor y tus agentes
 from src.core.battle_engine import process_turn
 from src.core.interfaces import BattleState
@@ -18,21 +19,18 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
     winner = None
     turn_count = 0
 
-    while not match_over and turn_count < 100:  # Límite de 100 turnos
+    while not match_over and turn_count < 100: 
         turn_count += 1
         
-        # 1. Preparar el estado para los agentes
         state = BattleState(
             p1_team=p1_team, p1_active_index=p1_active_idx,
             p2_team=p2_team, p2_active_index=p2_active_idx,
             turn_number=turn_count
         )
 
-        # 2. Los cerebros deciden
         p1_action = agent1.get_action(state)
         p2_action = agent2.get_action(state)
 
-        # 3. El árbitro resuelve el turno
         turn_result, new_p1_idx, new_p2_idx = process_turn(
             p1_team, p1_active_idx, p1_action,
             p2_team, p2_active_idx, p2_action
@@ -40,33 +38,25 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
 
         if print_logs:
             print(f"\n--- TURNO {turn_count} ---")
-            
-            # Referencias temporales para el log antes de actualizar los índices globales
-            # Esto ayuda a rastrear quién empezó el turno
             p1_pkmn = p1_team[p1_active_idx]
             p2_pkmn = p2_team[p2_active_idx]
 
             for out in turn_result.outcomes:
-                # Determinamos atacante y defensor REALES basándonos en el actor_id
                 attacker = p1_pkmn if out.actor == 1 else p2_pkmn
                 defender = p2_pkmn if out.actor == 1 else p1_pkmn
                 
                 actor_name = attacker.name.capitalize()
                 target_name = defender.name.capitalize()
 
-                # --- CASO 1: CAMBIO (SWITCH) ---
                 if out.action_type == ActionType.SWITCH:
                     switched_pkmn = next((p for p in (p1_team if out.actor == 1 else p2_team) if p.id == out.action_id), None)
                     name = switched_pkmn.name.capitalize() if switched_pkmn else "???"
                     print(f"[CAMBIO] Actor {out.actor} sacó a {name}")
                     
-                    # Sincronizamos la referencia local para los siguientes outcomes del turno
                     if out.actor == 1: p1_pkmn = switched_pkmn
                     else: p2_pkmn = switched_pkmn
 
-                # --- CASO 2: ATAQUE (MOVE) ---
                 else:
-                    # Búsqueda segura del movimiento para evitar AttributeError
                     actual_move = None
                     if attacker and hasattr(attacker, 'moves'):
                         actual_move = next((m for m in attacker.moves if m.id == out.action_id), None)
@@ -76,41 +66,33 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
                         cat_icon = "❓"
                     else:
                         mv_label = actual_move.name
-                        # Verificación segura de categoría
                         category = getattr(actual_move, 'category', 'PHYSICAL')
                         cat_icon = "💥" if category == "PHYSICAL" else ("🔮" if category == "SPECIAL" else "🛡️")
                     
-                    # 2.1 Fallo o incapacidad (Parálisis, Sueño, Fallo de precisión)
                     if not out.hit_success:
                         print(f"[{actor_name}] intentó usar {mv_label} pero falló o está incapacitado.")
                     
-                    # 2.2 Ataque con Daño
                     elif out.damage_dealt > 0:
                         print(f"[{actor_name}] usó {mv_label} {cat_icon}. Daño: {out.damage_dealt}")
                         if actual_move and getattr(actual_move, 'drain', 0) > 0:
                             print(f"  -> [{actor_name}] drenó vida. HP actual: {out.attacker_hp_remaining}")
                     
-                    # 2.3 Efecto Puro o Inmunidad
                     else:
                         if getattr(out, 'type_multiplier', 1.0) == 0.0:
                             print(f"[{actor_name}] usó {mv_label} -> 🚫 NO TIENE EFECTO (Inmunidad de {target_name})")
                         else:
                             print(f"[{actor_name}] usó {mv_label} (Efecto)")
-                            # Lógica de curación para Roost/Synthesis
                             if actual_move and getattr(actual_move, 'healing', 0) > 0:
                                 print(f"  -> [{actor_name}] se curó. HP actual: {out.attacker_hp_remaining}")
 
-                    # Logs de Estado (Toxic, Burn, Sleep, etc.)
                     if out.status_applied:
                         status_str = str(out.status_applied).split('.')[-1].replace('_', ' ')
-                        # Rest aplica el estado al actor, los demás al objetivo
                         final_target = actor_name if mv_label.lower() == "rest" else target_name
                         print(f"  -> [ESTADO] ¡{status_str} aplicado a {final_target}!")
 
                     if out.target_fainted:
                         print(f"  -> [KO] {target_name} ha caído.")
 
-        # Actualizar índices activos para el siguiente turno
         p1_active_idx = new_p1_idx
         p2_active_idx = new_p2_idx
         match_over = turn_result.match_over
@@ -128,7 +110,6 @@ def run_tournament(n_battles: int, AgentClass1, AgentClass2):
     total_turns = 0
     loader = DataLoader("data/pokemon_pool.json", "data/moves_pool.json")
     for i in range(n_battles):
-        # 2. Genera equipos frescos (con HP y PP al 100%) para cada batalla
         p1_team_fresh = loader.generate_random_team(4)
         p2_team_fresh = loader.generate_random_team(4)
 
@@ -162,8 +143,6 @@ def run_tournament(n_battles: int, AgentClass1, AgentClass2):
     print("==========================================\n")
 
 
-import sys
-import os
 
 def run_debug_batch(n_battles: int, AgentClass1, AgentClass2, output_file="debug_logs.txt"):
     """Ejecuta batallas y guarda TODO el registro (Turno a Turno) en un archivo .txt"""
