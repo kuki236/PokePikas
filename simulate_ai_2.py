@@ -1,25 +1,25 @@
 
 import sys
+import os
+import copy
 from time import perf_counter
 
-import sys
-import os
 # Importa tu motor y tus agentes
 from src.core.battle_engine import process_turn
-from src.core.interfaces import BattleState
+from src.core.interfaces import BattleState, ActionType
 from src.ai.level1_agent import Level1Agent
 from src.ai.level2_agent import Level2Agent
-from src.core.interfaces import BattleState, ActionType
 from src.utils.data_loader import DataLoader
+
 def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
-    """Ejecuta una batalla sin Pygame y retorna el ID del ganador (1, 2, o None)."""
+    """Ejecuta una batalla sin Pygame y retorna el ID del ganador y los turnos."""
     p1_active_idx = 0
     p2_active_idx = 0
     match_over = False
     winner = None
     turn_count = 0
 
-    while not match_over and turn_count < 100: 
+    while not match_over and turn_count < 100:  
         turn_count += 1
         
         state = BattleState(
@@ -55,7 +55,6 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
                     
                     if out.actor == 1: p1_pkmn = switched_pkmn
                     else: p2_pkmn = switched_pkmn
-
                 else:
                     actual_move = None
                     if attacker and hasattr(attacker, 'moves'):
@@ -71,12 +70,10 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
                     
                     if not out.hit_success:
                         print(f"[{actor_name}] intentó usar {mv_label} pero falló o está incapacitado.")
-                    
                     elif out.damage_dealt > 0:
                         print(f"[{actor_name}] usó {mv_label} {cat_icon}. Daño: {out.damage_dealt}")
                         if actual_move and getattr(actual_move, 'drain', 0) > 0:
                             print(f"  -> [{actor_name}] drenó vida. HP actual: {out.attacker_hp_remaining}")
-                    
                     else:
                         if getattr(out, 'type_multiplier', 1.0) == 0.0:
                             print(f"[{actor_name}] usó {mv_label} -> 🚫 NO TIENE EFECTO (Inmunidad de {target_name})")
@@ -100,87 +97,97 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
         
     return winner, turn_count
 
-def run_tournament(n_battles: int, AgentClass1, AgentClass2):
-    print(f" INICIANDO TORNEO: {AgentClass1.__name__} VS {AgentClass2.__name__} ({n_battles} Batallas) ")
-    start_time = perf_counter()
 
-    wins_p1 = 0
-    wins_p2 = 0
-    draws = 0
-    total_turns = 0
+
+# LÓGICA DE TABLAS 
+
+def imprimir_tabla_winrates(resultados_3v3, resultados_4v4):
+    print("\n" + "="*85)
+    print(f"{'RESULTADOS DE SIMULACIONES':^85}")
+    print("="*85)
+    print("                                     3v3                                   4v4")
+    print("Simulacion             1     2     3     4     5           1     2     3     4     5")
+    print("-" * 85)
+    
+    vacio = ["-", "-", "-", "-", "-"]
+    r_3v3_l1 = resultados_3v3.get('nivel_1', vacio)
+    r_3v3_l2 = resultados_3v3.get('nivel_2', vacio)
+    r_3v3_t  = resultados_3v3.get('turnos', vacio)
+    r_3v3_tm = resultados_3v3.get('tiempos', vacio)
+    
+    r_4v4_l1 = resultados_4v4.get('nivel_1', vacio)
+    r_4v4_l2 = resultados_4v4.get('nivel_2', vacio)
+    r_4v4_t  = resultados_4v4.get('turnos', vacio)
+    r_4v4_tm = resultados_4v4.get('tiempos', vacio)
+    
+    formatear = lambda lista: " ".join([f"{str(x):>5}" for x in lista])
+
+    print(f"Sim Nivel 1      {formatear(r_3v3_l1)}         {formatear(r_4v4_l1)}")
+    print(f"Sim Nivel 2      {formatear(r_3v3_l2)}         {formatear(r_4v4_l2)}")
+    print("-" * 85)
+    print(f"Prom Turnos      {formatear(r_3v3_t)}         {formatear(r_4v4_t)}")
+    print(f"Tiempo Ejec      {formatear(r_3v3_tm)}         {formatear(r_4v4_tm)}")
+    print("="*85 + "\n")
+
+def correr_simulaciones_winrate(team_size, num_simulaciones=5, batallas_por_sim=100):
     loader = DataLoader("data/pokemon_pool.json", "data/moves_pool.json")
-    for i in range(n_battles):
-        p1_team_fresh = loader.generate_random_team(4)
-        p2_team_fresh = loader.generate_random_team(4)
-
-        agent1 = AgentClass1(player_id=1)
-        agent2 = AgentClass2(player_id=2)
-
-        show_logs = (i == 0) 
+    
+    winrates_l1 = []
+    winrates_l2 = []
+    turnos_promedio = []
+    tiempos_ejecucion = []
+    
+    for sim in range(num_simulaciones):
+        start_time = perf_counter()
+        wins_p1 = 0
+        wins_p2 = 0
+        total_turns = 0
         
-        winner, turns = run_headless_battle(p1_team_fresh, p2_team_fresh, agent1, agent2, print_logs=show_logs)
+        for _ in range(batallas_por_sim):
+            p1_team = loader.generate_random_team(team_size)
+            p2_team = loader.generate_random_team(team_size)
+            
+            agent1 = Level1Agent(player_id=1)
+            agent2 = Level2Agent(player_id=2)
+            
+            winner, turns = run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False)
+            
+            total_turns += turns
+            if winner == 1:
+                wins_p1 += 1
+            elif winner == 2:
+                wins_p2 += 1
+                
+        end_time = perf_counter()
         
-        total_turns += turns
-        if winner == 1:
-            wins_p1 += 1
-        elif winner == 2:
-            wins_p2 += 1
+        exec_time = round(end_time - start_time, 2)
+        avg_turns = round(total_turns / batallas_por_sim, 1)
+        
+        total_validas = wins_p1 + wins_p2
+        if total_validas > 0:
+            wr_l1 = round((wins_p1 / total_validas) * 100)
+            wr_l2 = round((wins_p2 / total_validas) * 100)
         else:
-            draws += 1
-
-    end_time = perf_counter()
-    
-    print("\n==========================================")
-    print(" RESULTADOS DEL TORNEO ")
-    print("==========================================")
-    print(f"Total de batallas: {n_battles}")
-    print(f"Tiempo de ejecución: {end_time - start_time:.3f} segundos")
-    print(f"Promedio de turnos por batalla: {total_turns / n_battles:.1f}")
-    print("------------------------------------------")
-    print(f"Victorias {AgentClass1.__name__} (P1): {wins_p1} ({(wins_p1/n_battles)*100:.1f}%)")
-    print(f"Victorias {AgentClass2.__name__} (P2): {wins_p2} ({(wins_p2/n_battles)*100:.1f}%)")
-    print(f"Empates / Límite de turnos: {draws}")
-    print("==========================================\n")
-
-
-
-def run_debug_batch(n_battles: int, AgentClass1, AgentClass2, output_file="debug_logs.txt"):
-    """Ejecuta batallas y guarda TODO el registro (Turno a Turno) en un archivo .txt"""
-    original_stdout = sys.stdout  # Guardamos la consola original
-    
-    project_root = os.path.dirname(os.path.abspath(__file__))
-    poke_path = os.path.join(project_root, "data", "pokemon_pool.json")
-    moves_path = os.path.join(project_root, "data", "moves_pool.json")
-    
-    try:
-        with open(output_file, 'w', encoding='utf-8') as f:
-            sys.stdout = f  
+            wr_l1, wr_l2 = 0, 0
             
-            print(f"🔥 INICIANDO MODO DEBUG: {n_battles} BATALLAS COMPLETAS 🔥")
-            loader = DataLoader(poke_path, moves_path)
-            
-            for i in range(1, n_battles + 1):
-                print(f"\n\n==========================================")
-                print(f" BATALLA {i} DE {n_battles} ")
-                print(f"==========================================")
-                
-                p1_team = loader.generate_random_team(4)
-                p2_team = loader.generate_random_team(4)
-                
-                agent1 = AgentClass1(player_id=1)
-                agent2 = AgentClass2(player_id=2)
-                
-                run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=True)
-                
-    finally:
-        sys.stdout = original_stdout  
+        winrates_l1.append(f"{wr_l1}%")
+        winrates_l2.append(f"{wr_l2}%")
+        turnos_promedio.append(str(avg_turns))
+        tiempos_ejecucion.append(str(exec_time))
         
-    print(f" ¡Operación exitosa! Se guardó el registro paso a paso de {n_battles} batallas.")
-    print(f" Revisa el archivo: {output_file} en tu carpeta del proyecto.")
-if __name__ == "__main__":
-    CANTIDAD_BATALLAS = 1000
-    CANTIDAD_BATALLAS_DEBUG = 100
+    return {
+        'nivel_1': winrates_l1, 
+        'nivel_2': winrates_l2,
+        'turnos': turnos_promedio,
+        'tiempos': tiempos_ejecucion
+    }
 
-    run_tournament(CANTIDAD_BATALLAS, Level1Agent, Level2Agent)
+
+if __name__ == "__main__":
+    print("Calculando simulaciones 3v3 (5 rondas de 100 batallas)...")
+    resultados_3v3 = correr_simulaciones_winrate(team_size=3, num_simulaciones=5, batallas_por_sim=100)
     
-    #run_debug_batch(CANTIDAD_BATALLAS_DEBUG, Level1Agent, Level2Agent, "debug_logs.txt")
+    print("Calculando simulaciones 4v4 (5 rondas de 100 batallas)...")
+    resultados_4v4 = correr_simulaciones_winrate(team_size=4, num_simulaciones=5, batallas_por_sim=100)
+    
+    imprimir_tabla_winrates(resultados_3v3, resultados_4v4)
