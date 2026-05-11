@@ -1,8 +1,9 @@
 # src/gui/renderer.py
 import pygame
 import os
+import math
+import random
 from src.entities.enums import AilmentType
-
 
 class Renderer:
     def __init__(self, screen):
@@ -13,11 +14,11 @@ class Renderer:
         if os.path.exists(ruta_fuente):
             self.font_title = pygame.font.Font(ruta_fuente, 30)
             self.font_subtitle = pygame.font.Font(ruta_fuente, 16)
-            self.font_small = pygame.font.Font(ruta_fuente, 6) # Aumentado para mejor legibilidad
+            self.font_small = pygame.font.Font(ruta_fuente, 6) 
         else:
             self.font_title = pygame.font.SysFont("Arial", 45, bold=True)
             self.font_subtitle = pygame.font.SysFont("Arial", 26)
-            self.font_small = pygame.font.SysFont("Arial", 14)
+            self.font_small = pygame.font.SysFont("Arial", 12)
 
         self.image_cache = {}
 
@@ -35,7 +36,7 @@ class Renderer:
             self.screen.blit(img, (0, 0))
             if apply_dark_overlay:
                 overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
-                overlay.set_alpha(120)
+                overlay.set_alpha(120) 
                 overlay.fill((0, 0, 0))
                 self.screen.blit(overlay, (0, 0))
         else:
@@ -48,57 +49,38 @@ class Renderer:
             flash_surface.fill(color)
             self.screen.blit(flash_surface, (0, 0))
 
-    def _get_font(self, font_type):
-        if font_type == 'title':
-            return self.font_title
-        elif font_type == 'subtitle':
-            return self.font_subtitle
-        return self.font_small
+    def draw_text(self, text, font_type, color, x, y, center=False, shadow=True):
+        if font_type == 'title': font = self.font_title
+        elif font_type == 'subtitle': font = self.font_subtitle
+        else: font = self.font_small
 
-    def draw_text(self, text, font_type, color, x, y, center=False, shadow=True, right_align=False):
-        font = self._get_font(font_type)
-        surface = font.render(str(text), True, color)
-
+        surface = font.render(text, True, color)
+        
         if center:
             x = x - surface.get_width() // 2
             y = y - surface.get_height() // 2
-        elif right_align:
-            x = x - surface.get_width()
 
         if shadow:
-            shadow_surface = font.render(str(text), True, (20, 20, 20))
+            shadow_surface = font.render(text, True, (20, 20, 20))
             self.screen.blit(shadow_surface, (x + 2, y + 2))
-
+            
         self.screen.blit(surface, (x, y))
 
-    def draw_button(self, rect, text, is_hovered, disabled=False, sub_text=None):
+    def draw_button(self, rect, text, is_hovered):
         button_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-
-        if disabled:
-            bg_color = (90, 90, 90, 190)
-            border_color = (150, 150, 150, 220)
-            text_color = (210, 210, 210)
-        elif is_hovered:
-            bg_color = (255, 180, 20, 230)
-            border_color = (255, 255, 100, 255)
-            text_color = (255, 255, 255)
+        
+        if is_hovered:
+            bg_color = (255, 180, 20, 230) 
+            border_color = (255, 255, 100, 255) 
         else:
-            bg_color = (200, 120, 10, 210)
-            border_color = (255, 200, 50, 255)
-            text_color = (255, 255, 255)
-
+            bg_color = (200, 120, 10, 210) 
+            border_color = (255, 200, 50, 255) 
+            
         pygame.draw.rect(button_surface, bg_color, button_surface.get_rect(), border_radius=10)
         pygame.draw.rect(button_surface, border_color, button_surface.get_rect(), width=3, border_radius=10)
-
-        self.screen.blit(button_surface, (rect.x, rect.y))
         
-        if sub_text:
-            # Si hay subtexto, el texto principal va arriba y el subtexto abajo
-            self.draw_text(text, 'subtitle', text_color, rect.centerx, rect.centery - 10, center=True)
-            self.draw_text(sub_text, 'small', text_color, rect.centerx, rect.centery + 10, center=True)
-        else:
-            self.draw_text(text, 'subtitle', text_color, rect.centerx, rect.centery, center=True)
-
+        self.screen.blit(button_surface, (rect.x, rect.y))
+        self.draw_text(text, 'subtitle', (255, 255, 255), rect.centerx, rect.centery, center=True)
 
     def load_sprite(self, name, filepath):
         if name not in self.image_cache:
@@ -106,9 +88,31 @@ class Renderer:
                 img = pygame.image.load(filepath).convert_alpha()
                 self.image_cache[name] = pygame.transform.scale(img, (75, 75))
             else:
-                self.image_cache[name] = None
+                self.image_cache[name] = None 
         return self.image_cache.get(name)
 
+    def load_battle_sprite(self, name, filepath, is_back=False):
+        cache_key = f"battle_{'back' if is_back else 'front'}_{name}"
+        if cache_key not in self.image_cache:
+            if os.path.exists(filepath):
+                img = pygame.image.load(filepath).convert_alpha()
+                
+                # Recortar el exceso de transparencia para que todos tengan un tamaño estandarizado
+                bbox = img.get_bounding_rect()
+                if bbox.width > 0 and bbox.height > 0:
+                    img = img.subsurface(bbox)
+                    
+                side = max(img.get_width(), img.get_height())
+                square_img = pygame.Surface((side, side), pygame.SRCALPHA)
+                cx = (side - img.get_width()) // 2
+                cy = side - img.get_height()
+                square_img.blit(img, (cx, cy))
+                
+                self.image_cache[cache_key] = pygame.transform.scale(square_img, (250, 250))
+            else:
+                self.image_cache[cache_key] = None
+        return self.image_cache.get(cache_key)
+        
     def draw_pokemon_grid(self, pokemon_list, start_x, start_y, selected_names, columns=6, spacing_x=75, spacing_y=75):
         for i, pkm in enumerate(pokemon_list):
             name = pkm['name']
@@ -116,107 +120,22 @@ class Renderer:
             row = i // columns
             x = start_x + (col * spacing_x)
             y = start_y + (row * spacing_y)
-
+            
             is_selected = name in selected_names
             bg_color = (60, 120, 60) if is_selected else (40, 40, 50)
-
+            
             pygame.draw.rect(self.screen, bg_color, (x, y, 60, 60), border_radius=6)
             if is_selected:
                 pygame.draw.rect(self.screen, (100, 255, 100), (x, y, 60, 60), width=3, border_radius=6)
-
+                
             img = self.image_cache.get(name)
             if img:
-                self.screen.blit(img, (x - 7, y - 10))
-
-            self.draw_text(name.capitalize(), 'small', (200, 200, 200), x + 30, y + 65, center=True)
-
-    def load_battle_sprite(self, name, filepath, is_back=False):
-        cache_key = f"battle_{'back' if is_back else 'front'}_{name}"
-        if cache_key not in self.image_cache:
-            if os.path.exists(filepath):
-                img = pygame.image.load(filepath).convert_alpha()
-                self.image_cache[cache_key] = pygame.transform.scale(img, (200, 200))
-            else:
-                self.image_cache[cache_key] = None
-        return self.image_cache.get(cache_key)
-
-    def draw_health_bar(self, x, y, name, hp, max_hp, level, is_player=False, status=AilmentType.NONE):
-        box_rect = pygame.Rect(x, y, 320, 80) # Ensanchado para que quepa bien todo
-        pygame.draw.rect(self.screen, (240, 240, 230), box_rect, border_radius=10)
-        pygame.draw.rect(self.screen, (50, 50, 50), box_rect, width=3, border_radius=10)
-
-        self.draw_text(name.upper(), 'subtitle', (30, 30, 30), x + 15, y + 10)
-        self.draw_text(f"Lv{level}", 'subtitle', (50, 50, 50), x + 250, y + 10)
-
-        # La barra ahora no se superpone si hay estado
-        bar_x, bar_y = x + 15, y + 45
-        
-        # Dibujar icono de estado si existe
-        if status != AilmentType.NONE and status != AilmentType.UNKNOWN:
-            status_colors = {
-                AilmentType.BURN: (240, 80, 48),      # Rojo anaranjado
-                AilmentType.FREEZE: (152, 216, 216),  # Azul claro
-                AilmentType.PARALYSIS: (248, 208, 48),# Amarillo
-                AilmentType.POISON: (160, 64, 160),   # Morado
-                AilmentType.SLEEP: (140, 136, 140),   # Gris
-                AilmentType.CONFUSION: (248, 88, 136),# Rosa
-                AilmentType.LEECH_SEED: (120, 200, 80)# Verde
-            }
+                self.screen.blit(img, (x - 7, y - 10)) 
             
-            status_names = {
-                AilmentType.BURN: "BRN",
-                AilmentType.FREEZE: "FRZ",
-                AilmentType.PARALYSIS: "PAR",
-                AilmentType.POISON: "PSN",
-                AilmentType.SLEEP: "SLP",
-                AilmentType.CONFUSION: "CNF",
-                AilmentType.LEECH_SEED: "LCH"
-            }
-
-            bg_color = status_colors.get(status, (150, 150, 150))
-            text = status_names.get(status, "???")
-
-            # Posición de la etiqueta de estado
-            status_rect = pygame.Rect(x + 15, y + 45, 35, 15)
-            pygame.draw.rect(self.screen, bg_color, status_rect, border_radius=3)
-            
-            # Texto de estado centrado en su cajita sin sombra
-            font = self.font_small
-            text_surf = font.render(text, True, (255, 255, 255))
-            text_rect = text_surf.get_rect(center=status_rect.center)
-            self.screen.blit(text_surf, text_rect)
-            
-            # Ajustar el inicio de la barra de vida si hay estado
-            bar_x += 45 
-            bar_w = 170 # Reducimos el ancho de la barra si hay estado
-        else:
-            bar_w = 215
-
-        bar_h = 15
-        pygame.draw.rect(self.screen, (100, 100, 100), (bar_x, bar_y, bar_w, bar_h), border_radius=5)
-
-        safe_max_hp = max(1, max_hp)
-        ratio = max(0.0, min(1.0, hp / safe_max_hp))
-        fill_w = int(bar_w * ratio)
-
-        if ratio > 0.5:
-            color = (50, 200, 50)
-        elif ratio > 0.2:
-            color = (200, 200, 50)
-        else:
-            color = (200, 50, 50)
-
-        if fill_w > 0:
-            pygame.draw.rect(self.screen, color, (bar_x, bar_y, fill_w, bar_h), border_radius=5)
-
-        # Mostrar el texto de los puntos de vida alineado a la derecha de la caja para que NUNCA se superponga
-        # Movemos la x para que quede bien a la derecha, cerca del borde de la caja
-        self.draw_text(f"{hp}/{max_hp}", 'subtitle', (30, 30, 30), x + 310, bar_y + 8, center=False, shadow=False, right_align=True)
+            display_name = name.capitalize().replace("-", " ")
+            self.draw_text(display_name, 'small', (200, 200, 200), x + 30, y + 65, center=True)
 
     def _wrap_text(self, text, font, max_width):
-        if not text:
-            return []
-
         wrapped_lines = []
         paragraphs = str(text).split('\n')
 
@@ -254,8 +173,155 @@ class Renderer:
 
         max_lines = 3
         line_height = font.get_height() + 4
-        start_y = box_rect.y + 12
+        start_y = box_rect.y + 20
 
         for i, line in enumerate(wrapped_lines[:max_lines]):
             y = start_y + i * line_height
-            self.draw_text(line, 'subtitle', (255, 255, 255), box_rect.x + 30, y)
+            shadow_surface = font.render(line, True, (20, 20, 20))
+            text_surface = font.render(line, True, (255, 255, 255))
+            self.screen.blit(shadow_surface, (box_rect.x + 32, y + 2))
+            self.screen.blit(text_surface, (box_rect.x + 30, y))
+
+    def draw_health_bar(self, x, y, name, hp, max_hp, level, is_player=False, status=AilmentType.NONE):
+        box_rect = pygame.Rect(x, y, 280, 80)
+        pygame.draw.rect(self.screen, (240, 240, 230), box_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (50, 50, 50), box_rect, width=3, border_radius=10)
+
+        self.draw_text(name.upper(), 'subtitle', (30, 30, 30), x + 15, y + 10, shadow=False)
+        self.draw_text(f"Lv{level}", 'subtitle', (50, 50, 50), x + 210, y + 10, shadow=False)
+
+        if status != AilmentType.NONE:
+            status_text = str(status).split('.')[-1]
+            status_colors = {
+                "POISON": (150, 50, 150),
+                "BURN": (200, 50, 50),
+                "PARALYSIS": (200, 200, 50),
+                "SLEEP": (100, 100, 200),
+                "FREEZE": (100, 200, 200),
+                "LEECH_SEED": (50, 150, 50)
+            }
+            color = status_colors.get(status_text, (100, 100, 100))
+            pygame.draw.rect(self.screen, color, (x + 15, y + 45, 30, 15), border_radius=4)
+            self.draw_text(status_text[:3], 'small', (255, 255, 255), x + 17, y + 46, shadow=False)
+
+        bar_x, bar_y = x + 50, y + 45
+        bar_w, bar_h = 200, 15
+        pygame.draw.rect(self.screen, (100, 100, 100), (bar_x, bar_y, bar_w, bar_h), border_radius=5)
+
+        # --- FIX: MATEMÁTICA DEFENSIVA ---
+        # Aseguramos que el ratio nunca sea menor a 0.0 ni mayor a 1.0
+        if max_hp <= 0: max_hp = 1 
+        ratio = max(0.0, min(1.0, hp / max_hp))
+        fill_w = int(bar_w * ratio)
+        
+        if ratio > 0.5: color = (50, 200, 50)     
+        elif ratio > 0.2: color = (200, 200, 50)  
+        else: color = (200, 50, 50)               
+        
+        if fill_w > 0:
+            pygame.draw.rect(self.screen, color, (bar_x, bar_y, fill_w, bar_h), border_radius=5)
+
+        self.draw_text(f"{hp}/{max_hp}", 'subtitle', (30, 30, 30), bar_x + 130, bar_y + 18, shadow=False)
+
+    # =========================================================================
+    # EL NUEVO MOTOR DE PARTÍCULAS (Acepta imágenes descargadas)
+    # =========================================================================
+    def load_effect_sprite(self, move_type):
+        """Busca una imagen PNG del usuario para las partículas del ataque"""
+        move_type = move_type.name if hasattr(move_type, 'name') else str(move_type).split('.')[-1]
+        cache_key = f"effect_{move_type}"
+        if cache_key not in self.image_cache:
+            paths_to_check = [
+                os.path.join('assets', 'effects', f"{move_type.lower()}.png"),
+                os.path.join('assets', 'effects', f"{move_type.upper()}.png"),
+                os.path.join('assets', f"{move_type.lower()}.png"),
+                os.path.join('assets', f"{move_type.upper()}.png")
+            ]
+            
+            self.image_cache[cache_key] = None
+            for path in paths_to_check:
+                if os.path.exists(path):
+                    img = pygame.image.load(path).convert_alpha()
+                    self.image_cache[cache_key] = pygame.transform.scale(img, (30, 30))
+                    break
+        return self.image_cache[cache_key]
+
+    def draw_attack_effect(self, move_type, tx, ty, progress):
+        """Genera una explosión de físicas sobre el enemigo"""
+        move_type = move_type.name if hasattr(move_type, 'name') else str(move_type).split('.')[-1]
+        surf = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
+        
+        # 1. Intentamos cargar tu propia imagen si la tienes
+        particle_img = self.load_effect_sprite(move_type)
+        
+        # Usamos el objetivo como "semilla" para que las partículas no parpadeen caóticamente
+        random.seed(tx + ty) 
+        
+        num_particles = 30 # Cuántas chispas/llamas/gotas salen disparadas
+        
+        for i in range(num_particles):
+            # Matemáticas de física: Dirección y Velocidad
+            angle = random.uniform(0, math.pi * 2)
+            speed = random.uniform(50, 250)
+            
+            # Trayectoria
+            dist = progress * speed
+            x = tx + math.cos(angle) * dist
+            y = ty + math.sin(angle) * dist
+            
+            # Gravedad simulada (las partículas caen al final de la animación)
+            y += (progress ** 2) * 150 
+            
+            # Fade out (Desvanecimiento)
+            alpha = max(0, 255 - int(progress * 255))
+            
+            # 2. DIBUJAR
+            if particle_img:
+                # SI TIENES EL ASSET DESCARGADO: Lo usamos como partícula real
+                temp = particle_img.copy()
+                temp.set_alpha(alpha)
+                surf.blit(temp, (int(x) - 15, int(y) - 15))
+            else:
+                # SI NO TIENES EL ASSET: Hacemos una explosión procedimental MUCHO mejor
+                if move_type == "FIRE":
+                    pygame.draw.circle(surf, (255, random.randint(50, 150), 0, alpha), (int(x), int(y)), random.randint(10, 25))
+                elif move_type == "WATER":
+                    pygame.draw.circle(surf, (0, 150, 255, alpha), (int(x), int(y)), random.randint(5, 15))
+                elif move_type == "GRASS":
+                    pygame.draw.ellipse(surf, (50, 200, 50, alpha), (int(x), int(y), 20, 10))
+                elif move_type == "ELECTRIC":
+                    # El eléctrico son rayos rectos en lugar de partículas
+                    if random.random() > 0.5:
+                        pygame.draw.line(surf, (255, 255, 0, alpha), (tx, ty), (int(x), int(y)), 5)
+                elif move_type in ["DARK", "GHOST"]:
+                    pygame.draw.circle(surf, (100, 0, 150, alpha), (int(x), int(y)), random.randint(8, 20))
+                elif move_type == "ICE":
+                    pygame.draw.rect(surf, (150, 255, 255, alpha), (int(x) - 5, int(y) - 5, 10, 10))
+                elif move_type == "POISON":
+                    pygame.draw.circle(surf, (150, 0, 255, alpha), (int(x), int(y)), random.randint(5, 15))
+                elif move_type == "PSYCHIC":
+                    pygame.draw.circle(surf, (255, 100, 255, alpha), (int(x), int(y)), random.randint(5, 15))
+                elif move_type == "FIGHTING":
+                    pygame.draw.polygon(surf, (200, 50, 50, alpha), [(int(x), int(y) - 10), (int(x) - 10, int(y) + 10), (int(x) + 10, int(y) + 10)])
+                elif move_type == "DRAGON":
+                    pygame.draw.circle(surf, (50, 50, 255, alpha), (int(x), int(y)), random.randint(10, 20))
+                elif move_type == "FAIRY":
+                    pygame.draw.circle(surf, (255, 150, 255, alpha), (int(x), int(y)), random.randint(3, 8))
+                    pygame.draw.circle(surf, (255, 255, 255, alpha), (int(x), int(y)), random.randint(1, 4))
+                elif move_type in ["GROUND", "ROCK"]:
+                    pygame.draw.rect(surf, (150, 100, 50, alpha), (int(x) - 8, int(y) - 8, 16, 16))
+                elif move_type == "BUG":
+                    pygame.draw.circle(surf, (150, 255, 50, alpha), (int(x), int(y)), random.randint(3, 8))
+                elif move_type == "FLYING":
+                    pygame.draw.ellipse(surf, (200, 200, 255, alpha), (int(x), int(y), 15, 5))
+                elif move_type == "STEEL":
+                    pygame.draw.polygon(surf, (200, 200, 200, alpha), [(int(x), int(y) - 8), (int(x) - 8, int(y)), (int(x), int(y) + 8), (int(x) + 8, int(y))])
+                else:
+                    # El nuevo impacto NORMAL (Ya no es una cruz gigante, son chispas de impacto)
+                    pygame.draw.circle(surf, (255, 255, 200, alpha), (int(x), int(y)), random.randint(3, 8))
+
+        # Dibujamos todo sobre la pantalla
+        self.screen.blit(surf, (0, 0))
+        
+        # Restaurar la semilla aleatoria para no romper la IA del juego
+        random.seed()

@@ -3,6 +3,7 @@ import pygame
 import sys
 import os
 import random
+import math
 from time import perf_counter
 
 from src.utils.data_loader import DataLoader
@@ -30,10 +31,9 @@ class BattleScreen:
         self.sh = self.screen.get_height()
         
         # Pantalla dividida tipo DS
-        self.top_h = int(self.sh * 0.80) # 80% para la batalla
-        self.bottom_h = self.sh - self.top_h # 20% para la UI
+        self.top_h = int(self.sh * 0.80)
+        self.bottom_h = self.sh - self.top_h
 
-        # Cargamos el fondo de la batalla para la pantalla superior
         self.bg_battle = self.renderer.load_background(
             os.path.join('assets', 'bg_battle.jpg'),
             self.sw,
@@ -59,11 +59,7 @@ class BattleScreen:
             try:
                 self.p1_team.append(self.loader.create_battle_pokemon(pid))
             except Exception:
-                self.p1_team.append(
-                    self.loader.create_battle_pokemon(
-                        random.choice(self.loader.pokemon_data)['poke_id']
-                    )
-                )
+                self.p1_team.append(self.loader.create_battle_pokemon(random.choice(self.loader.pokemon_data)['poke_id']))
 
         pool_ids = [p['poke_id'] for p in self.loader.pokemon_data]
         self.p2_team = []
@@ -71,10 +67,12 @@ class BattleScreen:
             pid = random.choice(pool_ids)
             self.p2_team.append(self.loader.create_battle_pokemon(pid))
 
+        for pkm in self.p1_team + self.p2_team:
+            if pkm.current_hp > pkm.max_hp:
+                pkm.max_hp = pkm.current_hp
+
         self.p1_active_idx = 0
         self.p2_active_idx = 0
-        
-        # Índices visuales independientes de la lógica
         self.p1_visual_idx = 0
         self.p2_visual_idx = 0
 
@@ -103,7 +101,6 @@ class BattleScreen:
         self.turn_interval = 1.0
         self.turn_number = 1
 
-        # --- LAYOUT TIPO DS (Pantalla Inferior) ---
         self.main_dialog_rect = pygame.Rect(10, self.top_h + 10, (self.sw // 2) - 20, self.bottom_h - 20)
         btn_action_w = (self.sw // 2) - 20
         btn_action_h = (self.bottom_h - 30) // 2
@@ -147,27 +144,44 @@ class BattleScreen:
         self.p2_fainted_anim_start = 0
         self.faint_anim_duration = 1.0 
         
-        # Variables de la Pokéball
-        self.pokeball_img = self.renderer.load_sprite("pokeball", os.path.join('assets', 'sprites', 'pokeball.png'))
+        pokeball_path = os.path.join('assets', 'sprites', 'pokeball.png')
+        if not os.path.exists(pokeball_path):
+            pokeball_path = os.path.join('assets', 'pokeball.png')
+        self.pokeball_img = self.renderer.load_sprite("pokeball", pokeball_path)
+        
         self.p1_switching_anim = False
         self.p2_switching_anim = False
         self.switch_anim_start = 0
         self.switch_anim_duration = 0.8
         
-        self.animating_blocking = False # Usado para CUALQUIER animación bloqueante
+        # --- NUEVO: Estado para animaciones de ataques elementales ---
+        self.attack_animating = False
+        self.attack_anim_start = 0
+        self.attack_anim_type = "NORMAL"
+        self.attack_anim_target = 1
+        self.attack_duration = 0.6
+        
+        # --- NUEVO: Transformación Greninja ---
+        self.p1_greninja_transformed = False
+        self.p2_greninja_transformed = False
+        self.p1_greninja_queued = False
+        self.p2_greninja_queued = False
+        self.greninja_transform_animating = False
+        self.greninja_transform_start = 0
+        self.greninja_transform_actor = 1
+        self.greninja_transform_duration = 2.5
+
+        self.animating_blocking = False 
 
         self.p1_fainted_id = None
         self.p2_fainted_id = None
         self.p1_next_id = None
         self.p2_next_id = None
 
-        # BARRAS DE VIDA FLUIDAS
         self.p1_display_hp = -1
         self.p2_display_hp = -1
         self.p1_target_hp = -1
         self.p2_target_hp = -1
-        self.last_p1_id = None
-        self.last_p2_id = None
 
         if self.human_player and not self.auto_mode:
             self.waiting_for_player_action = True
@@ -194,7 +208,6 @@ class BattleScreen:
             msg = self.message_queue.pop(0)
             
             if isinstance(msg, dict):
-                # Sincronizar metas de HP visual
                 if "p1_target_hp" in msg:
                     self.p1_target_hp = int(msg["p1_target_hp"])
                 if "p2_target_hp" in msg:
@@ -209,7 +222,6 @@ class BattleScreen:
                     if self.p2_target_hp <= 0 and not self.p2_fainted:
                         self.message_queue.insert(0, {"text": f"¡El {self.p2_team[self.p2_visual_idx].name.capitalize()}\nrival se ha debilitado por su estado!", "trigger_anim": "p2_fainted", "id": self.p2_team[self.p2_visual_idx].name})
                 
-                # Activar animaciones
                 if "trigger_anim" in msg:
                     trigger = msg["trigger_anim"]
                     if trigger == "p1_damage":
@@ -242,6 +254,28 @@ class BattleScreen:
                         self.switch_anim_start = perf_counter()
                         self.animating_blocking = True
                         self.p2_next_id = msg.get("id")
+                    elif trigger == "attack":
+                        # NUEVO: Activa la animación del ataque elemental
+                        self.attack_animating = True
+                        self.attack_anim_start = perf_counter()
+                        self.attack_anim_type = msg.get("attack_type", "NORMAL")
+                        self.attack_anim_target = msg.get("target", 1)
+                        self.animating_blocking = True
+                    elif trigger == "greninja_transform":
+                        if msg.get("actor") == 1:
+                            self.p1_greninja_transformed = True
+                        else:
+                            self.p2_greninja_transformed = True
+                            
+                        self.greninja_transform_animating = True
+                        self.greninja_transform_start = perf_counter()
+                        self.greninja_transform_actor = msg.get("actor")
+                        self.animating_blocking = True
+                        
+                        ruta_musica_ikuze = os.path.join('assets', 'music', 'ikuze.mp3')
+                        if os.path.exists(ruta_musica_ikuze):
+                            pygame.mixer.music.load(ruta_musica_ikuze)
+                            pygame.mixer.music.play(-1)
 
                 if msg.get("end_battle"):
                     self.battle_finished = True
@@ -288,6 +322,7 @@ class BattleScreen:
 
         for out in outcomes:
             actor_name = current_p1_name if out.actor == 1 else current_p2_name
+            target_name = current_p2_name if out.actor == 1 else current_p1_name
 
             if out.action_type == ActionType.SWITCH:
                 new_idx = 0
@@ -333,10 +368,28 @@ class BattleScreen:
                 label = mv_name or f"Movimiento #{out.action_id}"
 
                 if not out.hit_success:
-                    self.message_queue.append({"text": f"¡{actor_name.capitalize()} usó {label}\npero falló!"})
+                    self.message_queue.append({
+                        "text": f"¡{actor_name.capitalize()} usó {label}\npero falló!",
+                        "trigger_anim": "attack",
+                        "attack_type": getattr(actual_move, 'move_type', 'NORMAL'),
+                        "target": 2 if out.actor == 1 else 1
+                    })
                 elif out.damage_dealt > 0:
-                    self.message_queue.append({"text": f"¡{actor_name.capitalize()} usó {label}!"})
+                    # NUEVO: Primero inyectamos la orden para la animación visual del poder
+                    self.message_queue.append({
+                        "text": f"¡{actor_name.capitalize()} usó {label}!",
+                        "trigger_anim": "attack",
+                        "attack_type": getattr(actual_move, 'move_type', 'NORMAL'),
+                        "target": 2 if out.actor == 1 else 1
+                    })
                     
+                    multiplier = getattr(out, 'type_multiplier', 1.0)
+                    if multiplier > 1.0:
+                        self.message_queue.append({"text": "¡Es súper eficaz!"})
+                    elif 0.0 < multiplier < 1.0:
+                        self.message_queue.append({"text": "No es muy eficaz..."})
+                    
+                    # Luego el daño
                     msg = {"text": f"¡Y causó {out.damage_dealt} de daño!"}
                     if out.actor == 1:
                         msg["trigger_anim"] = "p2_damage"
@@ -354,7 +407,19 @@ class BattleScreen:
                             drain_msg["p2_target_hp"] = out.attacker_hp_remaining
                         self.message_queue.append(drain_msg)
                 else:
-                    self.message_queue.append({"text": f"¡{actor_name.capitalize()} usó {label}!"})
+                    self.message_queue.append({
+                        "text": f"¡{actor_name.capitalize()} usó {label}!",
+                        "trigger_anim": "attack",
+                        "attack_type": getattr(actual_move, 'move_type', 'NORMAL'),
+                        "target": 2 if out.actor == 1 else 1
+                    })
+                    
+                    multiplier = getattr(out, 'type_multiplier', 1.0)
+                    if multiplier == 0.0:
+                        self.message_queue.append({"text": f"¡No tiene efecto en\n{target_name.capitalize()}!"})
+                    elif actual_move and getattr(actual_move, 'power', 0) > 0:
+                        self.message_queue.append({"text": "¡Pero el ataque no causó\nningún daño!"})
+                        
                     if actual_move and getattr(actual_move, 'healing', 0) > 0:
                         heal_msg = {"text": f"¡{actor_name.capitalize()} restauró su salud!"}
                         if out.actor == 1:
@@ -379,6 +444,21 @@ class BattleScreen:
                         faint_msg["id"] = current_p1_name
                         faint_msg["p1_target_hp"] = 0
                     self.message_queue.append(faint_msg)
+                    
+                    if out.actor == 1 and current_p1_name == "greninja-ash" and not self.p1_greninja_queued:
+                        self.p1_greninja_queued = True
+                        self.message_queue.append({
+                            "text": "¡Greninja siente su lazo fortalecerse\ny se envuelve en agua!",
+                            "trigger_anim": "greninja_transform",
+                            "actor": 1
+                        })
+                    elif out.actor == 2 and current_p2_name == "greninja-ash" and not self.p2_greninja_queued:
+                        self.p2_greninja_queued = True
+                        self.message_queue.append({
+                            "text": "¡El Greninja rival siente su lazo\nfortalecerse y se envuelve en agua!",
+                            "trigger_anim": "greninja_transform",
+                            "actor": 2
+                        })
         
         if not outcomes:
             self.message_queue.append({"text": "No pasó nada relevante este turno."})
@@ -434,7 +514,6 @@ class BattleScreen:
                                 self._advance_message()
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    # Pantalla final de botones (Ir al Menú / Repetir)
                     if self.battle_finished and not self.message_queue and not self.animating_blocking:
                         if self.btn_replay.collidepoint(event.pos):
                             self.action_after_battle = "REPLAY"
@@ -443,16 +522,13 @@ class BattleScreen:
                             self.action_after_battle = "MENU"
                             self.running = False
                             
-                    # Lógica mientras juegas y lees mensajes
                     elif self.human_player:
                         if self.animating_blocking:
                             continue
                             
-                        # Permitimos avanzar mensajes INCLUSO si la batalla ya terminó (para ver quién ganó)
                         if self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch):
                              self._advance_message()
                              
-                        # Las acciones de combate (Lucha/Cambio) SOLO si la batalla sigue activa
                         elif not self.battle_finished:
                             if self.waiting_for_player_action:
                                 if not self.showing_moves:
@@ -495,10 +571,23 @@ class BattleScreen:
                     else:
                         self.p2_switching_anim = False
                         
-                if anim_p1_done and anim_p2_done:
+                # Comprobar animación de ataque
+                anim_attack_done = True
+                if self.attack_animating:
+                    if now - self.attack_anim_start < self.attack_duration:
+                        anim_attack_done = False
+                    else:
+                        self.attack_animating = False
+                        
+                anim_greninja_done = True
+                if self.greninja_transform_animating:
+                    if now - self.greninja_transform_start < self.greninja_transform_duration:
+                        anim_greninja_done = False
+                    else:
+                        self.greninja_transform_animating = False
+                        
+                if anim_p1_done and anim_p2_done and anim_attack_done and anim_greninja_done:
                     self.animating_blocking = False
-                    if self.battle_finished and not self.message_queue:
-                         pass
 
             if not self.animating_blocking:
                 if self.auto_mode:
@@ -512,7 +601,6 @@ class BattleScreen:
                                 self._advance_message() 
                                 self.last_turn_time = now
 
-            # --- DIBUJO DE PANTALLAS ---
             self.renderer.clear_screen((20, 20, 25))
 
             if self.bg_battle:
@@ -521,7 +609,6 @@ class BattleScreen:
             pygame.draw.line(self.screen, (0, 0, 0), (0, self.top_h), (self.sw, self.top_h), 10)
             pygame.draw.rect(self.screen, (230, 240, 245), (0, self.top_h + 5, self.sw, self.bottom_h))
 
-            # Capturar Pokémon Visual
             active_p1 = self.p1_team[self.p1_visual_idx]
             active_p2 = self.p2_team[self.p2_visual_idx]
             
@@ -532,7 +619,6 @@ class BattleScreen:
                 self.p2_display_hp = active_p2.current_hp
                 self.p2_target_hp = active_p2.current_hp
 
-            # Disminución progresiva del HP
             hp_speed_1 = max(1, active_p1.max_hp // 50)
             if self.p1_display_hp > self.p1_target_hp:
                 self.p1_display_hp = max(self.p1_target_hp, self.p1_display_hp - hp_speed_1)
@@ -548,26 +634,43 @@ class BattleScreen:
             draw_p1_name = self.p1_next_id if self.p1_switching_anim else (self.p1_fainted_id if self.p1_fainted else active_p1.name)
             draw_p2_name = self.p2_next_id if self.p2_switching_anim else (self.p2_fainted_id if self.p2_fainted else active_p2.name)
 
-            img_p1_back = self.renderer.load_battle_sprite(
-                draw_p1_name,
-                os.path.join('assets', 'sprites_back', f"{draw_p1_name}.png"),
-                is_back=True
-            )
-            img_p2_front = self.renderer.load_battle_sprite(
-                draw_p2_name,
-                os.path.join('assets', 'sprites', f"{draw_p2_name}.png"),
-                is_back=False
-            )
+            sprite_p1_name = draw_p1_name
+            sprite_p2_name = draw_p2_name
+
+            if sprite_p1_name == "greninja-ash":
+                if not self.p1_greninja_transformed:
+                    sprite_p1_name = "greninja-ash_base"
+                elif self.greninja_transform_animating and self.greninja_transform_actor == 1:
+                    elapsed_trans = now - self.greninja_transform_start
+                    if elapsed_trans < self.greninja_transform_duration * 0.6:
+                        sprite_p1_name = "greninja-ash_base"
+
+            if sprite_p2_name == "greninja-ash":
+                if not self.p2_greninja_transformed:
+                    sprite_p2_name = "greninja-ash_base"
+                elif self.greninja_transform_animating and self.greninja_transform_actor == 2:
+                    elapsed_trans = now - self.greninja_transform_start
+                    if elapsed_trans < self.greninja_transform_duration * 0.6:
+                        sprite_p2_name = "greninja-ash_base"
+
+            img_p1_back = self.renderer.load_battle_sprite(sprite_p1_name, os.path.join('assets', 'sprites_back', f"{sprite_p1_name}.png"), is_back=True)
+            img_p2_front = self.renderer.load_battle_sprite(sprite_p2_name, os.path.join('assets', 'sprites', f"{sprite_p2_name}.png"), is_back=False)
             
-            # --- Animaciones P2 ---
             show_p2 = True
             p2_y_offset = 0
+            p2_scale = 1.0
             if self.p2_fainted:
                 elapsed_faint = now - self.p2_fainted_anim_start
                 if elapsed_faint < self.faint_anim_duration:
-                    p2_y_offset = int((elapsed_faint / self.faint_anim_duration) * 200)
+                    p2_y_offset = int((elapsed_faint / self.faint_anim_duration) * 250)
+                    p2_alpha = max(0, 255 - int((elapsed_faint / self.faint_anim_duration) * 255))
+                    if img_p2_front:
+                        temp_img = img_p2_front.copy()
+                        temp_img.set_alpha(p2_alpha)
+                        self.screen.blit(temp_img, (600, 100 + p2_y_offset))
+                    show_p2 = False
                 else:
-                    show_p2 = False # <--- CORRECCIÓN ZOMBIE P2: El Pokémon ya no resucita.
+                    show_p2 = False 
             elif self.p2_animating_damage:
                 elapsed = now - self.p2_animation_start
                 if elapsed > self.animation_duration:
@@ -577,25 +680,49 @@ class BattleScreen:
                         show_p2 = False
             elif self.p2_switching_anim:
                 elapsed_switch = now - self.switch_anim_start
-                if elapsed_switch < self.switch_anim_duration / 2:
+                half_dur = self.switch_anim_duration / 2
+                if elapsed_switch < half_dur:
+                    progress = elapsed_switch / half_dur
+                    start_x, start_y = self.sw + 50, -50
+                    target_x, target_y = 700, 225
+                    curr_x = start_x + (target_x - start_x) * progress
+                    curr_y = start_y + (target_y - start_y) * progress - math.sin(progress * math.pi) * 150
                     if self.pokeball_img:
-                        self.screen.blit(self.pokeball_img, (650, 200))
+                        angle = progress * 720
+                        rotated_ball = pygame.transform.rotate(self.pokeball_img, angle)
+                        ball_rect = rotated_ball.get_rect(center=(int(curr_x), int(curr_y)))
+                        self.screen.blit(rotated_ball, ball_rect.topleft)
                     show_p2 = False
                 else:
+                    p2_scale = min(1.0, (elapsed_switch - half_dur) / half_dur)
                     show_p2 = True
             
             if img_p2_front and show_p2:
-                self.screen.blit(img_p2_front, (600, 150 + p2_y_offset))
+                # Animación Idle (Respiración) calculada con seno
+                idle_y_p2 = int(math.sin(now * 5) * 5) if not (self.p2_fainted or self.p2_switching_anim) else 0
+                if self.p2_switching_anim and p2_scale < 1.0:
+                    scaled_size = max(1, int(250 * p2_scale))
+                    scaled_img = pygame.transform.scale(img_p2_front, (scaled_size, scaled_size))
+                    cx, cy = 600 + 125, 100 + p2_y_offset + 125 + idle_y_p2
+                    self.screen.blit(scaled_img, (cx - scaled_size // 2, cy - scaled_size // 2))
+                else:
+                    self.screen.blit(img_p2_front, (600, 100 + p2_y_offset + idle_y_p2))
             
-            # --- Animaciones P1 ---
             show_p1 = True
             p1_y_offset = 0
+            p1_scale = 1.0
             if self.p1_fainted:
                 elapsed_faint = now - self.p1_fainted_anim_start
                 if elapsed_faint < self.faint_anim_duration:
-                    p1_y_offset = int((elapsed_faint / self.faint_anim_duration) * 200)
+                    p1_y_offset = int((elapsed_faint / self.faint_anim_duration) * 250)
+                    p1_alpha = max(0, 255 - int((elapsed_faint / self.faint_anim_duration) * 255))
+                    if img_p1_back:
+                        temp_img = img_p1_back.copy()
+                        temp_img.set_alpha(p1_alpha)
+                        self.screen.blit(temp_img, (100, self.top_h - 250 + p1_y_offset))
+                    show_p1 = False
                 else:
-                    show_p1 = False # <--- CORRECCIÓN ZOMBIE P1: El Pokémon ya no resucita.
+                    show_p1 = False 
             elif self.p1_animating_damage:
                 elapsed = now - self.p1_animation_start
                 if elapsed > self.animation_duration:
@@ -605,15 +732,90 @@ class BattleScreen:
                         show_p1 = False
             elif self.p1_switching_anim:
                 elapsed_switch = now - self.switch_anim_start
-                if elapsed_switch < self.switch_anim_duration / 2:
+                half_dur = self.switch_anim_duration / 2
+                if elapsed_switch < half_dur:
+                    progress = elapsed_switch / half_dur
+                    start_x, start_y = -50, self.sh + 50
+                    target_x, target_y = 200, self.top_h - 125
+                    curr_x = start_x + (target_x - start_x) * progress
+                    curr_y = start_y + (target_y - start_y) * progress - math.sin(progress * math.pi) * 150
                     if self.pokeball_img:
-                        self.screen.blit(self.pokeball_img, (200, 400))
+                        angle = progress * -720
+                        rotated_ball = pygame.transform.rotate(self.pokeball_img, angle)
+                        ball_rect = rotated_ball.get_rect(center=(int(curr_x), int(curr_y)))
+                        self.screen.blit(rotated_ball, ball_rect.topleft)
                     show_p1 = False
                 else:
+                    p1_scale = min(1.0, (elapsed_switch - half_dur) / half_dur)
                     show_p1 = True
 
             if img_p1_back and show_p1:
-                self.screen.blit(img_p1_back, (100, self.top_h - 200 + p1_y_offset))
+                # Animación Idle para el jugador desfasada (usando coseno) para que no se muevan igual
+                idle_y_p1 = int(math.cos(now * 5) * 5) if not (self.p1_fainted or self.p1_switching_anim) else 0
+                if self.p1_switching_anim and p1_scale < 1.0:
+                    scaled_size = max(1, int(250 * p1_scale))
+                    scaled_img = pygame.transform.scale(img_p1_back, (scaled_size, scaled_size))
+                    cx, cy = 100 + 125, self.top_h - 250 + p1_y_offset + 125 + idle_y_p1
+                    self.screen.blit(scaled_img, (cx - scaled_size // 2, cy - scaled_size // 2))
+                else:
+                    self.screen.blit(img_p1_back, (100, self.top_h - 250 + p1_y_offset + idle_y_p1))
+
+            # --- DIBUJO DEL EFECTO DE ATAQUE ---
+            if self.attack_animating:
+                elapsed_atk = now - self.attack_anim_start
+                if elapsed_atk < self.attack_duration:
+                    progress = elapsed_atk / self.attack_duration
+                    # Calculamos dónde pintar la partícula (centro del objetivo)
+                    if self.attack_anim_target == 2: # Pega al rival
+                        tx, ty = 700, 225
+                    else: # Nos pegan a nosotros
+                        tx, ty = 200, self.top_h - 125
+                    
+                    self.renderer.draw_attack_effect(self.attack_anim_type, tx, ty, progress)
+
+            # --- DIBUJO DE LA TRANSFORMACIÓN GRENINJA ---
+            if self.greninja_transform_animating:
+                elapsed_trans = now - self.greninja_transform_start
+                if elapsed_trans < self.greninja_transform_duration:
+                    progress = elapsed_trans / self.greninja_transform_duration
+                    
+                    if self.greninja_transform_actor == 2: 
+                        cx, cy = 600 + 125, 100 + 125
+                    else: 
+                        cx, cy = 100 + 125, self.top_h - 250 + 125
+                    
+                    if progress < 0.6:
+                        dome_progress = min(1.0, progress / 0.4) 
+                        radius = int(180 * dome_progress)
+                        alpha = min(255, int(255 * dome_progress))
+                        
+                        dome_surf = pygame.Surface((400, 400), pygame.SRCALPHA)
+                        pygame.draw.circle(dome_surf, (50, 150, 255, alpha), (200, 200), radius)
+                        pygame.draw.circle(dome_surf, (20, 80, 200, alpha), (200, 200), max(1, radius - 20))
+                        
+                        random.seed(int(progress * 20)) 
+                        for _ in range(15):
+                            rx = 200 + random.randint(-radius, radius) // 2
+                            ry = 200 + random.randint(-radius, radius) // 2
+                            pygame.draw.circle(dome_surf, (200, 255, 255, alpha), (rx, ry), random.randint(3, 8))
+                        random.seed()
+                        
+                        self.screen.blit(dome_surf, (cx - 200, cy - 200))
+                    else:
+                        break_progress = (progress - 0.6) / 0.4
+                        random.seed(42) 
+                        for i in range(50):
+                            angle = random.uniform(0, math.pi * 2)
+                            speed = random.uniform(100, 400)
+                            dist = 100 + break_progress * speed
+                            px = cx + math.cos(angle) * dist
+                            py = cy + math.sin(angle) * dist
+                            py += (break_progress ** 2) * 200
+                            alpha = max(0, 255 - int(break_progress * 255))
+                            if alpha > 0:
+                                pygame.draw.circle(self.screen, (100, 200, 255, alpha), (int(px), int(py)), random.randint(5, 12))
+                                pygame.draw.circle(self.screen, (200, 255, 255, alpha), (int(px), int(py)), random.randint(2, 5))
+                        random.seed()
 
             self.renderer.draw_health_bar(30, 30, draw_p2_name, int(self.p2_display_hp), active_p2.max_hp, level=50, is_player=False, status=active_p2.status_ailment)
             self.renderer.draw_health_bar(self.sw - 350, self.top_h - 100, draw_p1_name, int(self.p1_display_hp), active_p1.max_hp, level=50, is_player=True, status=active_p1.status_ailment)
