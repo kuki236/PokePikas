@@ -50,6 +50,10 @@ class Level2Agent(BaseAgent):
         self.turns_since_last_switch += 1
         switch_candidates = [i for i, p in enumerate(team) if getattr(p, 'current_hp', 0) > 0 and i != active_idx]
 
+        if getattr(active, 'current_hp', 0) <= 0 and switch_candidates:
+            self.turns_since_last_switch = 0
+            return Action(type=ActionType.SWITCH, target_index=random.choice(switch_candidates))
+
         if not hasattr(active, 'moves'):
             if switch_candidates and self.turns_since_last_switch >= 2:
                 self.turns_since_last_switch = 0

@@ -297,18 +297,25 @@ class BattleScreen:
         if self.battle_finished:
             return
 
+        switched_any = False
+
         if self.p2_team[self.p2_active_idx].current_hp <= 0:
             self._ai_switch_pokemon(2)
-            self._advance_message()
-        elif self.p1_team[self.p1_active_idx].current_hp <= 0:
+            switched_any = True
+            
+        if self.p1_team[self.p1_active_idx].current_hp <= 0:
             if self.human_player and not self.auto_mode:
                 if not self.waiting_for_player_switch:
                     self.waiting_for_player_switch = True
                     self.waiting_for_player_action = False
                     self.current_message = "¡Tu Pokémon se ha debilitado!\nElige un nuevo Pokémon."
+                    switched_any = True
             else:
                 self._ai_switch_pokemon(1)
-                self._advance_message()
+                switched_any = True
+                
+        if switched_any:
+            self._advance_message()
         elif self.human_player and not self.auto_mode:
             if not self.waiting_for_player_action and not self.waiting_for_player_switch:
                 self.waiting_for_player_action = True
@@ -507,11 +514,10 @@ class BattleScreen:
                             self.action_after_battle = "MENU"
                             
                     elif event.key == pygame.K_SPACE:
-                        if self.human_player:
-                            if self.animating_blocking:
-                                pass 
-                            elif self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch):
-                                self._advance_message()
+                        if self.animating_blocking:
+                            pass 
+                        elif self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch):
+                            self._advance_message()
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if self.battle_finished and not self.message_queue and not self.animating_blocking:
@@ -522,14 +528,24 @@ class BattleScreen:
                             self.action_after_battle = "MENU"
                             self.running = False
                             
-                    elif self.human_player:
+                    else:
                         if self.animating_blocking:
                             continue
                             
-                        if self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch):
+                        clicked_dialog = False
+                        full_rect = pygame.Rect(20, self.top_h + 20, self.sw - 40, self.bottom_h - 40)
+                        
+                        if self.human_player and self.waiting_for_player_action and not self.showing_moves:
+                            if self.main_dialog_rect.collidepoint(event.pos):
+                                clicked_dialog = True
+                        else:
+                            if full_rect.collidepoint(event.pos):
+                                clicked_dialog = True
+                                
+                        if clicked_dialog and (self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch)):
                              self._advance_message()
                              
-                        elif not self.battle_finished:
+                        elif self.human_player and not self.battle_finished:
                             if self.waiting_for_player_action:
                                 if not self.showing_moves:
                                     if self.btn_lucha.collidepoint(event.pos):
@@ -591,10 +607,7 @@ class BattleScreen:
 
             if not self.animating_blocking:
                 if self.auto_mode:
-                    if self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch and not self.battle_finished):
-                        if now - self.message_display_time > self.message_duration:
-                            self._advance_message()
-                    else:
+                    if not (self.message_queue or (self.current_message and not self.waiting_for_player_action and not self.waiting_for_player_switch and not self.battle_finished)):
                         if not self.battle_finished and not self.waiting_for_player_action and not self.waiting_for_player_switch:
                             if now - self.last_turn_time >= self.turn_interval:
                                 self._process_full_turn()
@@ -992,7 +1005,6 @@ class BattleScreen:
 
         if result.match_over:
             self.battle_finished = True
-            self.auto_mode = False
             if result.winner == 1:
                 self.message_queue.append({"text": "¡El jugador ha ganado la batalla!"})
             elif result.winner == 2:
@@ -1146,3 +1158,5 @@ class BattleScreen:
                     "id": team[new_active_idx].name
                 })
                 self.p2_active_idx = new_active_idx
+            return True
+        return False
