@@ -83,7 +83,8 @@ def process_turn(
 
     turn_order = determine_turn_order(p1_team[new_p1_idx], p1_action, p2_team[new_p2_idx], p2_action)
 
-    for actor_id, _current_pokemon, action in turn_order:
+    for actor_id, _, action in turn_order:
+        
         if actor_id == 1:
             attacker_team, defender_team = p1_team, p2_team
             attacker_idx, defender_idx = new_p1_idx, new_p2_idx
@@ -94,7 +95,7 @@ def process_turn(
         attacker = attacker_team[attacker_idx]
         defender = defender_team[defender_idx]
 
-        if attacker.is_fainted():
+        if attacker.current_hp <= 0 or attacker.is_fainted():
             continue
 
         is_faster = (len(turn_order) > 0 and turn_order[0][0] == actor_id)
@@ -123,7 +124,8 @@ def process_turn(
             else:
                 attacker, defender = p2_team[new_p2_idx], p1_team[new_p1_idx]
             
-            if attacker.is_fainted(): continue 
+            if attacker.current_hp <= 0 or attacker.is_fainted() or defender.current_hp <= 0: 
+                continue 
 
             if not _is_valid_move(attacker, action.target_index):
                 outcomes.append(ActionOutcome(
@@ -162,12 +164,10 @@ def process_turn(
             if hit_success:
                 if move.category == "STATUS":
                     multi = get_type_multiplier(move.move_type, defender.types)
-                    
                     if move.name.lower() == "rest":
                         attacker.heal(attacker.max_hp) 
                         attacker.status_ailment = AilmentType.SLEEP
                         status_applied = AilmentType.SLEEP
-                    
                     elif move.healing > 0:
                         attacker.heal(int(attacker.max_hp * (move.healing / 100.0)))
                     
@@ -176,10 +176,8 @@ def process_turn(
                         if not defender.is_fainted():
                             defender.status_ailment = move.ailment
                             status_applied = move.ailment
-                
                 else:
                     is_phys = move.category == "PHYSICAL"
-                    
                     atk_key = "attack" if is_phys else "special_attack"
                     def_key = "defense" if is_phys else "special_defense"
                     
@@ -193,6 +191,9 @@ def process_turn(
                     last_multi = 1.0
                
                     for _ in range(hits):
+                        if defender.current_hp <= 0:
+                            break
+
                         hit_damage, m = calculate_damage(
                             attacker.attack if is_phys else attacker.special_attack,
                             defender.defense if is_phys else defender.special_defense,
@@ -224,7 +225,7 @@ def process_turn(
                             defender.status_ailment = move.ailment
                             status_applied = move.ailment
 
-                    if attacker.id == 10117 and defender.is_fainted():
+                    if attacker.id == 10117 and defender.current_hp <= 0:
                         for stat in ["attack", "special_attack", "speed"]:
                             if attacker.stat_stages[stat] < 6:
                                 attacker.stat_stages[stat] += 1
@@ -236,8 +237,9 @@ def process_turn(
             outcomes.append(ActionOutcome(
                 actor=actor_id, action_type=ActionType.MOVE, action_id=move.id,
                 is_faster=is_faster, hit_success=hit_success, damage_dealt=damage,
-                type_multiplier=multi, target_hp_remaining=defender.current_hp,
-                target_fainted=defender.is_fainted(), attacker_hp_remaining=attacker.current_hp,
+                type_multiplier=multi, target_hp_remaining=max(0, defender.current_hp),
+                target_fainted=(defender.current_hp <= 0 or defender.is_fainted()), 
+                attacker_hp_remaining=max(0, attacker.current_hp),
                 status_applied=status_applied
             ))
 
