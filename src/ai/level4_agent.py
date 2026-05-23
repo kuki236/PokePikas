@@ -1,5 +1,3 @@
-import copy
-import random
 from typing import List
 from src.ai.base_agent import BaseAgent
 from src.core.interfaces import Action, ActionType, BattleState, PokemonState
@@ -17,6 +15,9 @@ class Level4Agent(BaseAgent):
     def __init__(self, player_id: int):
         super().__init__(player_id)
         self.turns_since_last_switch = 0
+        
+        self.opp_turns_since_last_switch = 2  
+        self.last_opp_active_name = None     
 
     def _get_team_and_active(self, state: BattleState):
         if self.player_id == 1: return state.p1_team, state.p1_active_index, state.p2_team, state.p2_active_index
@@ -26,6 +27,7 @@ class Level4Agent(BaseAgent):
         if not seq: return 0
         if idx is None or idx < 0 or idx >= len(seq): return 0
         return idx
+
     def _build_real_team(self, state_team):
         return [Pokemon.from_state(p) for p in state_team]
 
@@ -66,7 +68,6 @@ class Level4Agent(BaseAgent):
 
                     power = getattr(move, 'power', 0)
                     
-                    # Extracción de tipos y estadísticas
                     m_type_str = getattr(move, 'move_type', 'NORMAL').upper()
                     m_enum = PokemonType[m_type_str] if m_type_str in PokemonType.__members__ else PokemonType.NORMAL
                     is_physical = getattr(move, 'category', 'PHYSICAL').upper() == 'PHYSICAL'
@@ -76,7 +77,6 @@ class Level4Agent(BaseAgent):
                     atk_stat = active.attack if is_physical else active.special_attack
                     def_stat = opp.defense if is_physical else getattr(opp, 'special_defense', 1)
 
-                    # 1. EL CEREBRO DEL ANTIGUO NIVEL 2: Daño real
                     damage, type_mult = calculate_damage(
                         attacker_base_stat=atk_stat,
                         defender_base_stat=def_stat,
@@ -89,7 +89,6 @@ class Level4Agent(BaseAgent):
                         attacker_ailment=getattr(active, 'status_ailment', 'NONE')
                     )
 
-                    # 2. EL CEREBRO DEL ANTIGUO NIVEL 2: Curación y Drenaje
                     possible_cure = 0
                     drain_val = getattr(move, 'drain', 0)
                     if drain_val > 0:
@@ -100,17 +99,14 @@ class Level4Agent(BaseAgent):
                         mod_rest = 0.4 if getattr(move, 'name', '').lower() == 'rest' else 1.0
                         possible_cure += int(active.max_hp * (healing_val / 100.0) * mod_rest)
 
-                    # 3. LA FÓRMULA DE INTERCAMBIO NETO (Net Swing)
-                    # Maximizamos la vida que ganamos y el daño que hacemos
                     score = damage + possible_cure
 
                     if type_mult == 0.0:
-                        score -= 5000  # Castigo severo a inmunidades (Estilo L2)
+                        score -= 5000 
 
                     if opp and damage >= opp.current_hp:
-                        score += 5000  # Instinto Asesino
+                        score += 5000 
 
-                    # Prioridad
                     if getattr(move, 'priority', 0) > 0 and opp and damage >= opp.current_hp:
                         score += 2000
 
@@ -118,20 +114,10 @@ class Level4Agent(BaseAgent):
                         (Action(type=ActionType.MOVE, target_index=i), score)
                     )
 
-            # =========================================
-            # MOVE ORDERING (Ordenar de Mejor a Peor)
-            # =========================================
             attack_actions.sort(key=lambda x: x[1], reverse=True)
 
-            # =========================================
-            # QUITAR LA VENDA (NO MÁS TOP 2)
-            # Evaluamos TODOS los ataques válidos, pero ordenados perfectamente.
-            # =========================================
             actions.extend([a[0] for a in attack_actions])
 
-            # =========================================
-            # SWITCHES (Cambios libres para el Minimax)
-            # =========================================
             switch_candidates = [
                 i for i, p in enumerate(team)
                 if p.current_hp > 0 and i != active_idx
@@ -148,6 +134,7 @@ class Level4Agent(BaseAgent):
                 actions.append(Action(type=ActionType.MOVE, target_index=0))
 
             return actions
+
     def _simulate_full_turn(
         self,
         state: BattleState,
@@ -155,19 +142,11 @@ class Level4Agent(BaseAgent):
         p2_action: Action
     ) -> BattleState:
 
-        # =========================================
-        # CONVERTIR A POKEMON REALES
-        # =========================================
-
         p1_team = self._build_real_team(state.p1_team)
         p2_team = self._build_real_team(state.p2_team)
 
         p1_idx = state.p1_active_index
         p2_idx = state.p2_active_index
-
-        # =========================================
-        # PROCESAR TURNO REAL
-        # =========================================
 
         _, new_p1_idx, new_p2_idx = process_turn(
             p1_team,
@@ -177,10 +156,6 @@ class Level4Agent(BaseAgent):
             p2_idx,
             p2_action
         )
-
-        # =========================================
-        # RECONSTRUIR BATTLESTATE
-        # =========================================
 
         new_state = BattleState(
             p1_team=[p.to_state() for p in p1_team],
@@ -192,71 +167,53 @@ class Level4Agent(BaseAgent):
 
         return new_state
 
-    # MINIMAX 
     def get_action(self, state: BattleState) -> Action:
+            team, active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
+            
+            self.turns_since_last_switch += 1
+            opp = opp_team[self._safe_index(opp_active_idx, opp_team)] if opp_team else None
 
-        team, active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
+            if opp:
+                current_opp_name = getattr(opp, 'name', None)
+                if self.last_opp_active_name is not None and current_opp_name != self.last_opp_active_name:
+                    self.opp_turns_since_last_switch = 0
+                else:
+                    self.opp_turns_since_last_switch += 1
+                self.last_opp_active_name = current_opp_name
 
-        self.turns_since_last_switch += 1
+            legal_actions = self._get_smart_legal_actions(team, active_idx, opp, self.turns_since_last_switch)
+            
+            if len(legal_actions) == 1:
+                if legal_actions[0].type == ActionType.SWITCH: self.turns_since_last_switch = 0
+                return legal_actions[0]
 
-        opp = (
-            opp_team[self._safe_index(opp_active_idx, opp_team)]
-            if opp_team else None
-        )
+            best_action = legal_actions[0]
+            best_value = -INF
+            alpha = -INF
+            beta = INF
 
-        legal_actions = self._get_smart_legal_actions(
-            team,
-            active_idx,
-            opp,
-            self.turns_since_last_switch
-        )
+            for my_action in legal_actions:
+                next_my_cooldown = 0 if my_action.type == ActionType.SWITCH else self.turns_since_last_switch + 1
+                
+                value = self._min_value(
+                    state, 
+                    DEPTH - 1, 
+                    alpha, 
+                    beta, 
+                    my_action, 
+                    next_my_cooldown, 
+                    self.opp_turns_since_last_switch  
+                )
+                
+                if value > best_value:
+                    best_value = value
+                    best_action = my_action
+                alpha = max(alpha, best_value)
 
-        if len(legal_actions) == 1:
-
-            if legal_actions[0].type == ActionType.SWITCH:
+            if best_action.type == ActionType.SWITCH:
                 self.turns_since_last_switch = 0
-
-            return legal_actions[0]
-
-        best_action = legal_actions[0]
-
-        best_value = -INF
-
-        alpha = -INF
-        beta = INF
-
-        for my_action in legal_actions:
-
-            next_my_cooldown = (
-                0
-                if my_action.type == ActionType.SWITCH
-                else self.turns_since_last_switch + 1
-            )
-
-            next_opp_cooldown = 2
-
-            value = self._min_value(
-                state,
-                DEPTH - 1,
-                alpha,
-                beta,
-                my_action,
-                next_my_cooldown,
-                next_opp_cooldown
-            )
-
-            if value > best_value:
-
-                best_value = value
-
-                best_action = my_action
-
-            alpha = max(alpha, best_value)
-
-        if best_action.type == ActionType.SWITCH:
-            self.turns_since_last_switch = 0
-
-        return best_action
+                
+            return best_action
 
     def _max_value(
         self,
@@ -313,6 +270,7 @@ class Level4Agent(BaseAgent):
             alpha = max(alpha, v)
 
         return v
+
     def _min_value(
         self,
         state: BattleState,

@@ -175,5 +175,5 @@ def imprimir_matriz_competitiva(team_size, batallas):
 
 if __name__ == "__main__":
     print("Iniciando simulación Headless de Torneo Cruzado...")
-    imprimir_matriz_competitiva(team_size=3, batallas=400)
-    imprimir_matriz_competitiva(team_size=4, batallas=400)
+    imprimir_matriz_competitiva(team_size=3, batallas=100)
+    imprimir_matriz_competitiva(team_size=4, batallas=100)

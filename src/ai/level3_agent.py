@@ -3,13 +3,9 @@ from typing import List
 
 from src.ai.base_agent import BaseAgent
 from src.ai.heuristics import evaluate_level3_state
-
 from src.core.interfaces import (Action,ActionType,BattleState,PokemonState)
-
 from src.core.battle_engine import process_turn
-
 from src.entities.pokemon import Pokemon
-
 from config import AI_LEVEL3_DEPTH, INF
 
 
@@ -19,23 +15,15 @@ class Level3Agent(BaseAgent):
         super().__init__(player_id)
         self.turns_since_last_switch = 0
 
-    # =========================================================
-    # HELPERS
-    # =========================================================
-
     def _get_team_and_active(self, state: BattleState):
-
         if self.player_id == 1:
-
             return (
                 state.p1_team,
                 state.p1_active_index,
                 state.p2_team,
                 state.p2_active_index
             )
-
         else:
-
             return (
                 state.p2_team,
                 state.p2_active_index,
@@ -44,30 +32,19 @@ class Level3Agent(BaseAgent):
             )
 
     def _safe_index(self, idx: int, seq) -> int:
-
         if not seq:
             return 0
-
         if idx is None or idx < 0 or idx >= len(seq):
             return 0
-
         return idx
 
     def _is_match_over(self, state: BattleState) -> bool:
-
         p1_alive = any(p.current_hp > 0 for p in state.p1_team)
-
         p2_alive = any(p.current_hp > 0 for p in state.p2_team)
-
         return not (p1_alive and p2_alive)
 
     def _build_real_team(self, state_team):
-
         return [Pokemon.from_state(p) for p in state_team]
-
-    # =========================================================
-    # LEGAL ACTIONS
-    # =========================================================
 
     def _get_legal_actions(
         self,
@@ -77,24 +54,15 @@ class Level3Agent(BaseAgent):
     ) -> List[Action]:
 
         actions = []
-
         if not team:
             return actions
 
         active_idx = self._safe_index(active_idx, team)
-
         active = team[active_idx]
 
-        # =========================================
-        # MOVIMIENTOS
-        # =========================================
-
         if active.current_hp > 0 and getattr(active, "moves", []):
-
             for i, move in enumerate(active.moves):
-
                 if getattr(move, "current_pp", 0) > 0:
-
                     actions.append(
                         Action(
                             type=ActionType.MOVE,
@@ -102,45 +70,29 @@ class Level3Agent(BaseAgent):
                         )
                     )
 
-        # =========================================
-        # CAMBIOS
-        # =========================================
-
         switch_candidates = [
-
             i for i, p in enumerate(team)
-
             if p.current_hp > 0 and i != active_idx
         ]
 
         if active.current_hp <= 0:
-
             for c in switch_candidates:
-
                 actions.append(
                     Action(
                         type=ActionType.SWITCH,
                         target_index=c
                     )
                 )
-
         elif switch_candidates and turns_since_switch >= 2:
-
             for c in switch_candidates:
-
                 actions.append(
                     Action(
                         type=ActionType.SWITCH,
                         target_index=c
                     )
                 )
-
-        # =========================================
-        # FALLBACK
-        # =========================================
 
         if not actions:
-
             actions.append(
                 Action(
                     type=ActionType.MOVE,
@@ -150,10 +102,6 @@ class Level3Agent(BaseAgent):
 
         return actions
 
-    # =========================================================
-    # SIMULACIÓN REAL
-    # =========================================================
-
     def _simulate_full_turn(
         self,
         state: BattleState,
@@ -161,21 +109,11 @@ class Level3Agent(BaseAgent):
         p2_action: Action
     ) -> BattleState:
 
-        # =========================================
-        # CONVERTIR A POKEMON REALES
-        # =========================================
-
         p1_team = self._build_real_team(state.p1_team)
-
         p2_team = self._build_real_team(state.p2_team)
 
         p1_idx = state.p1_active_index
-
         p2_idx = state.p2_active_index
-
-        # =========================================
-        # PROCESAR TURNO REAL
-        # =========================================
 
         _, new_p1_idx, new_p2_idx = process_turn(
             p1_team,
@@ -186,33 +124,19 @@ class Level3Agent(BaseAgent):
             p2_action
         )
 
-        # =========================================
-        # RECONSTRUIR STATE
-        # =========================================
-
         new_state = BattleState(
-
             p1_team=[p.to_state() for p in p1_team],
-
             p2_team=[p.to_state() for p in p2_team],
-
             p1_active_index=new_p1_idx,
-
             p2_active_index=new_p2_idx,
-
             turn_number=state.turn_number + 1
         )
 
         return new_state
 
-    # =========================================================
-    # GET ACTION
-    # =========================================================
-
     def get_action(self, state: BattleState) -> Action:
 
         team, active_idx, _, _ = self._get_team_and_active(state)
-
         self.turns_since_last_switch += 1
 
         legal_actions = self._get_legal_actions(
@@ -221,28 +145,14 @@ class Level3Agent(BaseAgent):
             self.turns_since_last_switch
         )
 
-        # =========================================
-        # SOLO 1 ACCIÓN
-        # =========================================
-
         if len(legal_actions) == 1:
-
             if legal_actions[0].type == ActionType.SWITCH:
-
                 self.turns_since_last_switch = 0
-
             return legal_actions[0]
 
-        # =========================================
-        # MINIMAX
-        # =========================================
-
         best_action = legal_actions[0]
-
         best_value = -INF
-
         alpha = -INF
-
         beta = INF
 
         legal_actions.sort(
@@ -250,7 +160,6 @@ class Level3Agent(BaseAgent):
         )
 
         for my_action in legal_actions:
-
             value = self._min_value(
                 state,
                 AI_LEVEL3_DEPTH - 1,
@@ -260,26 +169,15 @@ class Level3Agent(BaseAgent):
             )
 
             if value > best_value:
-
                 best_value = value
-
                 best_action = my_action
 
             alpha = max(alpha, best_value)
 
-        # =========================================
-        # RESET SWITCH TIMER
-        # =========================================
-
         if best_action.type == ActionType.SWITCH:
-
             self.turns_since_last_switch = 0
 
         return best_action
-
-    # =========================================================
-    # MAX
-    # =========================================================
 
     def _max_value(
         self,
@@ -290,7 +188,6 @@ class Level3Agent(BaseAgent):
     ) -> float:
 
         if depth == 0 or self._is_match_over(state):
-
             return evaluate_level3_state(
                 state,
                 self.player_id
@@ -307,7 +204,6 @@ class Level3Agent(BaseAgent):
         v = -INF
 
         for my_action in legal_actions:
-
             value = self._min_value(
                 state,
                 depth - 1,
@@ -318,21 +214,12 @@ class Level3Agent(BaseAgent):
 
             v = max(v, value)
 
-            # =========================================
-            # PODA BETA
-            # =========================================
-
             if v >= beta:
-
                 return v
 
             alpha = max(alpha, v)
 
         return v
-
-    # =========================================================
-    # MIN
-    # =========================================================
 
     def _min_value(
         self,
@@ -344,7 +231,6 @@ class Level3Agent(BaseAgent):
     ) -> float:
 
         if depth == 0 or self._is_match_over(state):
-
             return evaluate_level3_state(
                 state,
                 self.player_id
@@ -367,21 +253,13 @@ class Level3Agent(BaseAgent):
         v = INF
 
         for opp_action in opp_actions:
-
-            # =========================================
-            # SIMULACIÓN COMPLETA REAL
-            # =========================================
-
             if self.player_id == 1:
-
                 next_state = self._simulate_full_turn(
                     state,
                     my_action,
                     opp_action
                 )
-
             else:
-
                 next_state = self._simulate_full_turn(
                     state,
                     opp_action,
@@ -397,12 +275,7 @@ class Level3Agent(BaseAgent):
 
             v = min(v, value)
 
-            # =========================================
-            # PODA ALFA
-            # =========================================
-
             if v <= alpha:
-
                 return v
 
             beta = min(beta, v)

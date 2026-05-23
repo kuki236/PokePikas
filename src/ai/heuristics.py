@@ -18,9 +18,6 @@ def evaluate_level3_state(state: BattleState, player_id: int) -> float:
         else my_team[0]
     )
 
-    # =====================================================
-    # HP GLOBAL NORMALIZADO [-1, 1]
-    # =====================================================
     my_current_hp = sum(max(0, p.current_hp) for p in my_team)
     my_max_hp = sum(max(1, p.max_hp) for p in my_team)
 
@@ -33,17 +30,11 @@ def evaluate_level3_state(state: BattleState, player_id: int) -> float:
         (opp_current_hp / opp_max_hp)
     )
 
-    # =====================================================
-    # KO SCORE
-    # =====================================================
     ko_score = 0.0
 
     if my_active.current_hp <= 0:
         ko_score = -1.0
 
-    # =====================================================
-    # PESOS NORMALIZADOS
-    # =====================================================
     HP_WEIGHT = 0.8
     KO_WEIGHT = 0.2
 
@@ -59,12 +50,11 @@ from src.core.damage_calc import get_type_multiplier
 from src.entities.enums import PokemonType
 
 def evaluate_level4_state(state: BattleState, player_id: int) -> float:
-    """Heurística Nivel 4 Optimizada para Competitivo."""
     
-    # 7. BALANCEO DE PESOS ESTABLE
-    HP_WEIGHT = 0.60
-    ALIVE_WEIGHT = 0.25
-    TYPE_WEIGHT = 0.10
+    # BALANCEO 
+    HP_WEIGHT = 0.50
+    ALIVE_WEIGHT = 0.30
+    TYPE_WEIGHT = 0.15
     SPEED_WEIGHT = 0.03
     STATUS_WEIGHT = 0.02
     if player_id == 1:
@@ -74,7 +64,6 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
         my_team, opp_team = state.p2_team, state.p1_team
         my_idx, opp_idx = state.p2_active_index, state.p1_active_index
 
-    # 8. TERMINAL STATES (Evitar indecisiones)
     my_alive_flag = any(p.current_hp > 0 for p in my_team)
     opp_alive_flag = any(p.current_hp > 0 for p in opp_team)
 
@@ -84,14 +73,12 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     my_active = my_team[my_idx] if my_idx < len(my_team) else my_team[0]
     opp_active = opp_team[opp_idx] if opp_idx < len(opp_team) else opp_team[0]
 
-    # VIDA (Normalizada)
     my_current_hp = sum(max(0, p.current_hp) for p in my_team)
     my_max_hp = sum(max(1, p.max_hp) for p in my_team)
     opp_current_hp = sum(max(0, p.current_hp) for p in opp_team)
     opp_max_hp = sum(max(1, p.max_hp) for p in opp_team)
     hp_score = (my_current_hp / my_max_hp) - (opp_current_hp / opp_max_hp)
 
-    # VIVOS (Normalizada)
     my_alive = sum(1 for p in my_team if p.current_hp > 0)
     opp_alive = sum(1 for p in opp_team if p.current_hp > 0)
     team_size = max(1, len(my_team)) 
@@ -124,7 +111,7 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
                 mult = get_type_multiplier(m_enum, my_types)
                 if mult > max_mult_defense: max_mult_defense = mult
         
-        type_score = (max_mult_offense - 1.0) - (max_mult_defense - 1.0)
+        type_score = ((max_mult_offense - 1.0) - (max_mult_defense - 1.0))/3
 
         bad_ailments = ["BURN", "POISON", "PARALYSIS", "FREEZE", "SLEEP"]
         my_ailment = getattr(my_active, 'status_ailment', "NONE")
