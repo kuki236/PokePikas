@@ -34,26 +34,41 @@ class Level4Agent(BaseAgent):
         p2_alive = any(p.current_hp > 0 for p in state.p2_team)
         return not (p1_alive and p2_alive)
 
-    def _get_smart_legal_actions(self, team: List[PokemonState], active_idx: int, opp: PokemonState, my_cooldown: int) -> List[Action]:
+    def _get_smart_legal_actions(
+            self,
+            team: List[PokemonState],
+            active_idx: int,
+            opp: PokemonState,
+            my_cooldown: int
+        ) -> List[Action]:
+
             actions = []
-            if not team: return actions
-            
+            if not team:
+                return actions
+
             active_idx = self._safe_index(active_idx, team)
             active = team[active_idx]
-            
+
             opp_types = []
             if opp:
-                opp_types = [PokemonType[t.upper()] for t in getattr(opp, 'types', []) if t.upper() in PokemonType.__members__]
+                opp_types = [
+                    PokemonType[t.upper()]
+                    for t in getattr(opp, 'types', [])
+                    if t.upper() in PokemonType.__members__
+                ]
 
             attack_actions = []
+
             if active.current_hp > 0 and getattr(active, 'moves', []):
                 for i, move in enumerate(active.moves):
                     if getattr(move, 'current_pp', 0) <= 0:
                         continue
 
+                    power = getattr(move, 'power', 0)
+                    
+                    # Extracción de tipos y estadísticas
                     m_type_str = getattr(move, 'move_type', 'NORMAL').upper()
                     m_enum = PokemonType[m_type_str] if m_type_str in PokemonType.__members__ else PokemonType.NORMAL
-
                     is_physical = getattr(move, 'category', 'PHYSICAL').upper() == 'PHYSICAL'
                     atk_key = 'attack' if is_physical else 'special_attack'
                     def_key = 'defense' if is_physical else 'special_defense'
@@ -61,12 +76,12 @@ class Level4Agent(BaseAgent):
                     atk_stat = active.attack if is_physical else active.special_attack
                     def_stat = opp.defense if is_physical else getattr(opp, 'special_defense', 1)
 
-                    # 1. CÁLCULO DE DAÑO REAL
+                    # 1. EL CEREBRO DEL ANTIGUO NIVEL 2: Daño real
                     damage, type_mult = calculate_damage(
                         attacker_base_stat=atk_stat,
                         defender_base_stat=def_stat,
                         defender_spd=getattr(opp, 'speed', 0) if opp else 0,
-                        move_power=getattr(move, 'power', 0),
+                        move_power=power,
                         move_type=m_enum,
                         defender_types=opp_types,
                         attacker_stage=active.stat_stages.get(atk_key, 0),
@@ -74,9 +89,7 @@ class Level4Agent(BaseAgent):
                         attacker_ailment=getattr(active, 'status_ailment', 'NONE')
                     )
 
-                    score = damage * type_mult
-
-                    # 2. HEALING Y DRAIN
+                    # 2. EL CEREBRO DEL ANTIGUO NIVEL 2: Curación y Drenaje
                     possible_cure = 0
                     drain_val = getattr(move, 'drain', 0)
                     if drain_val > 0:
@@ -87,39 +100,53 @@ class Level4Agent(BaseAgent):
                         mod_rest = 0.4 if getattr(move, 'name', '').lower() == 'rest' else 1.0
                         possible_cure += int(active.max_hp * (healing_val / 100.0) * mod_rest)
 
-                    score += possible_cure * 0.25
+                    # 3. LA FÓRMULA DE INTERCAMBIO NETO (Net Swing)
+                    # Maximizamos la vida que ganamos y el daño que hacemos
+                    score = damage + possible_cure
 
-                    # 3. EL CIERRE DE PARTIDAS (INSTINTO ASESINO)
+                    if type_mult == 0.0:
+                        score -= 5000  # Castigo severo a inmunidades (Estilo L2)
+
                     if opp and damage >= opp.current_hp:
-                        score += 5000
+                        score += 5000  # Instinto Asesino
 
-                    # 4. STAB
-                    my_types = [t.upper() for t in getattr(active, 'types', [])]
-                    if m_enum.name in my_types:
-                        score *= 1.5
-
-                    # 5. CASTIGO A INMUNIDADES
-                    if type_mult == 0:
-                        score -= 9999
-
-                    # PREFERENCIA DE PRIORIDAD (OPCIONAL, PERO ÚTIL)
+                    # Prioridad
                     if getattr(move, 'priority', 0) > 0 and opp and damage >= opp.current_hp:
-                        score += 2000  # Prioridad letal es inmejorable
+                        score += 2000
 
-                    attack_actions.append((Action(type=ActionType.MOVE, target_index=i), score))
+                    attack_actions.append(
+                        (Action(type=ActionType.MOVE, target_index=i), score)
+                    )
 
-            # 6. TOP K = 2
+            # =========================================
+            # MOVE ORDERING (Ordenar de Mejor a Peor)
+            # =========================================
             attack_actions.sort(key=lambda x: x[1], reverse=True)
-            actions.extend([a[0] for a in attack_actions[:2]])
 
-            # CAMBIOS (SWITCHES) - Libres para el Minimax
-            switch_candidates = [i for i, p in enumerate(team) if p.current_hp > 0 and i != active_idx]
+            # =========================================
+            # QUITAR LA VENDA (NO MÁS TOP 2)
+            # Evaluamos TODOS los ataques válidos, pero ordenados perfectamente.
+            # =========================================
+            actions.extend([a[0] for a in attack_actions])
+
+            # =========================================
+            # SWITCHES (Cambios libres para el Minimax)
+            # =========================================
+            switch_candidates = [
+                i for i, p in enumerate(team)
+                if p.current_hp > 0 and i != active_idx
+            ]
+
             if active.current_hp <= 0:
-                for c in switch_candidates: actions.append(Action(type=ActionType.SWITCH, target_index=c))
+                for c in switch_candidates:
+                    actions.append(Action(type=ActionType.SWITCH, target_index=c))
             elif switch_candidates and my_cooldown >= 2:
-                for c in switch_candidates: actions.append(Action(type=ActionType.SWITCH, target_index=c))
+                for c in switch_candidates:
+                    actions.append(Action(type=ActionType.SWITCH, target_index=c))
 
-            if not actions: actions.append(Action(type=ActionType.MOVE, target_index=0))
+            if not actions:
+                actions.append(Action(type=ActionType.MOVE, target_index=0))
+
             return actions
     def _simulate_full_turn(
         self,
