@@ -31,6 +31,7 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
             p2_team=p2_state_team, p2_active_index=p2_active_idx,
             turn_number=turn_count
         )
+        
 
         p1_action = agent1.get_action(state)
         p2_action = agent2.get_action(state)

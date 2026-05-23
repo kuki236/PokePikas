@@ -109,3 +109,95 @@ class Pokemon:
             stat_stages     = dict(self.stat_stages),
             status_ailment = self.status_ailment.name
         )
+    @staticmethod
+    def from_state(state):
+        """
+        Reconstruye un Pokemon real desde PokemonState
+        para simulaciones reales del minimax.
+        """
+
+        import copy
+
+        from src.entities.enums import PokemonType, AilmentType
+        from src.utils.move_registry import MOVE_TEMPLATES
+
+        # =========================================
+        # RECONSTRUIR MOVES REALES
+        # =========================================
+        real_moves = []
+
+        for move_state in state.moves:
+
+            if move_state.id not in MOVE_TEMPLATES:
+                continue
+
+            move_obj = copy.deepcopy(
+                MOVE_TEMPLATES[move_state.id]
+            )
+
+            # restaurar PP actual
+            move_obj.current_pp = move_state.current_pp
+
+            real_moves.append(move_obj)
+
+        # =========================================
+        # RECONSTRUIR TYPES
+        # =========================================
+        real_types = []
+
+        for t in state.types:
+
+            t_upper = str(t).upper()
+
+            if t_upper in PokemonType.__members__:
+                real_types.append(
+                    PokemonType[t_upper]
+                )
+
+        # =========================================
+        # CREAR POKEMON REAL
+        # =========================================
+        pkmn = Pokemon(
+            poke_id=state.id,
+            name=state.name,
+
+            max_hp=state.max_hp,
+
+            attack=state.attack,
+            defense=state.defense,
+
+            special_attack=state.special_attack,
+            special_defense=state.special_defense,
+
+            speed=state.speed,
+
+            types=real_types,
+
+            moves=real_moves
+        )
+
+        # =========================================
+        # RESTAURAR ESTADO ACTUAL
+        # =========================================
+        pkmn.current_hp = state.current_hp
+
+        # =========================================
+        # STATUS
+        # =========================================
+        ailment_str = str(
+            getattr(state, 'status_ailment', 'NONE')
+        ).upper()
+
+        if ailment_str in AilmentType.__members__:
+            pkmn.status_ailment = AilmentType[ailment_str]
+        else:
+            pkmn.status_ailment = AilmentType.NONE
+
+        # =========================================
+        # STAT STAGES
+        # =========================================
+        pkmn.stat_stages = dict(
+            getattr(state, 'stat_stages', {})
+        )
+
+        return pkmn

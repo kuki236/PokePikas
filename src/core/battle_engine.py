@@ -6,7 +6,6 @@ from src.entities.pokemon import Pokemon
 from src.entities.enums import AilmentType
 from .damage_calc import calculate_damage, get_type_multiplier
 
-
 def _is_valid_switch(team: List[Pokemon], current_idx: int, target_idx: int) -> bool:
     if target_idx < 0 or target_idx >= len(team):
         return False
@@ -229,7 +228,9 @@ def process_turn(
                         for stat in ["attack", "special_attack", "speed"]:
                             if attacker.stat_stages[stat] < 6:
                                 attacker.stat_stages[stat] += 1
-                        print(f"  -> ¡El Vínculo Afectivo de {attacker.name} se fortalece! (Stats +1)")
+                        DEBUG_BATTLE_ENGINE = False
+                        if DEBUG_BATTLE_ENGINE:
+                             print(f"  -> ¡El Vínculo Afectivo de {attacker.name} se fortalece! (Stats +1)")
 
             if move.id == 136 and not hit_success:
                 attacker.take_damage(attacker.max_hp // 2)
