@@ -245,7 +245,9 @@ class Level3Agent(BaseAgent):
 
         beta = INF
 
-        random.shuffle(legal_actions)
+        legal_actions.sort(
+            key=lambda a: 0 if a.type == ActionType.MOVE else 1
+        )
 
         for my_action in legal_actions:
 
@@ -388,7 +390,7 @@ class Level3Agent(BaseAgent):
 
             value = self._max_value(
                 next_state,
-                depth - 1,
+                depth,
                 alpha,
                 beta
             )

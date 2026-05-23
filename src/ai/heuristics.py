@@ -62,12 +62,11 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     """Heurística Nivel 4 Optimizada para Competitivo."""
     
     # 7. BALANCEO DE PESOS ESTABLE
-    HP_WEIGHT = 0.50
-    ALIVE_WEIGHT = 0.35
-    TYPE_WEIGHT = 0.08
-    SPEED_WEIGHT = 0.04
-    STATUS_WEIGHT = 0.03
-
+    HP_WEIGHT = 0.60
+    ALIVE_WEIGHT = 0.25
+    TYPE_WEIGHT = 0.10
+    SPEED_WEIGHT = 0.03
+    STATUS_WEIGHT = 0.02
     if player_id == 1:
         my_team, opp_team = state.p1_team, state.p2_team
         my_idx, opp_idx = state.p1_active_index, state.p2_active_index
@@ -95,7 +94,8 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     # VIVOS (Normalizada)
     my_alive = sum(1 for p in my_team if p.current_hp > 0)
     opp_alive = sum(1 for p in opp_team if p.current_hp > 0)
-    alive_score = (my_alive - opp_alive) / 2.0
+    team_size = max(1, len(my_team)) 
+    alive_score = (my_alive - opp_alive) / float(team_size)
 
     speed_score = 0.0
     type_score = 0.0

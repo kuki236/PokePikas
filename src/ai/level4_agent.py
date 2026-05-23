@@ -74,7 +74,7 @@ class Level4Agent(BaseAgent):
                         attacker_ailment=getattr(active, 'status_ailment', 'NONE')
                     )
 
-                    score = damage
+                    score = damage * type_mult
 
                     # 2. HEALING Y DRAIN
                     possible_cure = 0
@@ -110,7 +110,7 @@ class Level4Agent(BaseAgent):
 
             # 6. TOP K = 2
             attack_actions.sort(key=lambda x: x[1], reverse=True)
-            actions.extend([a[0] for a in attack_actions[:3]])
+            actions.extend([a[0] for a in attack_actions[:2]])
 
             # CAMBIOS (SWITCHES) - Libres para el Minimax
             switch_candidates = [i for i, p in enumerate(team) if p.current_hp > 0 and i != active_idx]
@@ -335,7 +335,7 @@ class Level4Agent(BaseAgent):
 
             value = self._max_value(
                 next_state,
-                depth - 1,
+                depth,
                 alpha,
                 beta,
                 my_cooldown,
