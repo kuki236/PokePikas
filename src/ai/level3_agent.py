@@ -56,38 +56,89 @@ class Level3Agent(BaseAgent):
         return actions
 
     def _simulate_deterministic_transition(self, state: BattleState, action: Action, is_p1: bool) -> BattleState:
-      
+
         sim_state = copy.deepcopy(state)
-        
+
         if is_p1:
             my_team, my_idx = sim_state.p1_team, sim_state.p1_active_index
             opp_team, opp_idx = sim_state.p2_team, sim_state.p2_active_index
         else:
             my_team, my_idx = sim_state.p2_team, sim_state.p2_active_index
             opp_team, opp_idx = sim_state.p1_team, sim_state.p1_active_index
-            
+
         active = my_team[self._safe_index(my_idx, my_team)]
         opp = opp_team[self._safe_index(opp_idx, opp_team)]
-        
+
+        # =========================
+        # SWITCH
+        # =========================
         if action.type == ActionType.SWITCH:
-            if is_p1: sim_state.p1_active_index = action.target_index
-            else: sim_state.p2_active_index = action.target_index
+            if is_p1:
+                sim_state.p1_active_index = action.target_index
+            else:
+                sim_state.p2_active_index = action.target_index
+
             return sim_state
-            
+
+        # =========================
+        # MOVE
+        # =========================
         if action.type == ActionType.MOVE and opp.current_hp > 0 and active.current_hp > 0:
+
             move = active.moves[self._safe_index(action.target_index, active.moves)]
-            
-            opp_types = [PokemonType[t.upper()] for t in getattr(opp, 'types', []) if t.upper() in PokemonType.__members__]
+
+            # =========================================
+            # STATUS CHECKS (NUEVO)
+            # =========================================
+            can_attack = True
+            status_obj = getattr(active, 'status_ailment', 'NONE')
+            status = (
+                status_obj.name
+                if hasattr(status_obj, 'name')
+                else str(status_obj).upper()
+            )
+
+            if status in ['SLEEP', 'FREEZE']:
+                can_attack = False
+
+            elif status == 'PARALYSIS':
+                if random.randint(1, 100) <= 25:
+                    can_attack = False
+
+            if not can_attack:
+                return sim_state
+
+            # =========================================
+            # TYPES
+            # =========================================
+            opp_types = [
+                PokemonType[t.upper()]
+                for t in getattr(opp, 'types', [])
+                if t.upper() in PokemonType.__members__
+            ]
+
             m_type_str = getattr(move, 'move_type', 'NORMAL').upper()
-            move_type_enum = PokemonType[m_type_str] if m_type_str in PokemonType.__members__ else PokemonType.NORMAL
-            
+
+            move_type_enum = (
+                PokemonType[m_type_str]
+                if m_type_str in PokemonType.__members__
+                else PokemonType.NORMAL
+            )
+
+            # =========================================
+            # PHYSICAL / SPECIAL
+            # =========================================
             is_phys = getattr(move, 'category', 'PHYSICAL').upper() == 'PHYSICAL'
+
             atk_key = 'attack' if is_phys else 'special_attack'
             def_key = 'defense' if is_phys else 'special_defense'
-            
+
             atk_stat = active.attack if is_phys else active.special_attack
             def_stat = opp.defense if is_phys else opp.special_defense
-            
+
+            # =========================================
+            # DAMAGE CALC
+            # =========================================
             damage, type_mult = calculate_damage(
                 attacker_base_stat=atk_stat,
                 defender_base_stat=def_stat,
@@ -96,24 +147,237 @@ class Level3Agent(BaseAgent):
                 move_type=move_type_enum,
                 defender_types=opp_types,
                 attacker_stage=active.stat_stages.get(atk_key, 0),
-                defender_stage=opp.stat_stages.get(def_key, 0)
-            )
-            
-            opp.current_hp = max(0, opp.current_hp - damage)
-            move.current_pp = max(0, getattr(move, 'current_pp', 1) - 1)
+                defender_stage=opp.stat_stages.get(def_key, 0),
 
+                # =====================================
+                # NUEVO: BURN REDUCE ATAQUE
+                # =====================================
+                attacker_ailment=getattr(active, 'status_ailment', 'NONE')
+            )
+
+            # =========================================
+            # APPLY DAMAGE
+            # =========================================
+            opp.current_hp = max(0, opp.current_hp - damage)
+
+            move.current_pp = max(
+                0,
+                getattr(move, 'current_pp', 1) - 1
+            )
+
+            # =========================================
+            # DRAIN
+            # =========================================
             drain_val = getattr(move, 'drain', 0)
+
             if drain_val > 0 and damage > 0:
                 cura_drenaje = int(damage * (drain_val / 100.0))
-                active.current_hp = min(active.max_hp, active.current_hp + cura_drenaje)
-                
+
+                active.current_hp = min(
+                    active.max_hp,
+                    active.current_hp + cura_drenaje
+                )
+
+            # =========================================
+            # HEALING
+            # =========================================
             healing_val = getattr(move, 'healing', 0)
+
             if healing_val > 0:
+
                 m_name = getattr(move, 'name', '').lower()
+
                 mod_rest = 0.4 if m_name == "rest" else 1.0
-                cura_directa = int(active.max_hp * (healing_val / 100.0) * mod_rest)
-                active.current_hp = min(active.max_hp, active.current_hp + cura_directa)
-            
+
+                cura_directa = int(
+                    active.max_hp *
+                    (healing_val / 100.0) *
+                    mod_rest
+                )
+
+                active.current_hp = min(
+                    active.max_hp,
+                    active.current_hp + cura_directa
+                )
+
+        # =============================================
+        # RESIDUAL DAMAGE (NUEVO)
+        # =============================================
+        for p in [active, opp]:
+
+            status_obj = getattr(p, 'status_ailment', 'NONE')
+
+            status = (
+                status_obj.name
+                if hasattr(status_obj, 'name')
+                else str(status_obj).upper()
+            )
+
+            if status in ['BURN', 'POISON']:
+
+                residual = max(1, p.max_hp // 8)
+
+                p.current_hp = max(
+                    0,
+                    p.current_hp - residual
+                )
+
+        return sim_state
+        sim_state = copy.deepcopy(state)
+
+        if is_p1:
+            my_team, my_idx = sim_state.p1_team, sim_state.p1_active_index
+            opp_team, opp_idx = sim_state.p2_team, sim_state.p2_active_index
+        else:
+            my_team, my_idx = sim_state.p2_team, sim_state.p2_active_index
+            opp_team, opp_idx = sim_state.p1_team, sim_state.p1_active_index
+
+        active = my_team[self._safe_index(my_idx, my_team)]
+        opp = opp_team[self._safe_index(opp_idx, opp_team)]
+
+        # =========================
+        # SWITCH
+        # =========================
+        if action.type == ActionType.SWITCH:
+            if is_p1:
+                sim_state.p1_active_index = action.target_index
+            else:
+                sim_state.p2_active_index = action.target_index
+
+            return sim_state
+
+        # =========================
+        # MOVE
+        # =========================
+        if action.type == ActionType.MOVE and opp.current_hp > 0 and active.current_hp > 0:
+
+            move = active.moves[self._safe_index(action.target_index, active.moves)]
+
+            # =========================================
+            # STATUS CHECKS (NUEVO)
+            # =========================================
+            can_attack = True
+
+            status = getattr(active, 'status_ailment', 'NONE')
+
+            if status in ['SLEEP', 'FREEZE']:
+                can_attack = False
+
+            elif status == 'PARALYSIS':
+                if random.randint(1, 100) <= 25:
+                    can_attack = False
+
+            if not can_attack:
+                return sim_state
+
+            # =========================================
+            # TYPES
+            # =========================================
+            opp_types = [
+                PokemonType[t.upper()]
+                for t in getattr(opp, 'types', [])
+                if t.upper() in PokemonType.__members__
+            ]
+
+            m_type_str = getattr(move, 'move_type', 'NORMAL').upper()
+
+            move_type_enum = (
+                PokemonType[m_type_str]
+                if m_type_str in PokemonType.__members__
+                else PokemonType.NORMAL
+            )
+
+            # =========================================
+            # PHYSICAL / SPECIAL
+            # =========================================
+            is_phys = getattr(move, 'category', 'PHYSICAL').upper() == 'PHYSICAL'
+
+            atk_key = 'attack' if is_phys else 'special_attack'
+            def_key = 'defense' if is_phys else 'special_defense'
+
+            atk_stat = active.attack if is_phys else active.special_attack
+            def_stat = opp.defense if is_phys else opp.special_defense
+
+            # =========================================
+            # DAMAGE CALC
+            # =========================================
+            damage, type_mult = calculate_damage(
+                attacker_base_stat=atk_stat,
+                defender_base_stat=def_stat,
+                defender_spd=opp.speed,
+                move_power=getattr(move, 'power', 0),
+                move_type=move_type_enum,
+                defender_types=opp_types,
+                attacker_stage=active.stat_stages.get(atk_key, 0),
+                defender_stage=opp.stat_stages.get(def_key, 0),
+
+                # =====================================
+                # NUEVO: BURN REDUCE ATAQUE
+                # =====================================
+                attacker_ailment=getattr(active, 'status_ailment', 'NONE')
+            )
+
+            # =========================================
+            # APPLY DAMAGE
+            # =========================================
+            opp.current_hp = max(0, opp.current_hp - damage)
+
+            move.current_pp = max(
+                0,
+                getattr(move, 'current_pp', 1) - 1
+            )
+
+            # =========================================
+            # DRAIN
+            # =========================================
+            drain_val = getattr(move, 'drain', 0)
+
+            if drain_val > 0 and damage > 0:
+                cura_drenaje = int(damage * (drain_val / 100.0))
+
+                active.current_hp = min(
+                    active.max_hp,
+                    active.current_hp + cura_drenaje
+                )
+
+            # =========================================
+            # HEALING
+            # =========================================
+            healing_val = getattr(move, 'healing', 0)
+
+            if healing_val > 0:
+
+                m_name = getattr(move, 'name', '').lower()
+
+                mod_rest = 0.4 if m_name == "rest" else 1.0
+
+                cura_directa = int(
+                    active.max_hp *
+                    (healing_val / 100.0) *
+                    mod_rest
+                )
+
+                active.current_hp = min(
+                    active.max_hp,
+                    active.current_hp + cura_directa
+                )
+
+        # =============================================
+        # RESIDUAL DAMAGE (NUEVO)
+        # =============================================
+        for p in [active, opp]:
+
+            status = getattr(p, 'status_ailment', 'NONE')
+
+            if status in ['BURN', 'POISON']:
+
+                residual = max(1, p.max_hp // 8)
+
+                p.current_hp = max(
+                    0,
+                    p.current_hp - residual
+                )
+
         return sim_state
 
     # ALGORITMO MINIMAX 

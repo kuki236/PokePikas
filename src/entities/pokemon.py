@@ -87,6 +87,11 @@ class Pokemon:
                 move_type  = m.move_type.name if hasattr(m, 'move_type') and m.move_type else 'NORMAL',
                 current_pp = getattr(m, 'current_pp', 0),
                 max_pp     = getattr(m, 'max_pp', 1),
+                accuracy=getattr(m, 'accuracy', 100),
+                drain=getattr(m, 'drain', 0),
+                healing=getattr(m, 'healing', 0),
+                ailment=m.ailment.name if hasattr(m, 'ailment') and m.ailment else 'NONE',
+                ailment_chance=getattr(m, 'ailment_chance', 0),
             ))
 
         return PokemonState(
@@ -101,5 +106,6 @@ class Pokemon:
             speed           = self.speed,
             types           = [t.name for t in self.types],
             moves           = move_states,
-            stat_stages     = dict(self.stat_stages) 
+            stat_stages     = dict(self.stat_stages),
+            status_ailment = self.status_ailment.name
         )

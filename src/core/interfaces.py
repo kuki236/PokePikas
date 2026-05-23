@@ -20,11 +20,15 @@ class MoveState:
     id: int
     name: str
     power: int
-    category: str   
-    move_type: str   
+    category: str
+    move_type: str
     current_pp: int
     max_pp: int
-
+    accuracy: int
+    drain: int
+    healing: int
+    ailment: str
+    ailment_chance: int
 
 @dataclass
 class PokemonState:
@@ -40,6 +44,7 @@ class PokemonState:
     types: List[str]      
     moves: List[MoveState]
     stat_stages: Dict[str, int]
+    status_ailment: str
 
 
 @dataclass
