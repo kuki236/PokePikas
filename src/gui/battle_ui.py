@@ -81,6 +81,21 @@ class BattleScreen:
                 return Level1Agent(player_id=pid)
             elif lvl == 2:
                 return Level2Agent(player_id=pid)
+            elif lvl == 3:
+                try:
+                    from src.ai.level3_agent import Level3Agent
+                    return Level3Agent(player_id=pid)
+                except ImportError: pass
+            elif lvl == 4:
+                try:
+                    from src.ai.level4_agent import Level4Agent
+                    return Level4Agent(player_id=pid)
+                except ImportError: pass
+            elif lvl == 5:
+                try:
+                    from src.ai.level5_agent import Level5Agent
+                    return Level5Agent(player_id=pid)
+                except ImportError: pass
             return Level2Agent(player_id=pid)
 
         mode_str = str(self.mode).lower() if self.mode else ""

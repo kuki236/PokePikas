@@ -101,14 +101,16 @@ def main():
     # ¡NUEVA POSICIÓN DEL BOTÓN CONFIRMAR! (En el panel derecho del monitor)
     btn_confirm = pygame.Rect(670, 480, 160, 60)
     
-    btn_pc1_easy   = pygame.Rect(WINDOW_WIDTH//2 - 337, 230, 150, 60)
-    btn_pc1_med    = pygame.Rect(WINDOW_WIDTH//2 - 162, 230, 150, 60)
-    btn_pc1_hard   = pygame.Rect(WINDOW_WIDTH//2 + 13, 230, 150, 60)
-    btn_pc1_expert = pygame.Rect(WINDOW_WIDTH//2 + 188, 230, 150, 60)
-    btn_pc2_easy   = pygame.Rect(WINDOW_WIDTH//2 - 337, 400, 150, 60)
-    btn_pc2_med    = pygame.Rect(WINDOW_WIDTH//2 - 162, 400, 150, 60)
-    btn_pc2_hard   = pygame.Rect(WINDOW_WIDTH//2 + 13, 400, 150, 60)
-    btn_pc2_expert = pygame.Rect(WINDOW_WIDTH//2 + 188, 400, 150, 60)
+    btn_pc1_easy   = pygame.Rect(WINDOW_WIDTH//2 - 380, 230, 140, 60)
+    btn_pc1_med    = pygame.Rect(WINDOW_WIDTH//2 - 225, 230, 140, 60)
+    btn_pc1_hard   = pygame.Rect(WINDOW_WIDTH//2 - 70,  230, 140, 60)
+    btn_pc1_expert = pygame.Rect(WINDOW_WIDTH//2 + 85,  230, 140, 60)
+    btn_pc1_master = pygame.Rect(WINDOW_WIDTH//2 + 240, 230, 140, 60)
+    btn_pc2_easy   = pygame.Rect(WINDOW_WIDTH//2 - 380, 400, 140, 60)
+    btn_pc2_med    = pygame.Rect(WINDOW_WIDTH//2 - 225, 400, 140, 60)
+    btn_pc2_hard   = pygame.Rect(WINDOW_WIDTH//2 - 70,  400, 140, 60)
+    btn_pc2_expert = pygame.Rect(WINDOW_WIDTH//2 + 85,  400, 140, 60)
+    btn_pc2_master = pygame.Rect(WINDOW_WIDTH//2 + 240, 400, 140, 60)
     
     btn_start_battle = pygame.Rect(WINDOW_WIDTH//2 - 140, WINDOW_HEIGHT - 100, 280, 70)
 
@@ -186,6 +188,9 @@ def main():
                     elif btn_pc1_expert.collidepoint(mouse_pos): 
                         pc1_difficulty = 4
                         reproducir_sonido_select()
+                    elif btn_pc1_master.collidepoint(mouse_pos): 
+                        pc1_difficulty = 5
+                        reproducir_sonido_select()
                     
                     if selected_mode == "PC vs PC":
                         if btn_pc2_easy.collidepoint(mouse_pos): 
@@ -199,6 +204,9 @@ def main():
                             reproducir_sonido_select()
                         elif btn_pc2_expert.collidepoint(mouse_pos): 
                             pc2_difficulty = 4
+                            reproducir_sonido_select()
+                        elif btn_pc2_master.collidepoint(mouse_pos): 
+                            pc2_difficulty = 5
                             reproducir_sonido_select()
                         
                     can_start = False
@@ -282,24 +290,27 @@ def main():
                 
                 if selected_mode == "Humano vs PC":
                     renderer.draw_text("Elige el nivel de la Máquina:", 'subtitle', (255, 255, 255), WINDOW_WIDTH//2, 180, center=True)
-                    renderer.draw_button(btn_pc1_easy, "Nivel ★", pc1_difficulty == 1 or btn_pc1_easy.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc1_med, "Nivel ★★", pc1_difficulty == 2 or btn_pc1_med.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc1_hard, "Nivel ★★★", pc1_difficulty == 3 or btn_pc1_hard.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc1_expert, "Nivel ★★★★", pc1_difficulty == 4 or btn_pc1_expert.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_easy, "Nv.★", pc1_difficulty == 1 or btn_pc1_easy.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_med, "Nv.★★", pc1_difficulty == 2 or btn_pc1_med.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_hard, "Nv.★★★", pc1_difficulty == 3 or btn_pc1_hard.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_expert, "Nv.★★★★", pc1_difficulty == 4 or btn_pc1_expert.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_master, "Nv.★★★★★", pc1_difficulty == 5 or btn_pc1_master.collidepoint(mouse_pos))
                     if pc1_difficulty is not None: renderer.draw_button(btn_start_battle, "¡INICIAR BATALLA!", btn_start_battle.collidepoint(mouse_pos))
                 
                 elif selected_mode == "PC vs PC":
                     renderer.draw_text("Elige el nivel de la PC 1:", 'subtitle', (255, 255, 255), WINDOW_WIDTH//2, 180, center=True)
-                    renderer.draw_button(btn_pc1_easy, "Nivel ★", pc1_difficulty == 1 or btn_pc1_easy.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc1_med, "Nivel ★★", pc1_difficulty == 2 or btn_pc1_med.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc1_hard, "Nivel ★★★", pc1_difficulty == 3 or btn_pc1_hard.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc1_expert, "Nivel ★★★★", pc1_difficulty == 4 or btn_pc1_expert.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_easy, "Nv.★", pc1_difficulty == 1 or btn_pc1_easy.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_med, "Nv.★★", pc1_difficulty == 2 or btn_pc1_med.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_hard, "Nv.★★★", pc1_difficulty == 3 or btn_pc1_hard.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_expert, "Nv.★★★★", pc1_difficulty == 4 or btn_pc1_expert.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc1_master, "Nv.★★★★★", pc1_difficulty == 5 or btn_pc1_master.collidepoint(mouse_pos))
                     
                     renderer.draw_text("Elige el nivel de la PC 2:", 'subtitle', (255, 255, 255), WINDOW_WIDTH//2, 350, center=True)
-                    renderer.draw_button(btn_pc2_easy, "Nivel ★", pc2_difficulty == 1 or btn_pc2_easy.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc2_med, "Nivel ★★", pc2_difficulty == 2 or btn_pc2_med.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc2_hard, "Nivel ★★★", pc2_difficulty == 3 or btn_pc2_hard.collidepoint(mouse_pos))
-                    renderer.draw_button(btn_pc2_expert, "Nivel ★★★★", pc2_difficulty == 4 or btn_pc2_expert.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc2_easy, "Nv.★", pc2_difficulty == 1 or btn_pc2_easy.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc2_med, "Nv.★★", pc2_difficulty == 2 or btn_pc2_med.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc2_hard, "Nv.★★★", pc2_difficulty == 3 or btn_pc2_hard.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc2_expert, "Nv.★★★★", pc2_difficulty == 4 or btn_pc2_expert.collidepoint(mouse_pos))
+                    renderer.draw_button(btn_pc2_master, "Nv.★★★★★", pc2_difficulty == 5 or btn_pc2_master.collidepoint(mouse_pos))
                     if pc1_difficulty is not None and pc2_difficulty is not None: renderer.draw_button(btn_start_battle, "¡INICIAR SIMULACIÓN!", btn_start_battle.collidepoint(mouse_pos))
 
             elif current_state == GameState.BATTLE:
