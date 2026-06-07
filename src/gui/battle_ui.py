@@ -691,7 +691,7 @@ class BattleScreen:
                 elapsed_faint = now - self.p2_fainted_anim_start
                 if elapsed_faint < self.faint_anim_duration:
                     p2_y_offset = int((elapsed_faint / self.faint_anim_duration) * 250)
-                    p2_alpha = max(0, 255 - int((elapsed_faint / self.faint_anim_duration) * 255))
+                    p2_alpha = max(0, min(255, 255 - int((elapsed_faint / self.faint_anim_duration) * 255)))
                     if img_p2_front:
                         temp_img = img_p2_front.copy()
                         temp_img.set_alpha(p2_alpha)
@@ -743,7 +743,7 @@ class BattleScreen:
                 elapsed_faint = now - self.p1_fainted_anim_start
                 if elapsed_faint < self.faint_anim_duration:
                     p1_y_offset = int((elapsed_faint / self.faint_anim_duration) * 250)
-                    p1_alpha = max(0, 255 - int((elapsed_faint / self.faint_anim_duration) * 255))
+                    p1_alpha = max(0, min(255, 255 - int((elapsed_faint / self.faint_anim_duration) * 255)))
                     if img_p1_back:
                         temp_img = img_p1_back.copy()
                         temp_img.set_alpha(p1_alpha)
@@ -813,9 +813,9 @@ class BattleScreen:
                         cx, cy = 100 + 125, self.top_h - 250 + 125
                     
                     if progress < 0.6:
-                        dome_progress = min(1.0, progress / 0.4) 
+                        dome_progress = max(0.0, min(1.0, progress / 0.4)) 
                         radius = int(180 * dome_progress)
-                        alpha = min(255, int(255 * dome_progress))
+                        alpha = max(0, min(255, int(255 * dome_progress)))
                         
                         dome_surf = pygame.Surface((400, 400), pygame.SRCALPHA)
                         pygame.draw.circle(dome_surf, (50, 150, 255, alpha), (200, 200), radius)
@@ -839,7 +839,7 @@ class BattleScreen:
                             px = cx + math.cos(angle) * dist
                             py = cy + math.sin(angle) * dist
                             py += (break_progress ** 2) * 200
-                            alpha = max(0, 255 - int(break_progress * 255))
+                            alpha = max(0, min(255, 255 - int(break_progress * 255)))
                             if alpha > 0:
                                 pygame.draw.circle(self.screen, (100, 200, 255, alpha), (int(px), int(py)), random.randint(5, 12))
                                 pygame.draw.circle(self.screen, (200, 255, 255, alpha), (int(px), int(py)), random.randint(2, 5))

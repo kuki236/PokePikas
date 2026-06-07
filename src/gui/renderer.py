@@ -273,7 +273,7 @@ class Renderer:
             y += (progress ** 2) * 150 
             
             # Fade out (Desvanecimiento)
-            alpha = max(0, 255 - int(progress * 255))
+            alpha = max(0, min(255, 255 - int(progress * 255)))
             
             # 2. DIBUJAR
             if particle_img:
