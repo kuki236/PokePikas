@@ -1,0 +1,22 @@
+{
+  "weights": {
+    "hp_balance": 1.2445012745938202,
+    "alive_balance": 1.5,
+    "type_pressure": 0.27732428341346776,
+    "speed_pressure": 0.0,
+    "status_pressure": 0.0,
+    "move_pressure": 0.2137,
+    "switch_pressure": 0.4206733183174993,
+    "ko_pressure": 0.3802495955796612
+  },
+  "metadata": {
+    "generation": 24,
+    "best_fitness": 170.18645833333335,
+    "population_size": 28.0,
+    "mutation_rate": 0.25,
+    "elite_size": 4.0,
+    "avg_fitness": 138.73359375,
+    "worst_fitness": 118.51354166666667,
+    "stagnation": 10.0
+  }
+}

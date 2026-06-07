@@ -1,0 +1,17 @@
+{
+  "batch1": {
+    "level5_wins": 41,
+    "level4_wins": 59,
+    "avg_turns": 8.11
+  },
+  "batch2": {
+    "level5_wins": 29,
+    "level4_wins": 71,
+    "avg_turns": 7.6
+  },
+  "total": {
+    "level5_wins": 70,
+    "level4_wins": 130,
+    "total_battles": 200
+  }
+}

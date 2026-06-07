@@ -1,0 +1,66 @@
+{
+  "Level1Agent": {
+    "batch1": {
+      "level5_wins": 40,
+      "opp_wins": 10,
+      "avg_turns": 8.66
+    },
+    "batch2": {
+      "level5_wins": 43,
+      "opp_wins": 6,
+      "avg_turns": 8.32
+    },
+    "total": {
+      "level5_wins": 83,
+      "opp_wins": 16
+    }
+  },
+  "Level2Agent": {
+    "batch1": {
+      "level5_wins": 35,
+      "opp_wins": 15,
+      "avg_turns": 6.74
+    },
+    "batch2": {
+      "level5_wins": 39,
+      "opp_wins": 11,
+      "avg_turns": 6.26
+    },
+    "total": {
+      "level5_wins": 74,
+      "opp_wins": 26
+    }
+  },
+  "Level3Agent": {
+    "batch1": {
+      "level5_wins": 26,
+      "opp_wins": 24,
+      "avg_turns": 6.58
+    },
+    "batch2": {
+      "level5_wins": 33,
+      "opp_wins": 16,
+      "avg_turns": 7.26
+    },
+    "total": {
+      "level5_wins": 59,
+      "opp_wins": 40
+    }
+  },
+  "Level4Agent": {
+    "batch1": {
+      "level5_wins": 23,
+      "opp_wins": 27,
+      "avg_turns": 6.9
+    },
+    "batch2": {
+      "level5_wins": 25,
+      "opp_wins": 25,
+      "avg_turns": 7.44
+    },
+    "total": {
+      "level5_wins": 48,
+      "opp_wins": 52
+    }
+  }
+}

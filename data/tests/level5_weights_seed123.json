@@ -1,0 +1,29 @@
+{
+  "weights": {
+    "hp_balance": 0.6786,
+    "alive_balance": 0.796,
+    "type_pressure": 0.3227,
+    "speed_pressure": 0.4535,
+    "status_pressure": 0.3472,
+    "move_pressure": 0.293,
+    "switch_pressure": 0.2004,
+    "ko_pressure": 0.2479
+  },
+  "metadata": {
+    "generation": 9,
+    "best_fitness": 0.3733679136063567,
+    "best_holdout_level4": 0.6618137103338971,
+    "current_best": 0.21931196166194517,
+    "current_holdout_level4": 0.31836572128851537,
+    "avg_fitness": 0.15357164390755185,
+    "std_fitness": 0.036644489032665366,
+    "worst_fitness": 0.07037730535623152,
+    "population_size": 16.0,
+    "mutation_rate": 0.456192,
+    "mutation_strength": 0.3847813749999999,
+    "elite_size": 3.0,
+    "stagnation": 5.0,
+    "max_turns": 120.0,
+    "seed": 123.0
+  }
+}

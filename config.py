@@ -2,5 +2,6 @@ FACTOR_K = 0.03
 
 AI_LEVEL3_DEPTH = 2
 AI_LEVEL4_DEPTH = 3
+AI_LEVEL5_DEPTH = 4
 
 INF = float('inf')

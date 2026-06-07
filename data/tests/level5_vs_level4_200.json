@@ -1,0 +1,10 @@
+{
+  "summary": {
+    "level5_wins": 96,
+    "level4_wins": 102,
+    "battles_run": 200,
+    "notes": "Some battles had no winner; wins may not sum to 200.",
+    "weights_file": "data/ai/level5_weights.json",
+    "timestamp": "2026-05-28T00:00:00"
+  }
+}

@@ -1,0 +1,37 @@
+2026-06-06 13:31:18,353 | INFO | GA start | cores=8 | pop=16 | phase1=2 | phase2=5 | max_gen=14 | seed=42
+2026-06-06 13:31:18,354 | INFO | Generation 0 | start | mut_rate=0.220 | mut_str=0.220
+2026-06-06 13:32:31,261 | INFO | Gen 0 | best=0.2426 | holdoutL4=-0.1860 | avg=0.1775 | std=0.0279 | improved=True | stagnation=0/5 | 72.9s
+2026-06-06 13:32:31,262 | INFO | Gen 0 | best_weights={'hp_balance': 0.8421, 'alive_balance': 0.3941, 'type_pressure': 0.5846, 'speed_pressure': 0.5387, 'status_pressure': 0.1997, 'move_pressure': 0.2193, 'switch_pressure': 0.4988, 'ko_pressure': 0.7643}
+2026-06-06 13:32:31,263 | INFO | Generation 1 | start | mut_rate=0.220 | mut_str=0.220
+2026-06-06 13:33:26,419 | INFO | Gen 1 | best=0.0808 | holdoutL4=-0.6841 | avg=-0.0838 | std=0.1290 | improved=False | stagnation=1/5 | 55.2s
+2026-06-06 13:33:26,419 | INFO | Gen 1 | best_weights={'hp_balance': 1.1438, 'alive_balance': 0.8091, 'type_pressure': 0.7786, 'speed_pressure': 0.3182, 'status_pressure': 0.0003, 'move_pressure': 0.3242, 'switch_pressure': 0.0097, 'ko_pressure': 1.3936}
+2026-06-06 13:33:26,420 | INFO | Generation 2 | start | mut_rate=0.220 | mut_str=0.220
+2026-06-06 13:34:21,002 | INFO | Gen 2 | best=0.1023 | holdoutL4=0.1316 | avg=0.0854 | std=0.0110 | improved=True | stagnation=0/5 | 54.6s
+2026-06-06 13:34:21,002 | INFO | Gen 2 | best_weights={'hp_balance': 1.1107, 'alive_balance': 1.1477, 'type_pressure': 0.2375, 'speed_pressure': 0.5045, 'status_pressure': 0.0, 'move_pressure': 0.5523, 'switch_pressure': 0.438, 'ko_pressure': 1.2466}
+2026-06-06 13:34:21,003 | INFO | Generation 3 | start | mut_rate=0.220 | mut_str=0.220
+2026-06-06 13:35:34,384 | INFO | Gen 3 | best=0.3553 | holdoutL4=-0.3649 | avg=0.0049 | std=0.1964 | improved=False | stagnation=1/5 | 73.4s
+2026-06-06 13:35:34,384 | INFO | Gen 3 | best_weights={'hp_balance': 1.1656, 'alive_balance': 1.1585, 'type_pressure': 0.0, 'speed_pressure': 0.2511, 'status_pressure': 0.0156, 'move_pressure': 0.4682, 'switch_pressure': 0.4735, 'ko_pressure': 1.0707}
+2026-06-06 13:35:34,384 | INFO | Generation 4 | start | mut_rate=0.220 | mut_str=0.220
+2026-06-06 13:36:33,432 | INFO | Gen 4 | best=0.3478 | holdoutL4=-0.1591 | avg=0.0142 | std=0.2443 | improved=False | stagnation=2/5 | 59.0s
+2026-06-06 13:36:33,432 | INFO | Gen 4 | best_weights={'hp_balance': 0.8502, 'alive_balance': 0.4255, 'type_pressure': 0.5361, 'speed_pressure': 0.4777, 'status_pressure': 0.1664, 'move_pressure': 0.2333, 'switch_pressure': 0.5, 'ko_pressure': 0.5041}
+2026-06-06 13:36:33,432 | INFO | Generation 5 | start | mut_rate=0.264 | mut_str=0.253
+2026-06-06 13:38:16,842 | INFO | Gen 5 | best=0.3642 | holdoutL4=0.4828 | avg=0.0955 | std=0.2105 | improved=True | stagnation=0/5 | 103.4s
+2026-06-06 13:38:16,842 | INFO | Gen 5 | best_weights={'hp_balance': 1.1657, 'alive_balance': 1.139, 'type_pressure': 0.003, 'speed_pressure': 0.2253, 'status_pressure': 0.0, 'move_pressure': 0.4261, 'switch_pressure': 0.1986, 'ko_pressure': 1.4778}
+2026-06-06 13:38:16,843 | INFO | Generation 6 | start | mut_rate=0.220 | mut_str=0.220
+2026-06-06 13:39:39,766 | INFO | Gen 6 | best=0.4677 | holdoutL4=-0.5606 | avg=0.0001 | std=0.2437 | improved=False | stagnation=1/5 | 82.9s
+2026-06-06 13:39:39,766 | INFO | Gen 6 | best_weights={'hp_balance': 1.0914, 'alive_balance': 0.4539, 'type_pressure': 0.4852, 'speed_pressure': 0.479, 'status_pressure': 0.014, 'move_pressure': 0.2077, 'switch_pressure': 0.2935, 'ko_pressure': 0.5038}
+2026-06-06 13:39:39,767 | INFO | Generation 7 | start | mut_rate=0.220 | mut_str=0.220
+2026-06-06 13:40:38,102 | INFO | Gen 7 | best=0.5829 | holdoutL4=-0.6179 | avg=0.3875 | std=0.1701 | improved=False | stagnation=2/5 | 58.3s
+2026-06-06 13:40:38,103 | INFO | Gen 7 | best_weights={'hp_balance': 1.0914, 'alive_balance': 0.7789, 'type_pressure': 0.4852, 'speed_pressure': 0.4112, 'status_pressure': 0.014, 'move_pressure': 0.0396, 'switch_pressure': 0.362, 'ko_pressure': 0.3001}
+2026-06-06 13:40:38,103 | INFO | Generation 8 | start | mut_rate=0.264 | mut_str=0.253
+2026-06-06 13:42:15,291 | INFO | Gen 8 | best=0.1342 | holdoutL4=-0.1262 | avg=-0.1392 | std=0.2829 | improved=False | stagnation=3/5 | 97.2s
+2026-06-06 13:42:15,291 | INFO | Gen 8 | best_weights={'hp_balance': 1.2734, 'alive_balance': 1.2811, 'type_pressure': 0.0, 'speed_pressure': 0.4633, 'status_pressure': 0.0, 'move_pressure': 0.4347, 'switch_pressure': 0.0, 'ko_pressure': 0.5533}
+2026-06-06 13:42:15,292 | INFO | Generation 9 | start | mut_rate=0.317 | mut_str=0.291
+2026-06-06 13:43:37,174 | INFO | Gen 9 | best=0.1169 | holdoutL4=-0.4429 | avg=0.0467 | std=0.0795 | improved=False | stagnation=4/5 | 81.9s
+2026-06-06 13:43:37,174 | INFO | Gen 9 | best_weights={'hp_balance': 0.5413, 'alive_balance': 0.7185, 'type_pressure': 0.0, 'speed_pressure': 0.3341, 'status_pressure': 0.0, 'move_pressure': 0.4229, 'switch_pressure': 0.08, 'ko_pressure': 0.9636}
+2026-06-06 13:43:37,175 | INFO | Generation 10 | start | mut_rate=0.380 | mut_str=0.335
+2026-06-06 13:44:37,888 | INFO | Gen 10 | best=0.2197 | holdoutL4=0.3679 | avg=0.1287 | std=0.0509 | improved=False | stagnation=5/5 | 60.7s
+2026-06-06 13:44:37,888 | INFO | Gen 10 | best_weights={'hp_balance': 1.278, 'alive_balance': 1.5, 'type_pressure': 0.3209, 'speed_pressure': 0.1231, 'status_pressure': 0.0, 'move_pressure': 0.3015, 'switch_pressure': 0.0, 'ko_pressure': 0.5499}
+2026-06-06 13:44:37,888 | INFO | Early stop | stagnation=5 at generation 10
+2026-06-06 13:44:37,888 | INFO | GA finished | elapsed=799.5s (0.22h) | best_fitness=0.3642 | best_holdout_level4=0.4828 | output=C:\Users\rodri\Downloads\PokePikas-main\PokePikas\data\ai\level5_weights_seed42.json
+2026-06-06 13:44:37,889 | INFO | Final best_weights={'hp_balance': 1.1657, 'alive_balance': 1.139, 'type_pressure': 0.003, 'speed_pressure': 0.2253, 'status_pressure': 0.0, 'move_pressure': 0.4261, 'switch_pressure': 0.1986, 'ko_pressure': 1.4778}
