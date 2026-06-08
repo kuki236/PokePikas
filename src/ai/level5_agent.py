@@ -14,6 +14,19 @@ DEPTH = AI_LEVEL4_DEPTH
 
 class Level5Agent(BaseAgent):
     def __init__(self, player_id: int, weights_path: str = None):
+        """
+        Inicializa un objeto de jugador con un identificador y cargando pesos de entrenamiento.
+
+        Args:
+            player_id (int): Identificador único del jugador.
+            weights_path (str, optional): Ruta al archivo de pesos de entrenamiento. Defaults a None.
+
+        Returns:
+            None
+
+        Raises:
+            Exception: Si no se puede cargar el archivo de pesos en la ruta especificada.
+        """
         super().__init__(player_id)
         self.turns_since_last_switch = 0
         self.opp_turns_since_last_switch = 2  
@@ -77,6 +90,22 @@ class Level5Agent(BaseAgent):
         return score
 
     def _get_smart_legal_actions(self, team: List[PokemonState], active_idx: int, opp: PokemonState, my_cooldown: int) -> List[Action]:
+        """
+        Descripción breve:
+         Obtiene las acciones legales inteligentes para un equipo de Pokémon.
+
+        Args:
+            team (List[PokemonState]): El equipo de Pokémon.
+            active_idx (int): El índice del Pokémon activo en el equipo.
+            opp (PokemonState): El oponente.
+            my_cooldown (int): El tiempo de enfriamiento de las acciones.
+
+        Returns:
+            List[Action]: Una lista de acciones legales inteligentes.
+
+        Raises:
+            No se lanzan excepciones explícitas. Sin embargo, es posible que se produzcan excepciones si los parámetros no son del tipo correcto o si hay un error en la lógica de la función.
+        """
         actions = []
         if not team: return actions
 
@@ -156,6 +185,23 @@ class Level5Agent(BaseAgent):
         return BattleState(p1_team=[p.to_state() for p in p1_team], p2_team=[p.to_state() for p in p2_team], p1_active_index=new_p1_idx, p2_active_index=new_p2_idx, turn_number=state.turn_number + 1)
 
     def _max_value(self, state: BattleState, depth: int, alpha: float, beta: float, my_cd: int, opp_cd: int) -> float:
+        """
+        Obtiene el valor máximo en una situación determinada de una batalla.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+            depth (int): Profundidad de la búsqueda.
+            alpha (float): Mejor valor garantizado para el jugador actual.
+            beta (float): Mejor valor garantizado para el oponente.
+            my_cd (int): Tiempo de enfriamiento actual para el equipo del jugador.
+            opp_cd (int): Tiempo de enfriamiento actual para el equipo del oponente.
+
+        Returns:
+            float: Valor máximo obtenible en la situación actual.
+
+        Raises:
+            Exception: Si se produce un error durante la evaluación del estado.
+        """
         if depth == 0 or self._is_match_over(state): return self._evaluate_state(state)
         team, active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
         opp = opp_team[self._safe_index(opp_active_idx, opp_team)] if opp_team else None
@@ -169,6 +215,24 @@ class Level5Agent(BaseAgent):
         return v
 
     def _min_value(self, state: BattleState, depth: int, alpha: float, beta: float, my_action: Action, my_cd: int, opp_cd: int) -> float:
+        """
+        Calcula el valor mínimo de una función de evaluación en un árbol de juego.
+
+        Args:
+            state (BattleState): Estado actual del juego.
+            depth (int): Profundidad actual en el árbol de juego.
+            alpha (float): Mejor valor posible para el maximizador.
+            beta (float): Peor valor posible para el minimizador.
+            my_action (Action): Acción actual del jugador.
+            my_cd (int): Tiempo de enfriamiento actual del jugador.
+            opp_cd (int): Tiempo de enfriamiento actual del oponente.
+
+        Returns:
+            float: Valor mínimo de la función de evaluación.
+
+        Raises:
+            No se lanzan excepciones explícitas, pero puede ocurrir un error si el estado del juego es inválido.
+        """
         if depth == 0 or self._is_match_over(state): return self._evaluate_state(state)
         my_team, my_active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
         my_active = my_team[self._safe_index(my_active_idx, my_team)]
@@ -183,6 +247,19 @@ class Level5Agent(BaseAgent):
         return v
 
     def get_action(self, state: BattleState) -> Action:
+        """
+        Descripción breve:
+        Obtiene la acción óptima para un estado de batalla dado, considerando las acciones legales y el valor de cada acción.
+
+        Args:
+            state (BattleState): El estado de batalla actual.
+
+        Returns:
+            Action: La acción óptima para el estado de batalla dado.
+
+        Raises:
+            Exception: Si no se puede determinar la acción óptima debido a un error interno.
+        """
         team, active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
         self.turns_since_last_switch += 1
         opp = opp_team[self._safe_index(opp_active_idx, opp_team)] if opp_team else None

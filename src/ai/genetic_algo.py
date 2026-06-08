@@ -66,6 +66,18 @@ DEFAULT_BOUNDS: Dict[str, Tuple[float, float]] = {
 }
 
 def _setup_logger(log_path: str) -> logging.Logger:
+    """
+    Configure un objeto de registro de eventos (logger) para escribir registros en un archivo y la consola.
+
+    Args:
+        log_path (str): La ruta del archivo de registro.
+
+    Returns:
+        logging.Logger: Un objeto Logger configurado con un formato de registro determinado.
+
+    Raises:
+        OSError: Si no se puede crear el directorio del archivo de registro.
+    """
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
     logger = logging.getLogger('level5_ga')
     logger.setLevel(logging.INFO)
@@ -92,6 +104,20 @@ def _tournament_select(population: List[Dict], fitnesses: List[float], size: int
     return dict(population[best])
 
 def _crossover(a: Dict, b: Dict) -> Dict:
+    """
+    Descripción breve:
+     Combina dos diccionarios para generar un nuevo diccionario hijo mediante un proceso de cruza.
+
+    Args:
+        a (Dict): El primer diccionario padre.
+        b (Dict): El segundo diccionario padre.
+
+    Returns:
+        Dict: Un nuevo diccionario hijo generado mediante la combinación de los padres.
+
+    Raises:
+        KeyError: Si los diccionarios a y b no tienen las mismas claves que las definidas en DEFAULT_BOUNDS.
+    """
     child = {}
     alpha = 0.25
     for k, (lo, hi) in DEFAULT_BOUNDS.items():
@@ -102,6 +128,20 @@ def _crossover(a: Dict, b: Dict) -> Dict:
     return child
 
 def _mutate(candidate: Dict, mutation_rate: float, mutation_strength: float) -> Dict:
+    """
+    Aplica una mutación aleatoria a un candidato según una tasa y fuerza de mutación determinadas.
+
+    Args:
+        candidate (Dict): El candidato a mutar.
+        mutation_rate (float): La probabilidad de mutación para cada parámetro.
+        mutation_strength (float): La fuerza de la mutación, quecontrola el rango de variación aleatoria.
+
+    Returns:
+        Dict: El candidato mutado.
+
+    Raises:
+        No se contempla explícitamenteexceptions, aunque la función puede fallar si el tipo o contenido de `candidate` no coincide con los esperados por `DEFAULT_BOUNDS`.
+    """
     out = dict(candidate)
     for k, (lo, hi) in DEFAULT_BOUNDS.items():
         if random.random() <= mutation_rate:
@@ -110,6 +150,21 @@ def _mutate(candidate: Dict, mutation_rate: float, mutation_strength: float) -> 
     return out
 
 def _diversity_penalty(candidate: Dict, elites: List[Dict], pressure: float) -> float:
+    """
+    Descripción breve:
+    Calcula la penalización por diversidad para un candidato en función de su cercanía a los elitros.
+
+    Args:
+        candidate (Dict): Candidato a evaluar.
+        elites (List[Dict]): Lista de elitros.
+        pressure (float): Presión de selección.
+
+    Returns:
+        float: Valor de la penalización por diversidad.
+
+    Raises:
+        No se lanzan excepciones.
+    """
     if not elites or pressure <= 0.0: return 0.0
     keys = list(DEFAULT_BOUNDS.keys())
     min_dist = min(sum((candidate[k] - e[k]) ** 2 for k in keys) ** 0.5 for e in elites)
@@ -118,6 +173,23 @@ def _diversity_penalty(candidate: Dict, elites: List[Dict], pressure: float) -> 
     return -pressure * max(0.0, 0.25 - normalized)
 
 def _run_headless_battle(p1_team, p2_team, agent1, agent2, max_turns: int = 120):
+    """
+    Descripción breve:
+     Ejecuta una batalla entre dos equipos de forma headless utilizando dos agentes que toman decisiones.
+
+    Args:
+        p1_team (list): Equipo del jugador 1.
+        p2_team (list): Equipo del jugador 2.
+        agent1: Agente que toma decisiones para el equipo del jugador 1.
+        agent2: Agente que toma decisiones para el equipo del jugador 2.
+        max_turns (int): Número máximo de turnos que puede durar la batalla. Por defecto es 120.
+
+    Returns:
+        tuple: Una tupla que contiene el ganador de la batalla, el número de turnos jugados y los equipos finales de ambos jugadores.
+
+    Raises:
+        No se especifican excepciones explícitas en esta función, pero puede lanzar excepciones si los agentes o los equipos no están correctamente configurados.
+    """
     p1_idx, p2_idx = 0, 0
     winner = None
     turns_played = 0
@@ -143,6 +215,25 @@ def _alive_ratio(team) -> float:
     return sum(1 for p in team if p.current_hp > 0) / max(1, len(team))
 
 def _score_battle(winner, turns, p1_team, p2_team, perspective: int, max_turns: int, opp_weight: float = 1.0) -> float:
+    """
+    Descripción breve:
+      Calcula la puntuación de una batalla de manera relativa, considerando el resultado, el estado de salud de los equipos y la velocidad de victoria.
+
+    Args:
+      winner (int): Identificador del ganador de la batalla (None si es empate).
+      turns (int): Número de turnos que duró la batalla.
+      p1_team (object): Equipo del jugador 1.
+      p2_team (object): Equipo del jugador 2.
+      perspective (int): Perspectiva desde la que se evalúa la batalla (1 o 2).
+      max_turns (int): Número máximo de turnos permitidos en la batalla.
+      opp_weight (float, opcional): Peso de la importancia del oponente. Por defecto es 1.0.
+
+    Returns:
+      float: Puntuación de la batalla, calculada en base a factores como resultado, salud de los equipos y velocidad de victoria.
+
+    Raises:
+      No se especifican excepciones explícitas, pero puede lanzar errores en caso de que los parámetros no cumplan con los tipos y rangos esperados.
+    """
     my_team = p1_team if perspective == 1 else p2_team
     opp_team = p2_team if perspective == 1 else p1_team
 
@@ -164,6 +255,26 @@ def _score_battle(winner, turns, p1_team, p2_team, perspective: int, max_turns: 
     return raw * opp_weight
 
 def _eval_candidate_on_scenarios(args) -> float:
+    """
+    Descripción breve:
+    Evalúa un candidato (conjunto de pesos) en diferentes escenarios de batalla y devuelve una puntuación que refleja su desempeño.
+
+    Args:
+        args (tuple): Tupla que contiene los siguientes parámetros:
+            - weights (dict): Conjunto de pesos para el agente.
+            - scenarios (list): Lista de escenarios de batalla, cada uno representado por un tuple con los estados de los Pokémon del jugador 1, los estados de los Pokémon del oponente y el nombre de la clase del oponente.
+            - battles_per_opp (int): Número de batallas por oponente.
+            - max_turns (int): Máximo número de turnos por batalla.
+            - elites (list): Lista de pesos elitistas.
+            - diversity_pressure (float): Presión de diversidad.
+
+    Returns:
+        float: Puntuación que refleja el desempeño del candidato en los escenarios de batalla, calculada como la media de las puntuaciones obtenidas en cada batalla, ajustada con una penalización por diversidad.
+
+    Raises:
+        - Si no se pueden calcular las puntuaciones de las batallas, se devuelve infinito negativo.
+        - Excepciones additionales pueden ser lanzadas por las funciones auxiliares _run_headless_battle y _score_battle.
+    """
     weights, scenarios, battles_per_opp, max_turns, elites, diversity_pressure = args
     scores = []
     for p1_states, p2_states, opp_class_name in scenarios:
@@ -187,6 +298,22 @@ def _eval_candidate_on_scenarios(args) -> float:
     return base + _diversity_penalty(weights, elites, diversity_pressure)
 
 def _build_scenarios(loader, team_size: int, n_per_opponent: int) -> List:
+    """
+    ```Descripcion
+    Crea escenarios para partidas contra oponentes generando equipos aleatorios.
+
+    Args:
+        loader: objeto que carga y proporciona recursos para la generación de equipos
+        team_size (int): tamaño de cada equipo
+        n_per_opponent (int): número de escenarios por oponente
+
+    Returns:
+        List: lista de tuplas que contienen los escenarios, donde cada tupla contiene dos equipos (como listas de estados de jugador) y el nombre del oponente
+
+    Raises:
+        TypeError: si loader no es un objeto que tenga el método generate_random_team, o si team_size o n_per_opponent no son números enteros
+    ```
+    """
     scenarios = []
     for opp_name in OPPONENT_MAP:
         for _ in range(n_per_opponent):
@@ -203,6 +330,24 @@ def _build_level4_holdout(loader, team_size: int, n_scenarios: int) -> List:
     return scenarios
 
 def _evaluate_population(population: List[Dict], scenarios: List, battles_per_opp: int, n_cores: int, max_turns: int, elites: List[Dict], diversity_pressure: float) -> List[float]:
+    """
+    +\":Evaluación de población de candidatos en diferentes escenarios.
+
+     Args:
+        population (List[Dict]): Población de candidatos a evaluar.
+        scenarios (List): Escenarios en los que se evaluarán los candidatos.
+        battles_per_opp (int): Número de batallas por oponente.
+        n_cores (int): Número de núcleos a utilizar para la evaluación.
+        max_turns (int): Número máximo de turnos por batalla.
+        elites (List[Dict]): Candidatos de élite.
+        diversity_pressure (float): Presión de diversidad.
+
+     Returns:
+        List[float]: Puntuaciones de la población evaluada.
+
+     Raises:
+        Exception: Excepción genérica que puede ser lanzada en caso de error durante la evaluación.\"
+    """
     args_list = [(candidate, scenarios, battles_per_opp, max_turns, elites, diversity_pressure) for candidate in population]
     if n_cores and n_cores > 1:
         with Pool(processes=n_cores) as pool: return pool.map(_eval_candidate_on_scenarios, args_list)
@@ -212,6 +357,20 @@ def _holdout_level4_score(weights: Dict, holdout_scenarios: List, battles_per_op
     return _eval_candidate_on_scenarios((weights, holdout_scenarios, battles_per_opp, max_turns, [], 0.0))
 
 def _save_weights(path: str, weights: Dict, metadata: Optional[Dict] = None) -> None:
+    """
+    Salvar pesos en un archivo JSON.
+
+    Args:
+        path (str): Ruta del archivo donde se guardarán los pesos.
+        weights (Dict): Diccionario que contiene los pesos a guardar.
+        metadata (Optional[Dict], optional): Metadatos asociados a los pesos. Defaults to None.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: Si ocurre un error al crear el directorio o al escribir en el archivo.
+    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     payload = {'weights': weights}
     if metadata: payload['metadata'] = metadata
@@ -219,6 +378,18 @@ def _save_weights(path: str, weights: Dict, metadata: Optional[Dict] = None) -> 
         json.dump(payload, fh, indent=2, ensure_ascii=True)
 
 def run_genetic_algorithm(config: Optional[GeneticConfig] = None) -> Dict[str, float]:
+    """
+    Ejecuta un algoritmo genético para encontrar los mejores pesos para un modelo.
+
+    Args:
+        config (Optional[GeneticConfig], opcional): La configuración del algoritmo genético. Si no se proporciona, se utiliza un objeto GeneticConfig por defecto.
+
+    Returns:
+        Dict[str, float]: Un diccionario con los mejores pesos encontrados.
+
+    Raises:
+        Exception: Cualquier error que ocurra durante la ejecución del algoritmo genético.
+    """
     config = config or GeneticConfig()
     logger = _setup_logger(config.log_path)
     random.seed(config.seed)

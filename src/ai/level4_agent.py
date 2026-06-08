@@ -24,6 +24,22 @@ class Level4Agent(BaseAgent):
         else: return state.p2_team, state.p2_active_index, state.p1_team, state.p1_active_index
 
     def _safe_index(self, idx: int, seq) -> int:
+        """
+        Descripción breve:
+        Esta función devuelve un índice seguro para acceder a una secuencia, 
+         manifoldiando índices fuera de rango o None a un índice 0 válido.
+
+        Args:
+            idx (int): El índice a verificar.
+            seq: La secuencia sobre la que se aplicará el índice.
+
+        Returns:
+            int: Un índice seguro para acceder a la secuencia.
+
+        Raises:
+            No lanza excepciones. En su lugar, devuelve un índice válido para 
+            cualquier entrada inválida.
+        """
         if not seq: return 0
         if idx is None or idx < 0 or idx >= len(seq): return 0
         return idx
@@ -44,6 +60,21 @@ class Level4Agent(BaseAgent):
             my_cooldown: int
         ) -> List[Action]:
 
+            """
+            Obtiene acciones legales inteligentes para el Pokémon activo en función del estado actual del equipo y el oponente.
+
+            Args:
+                team (List[PokemonState]): Estado del equipo actual.
+                active_idx (int): Índice del Pokémon activo en el equipo.
+                opp (PokemonState): Estado del oponente.
+                my_cooldown (int): Tiempo de enfriamiento del equipo.
+
+            Returns:
+                List[Action]: Lista de acciones legales para el Pokémon activo, ordenadas según su puntuación.
+
+            Raises:
+                Exception: Si hay un error en la evaluación de las acciones.
+            """
             actions = []
             if not team:
                 return actions
@@ -142,6 +173,20 @@ class Level4Agent(BaseAgent):
         p2_action: Action
     ) -> BattleState:
 
+        """
+        Simula un turno completo de batalla.
+
+         Args:
+             state (BattleState): El estado actual de la batalla.
+             p1_action (Action): La acción a realizar del jugador 1.
+             p2_action (Action): La acción a realizar del jugador 2.
+
+         Returns:
+             BattleState: El nuevo estado de la batalla después del turno.
+
+         Raises:
+             Exception: Si ocurre un error durante la simulación del turno.
+        """
         p1_team = self._build_real_team(state.p1_team)
         p2_team = self._build_real_team(state.p2_team)
 
@@ -168,6 +213,18 @@ class Level4Agent(BaseAgent):
         return new_state
 
     def get_action(self, state: BattleState) -> Action:
+            """
+            Obtiene la acción óptima dada el estado actual de la batalla.
+
+            Args:
+                state (BattleState): El estado actual de la batalla.
+
+            Returns:
+                Action: La acción óptima a realizar.
+
+            Raises:
+                Exception: Si no se encuentra una acción válida.
+            """
             team, active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
             
             self.turns_since_last_switch += 1
@@ -225,6 +282,24 @@ class Level4Agent(BaseAgent):
         opp_cooldown: int
     ) -> float:
 
+        """
+        Descripción breve:
+            Calcula el valor máximo para el estado actual del juego mediante el algoritmo Minimax.
+
+        Args:
+            state (BattleState): Estado actual del juego.
+            depth (int): Profundidad de la búsqueda.
+            alpha (float): Mejor valor posible para el jugador.
+            beta (float): Mejor valor posible para el oponente.
+            my_cooldown (int): Tiempo de retraso actual para el jugador.
+            opp_cooldown (int): Tiempo de retraso actual para el oponente.
+
+        Returns:
+            float: El valor máximo obtenido.
+
+        Raises:
+            None: No se lanzan excepciones explícitamente.
+        """
         if depth == 0 or self._is_match_over(state):
             return evaluate_level4_state(state, self.player_id)
 
@@ -282,6 +357,26 @@ class Level4Agent(BaseAgent):
         opp_cooldown: int
     ) -> float:
 
+        """
+        Descripción breve:
+            Esta función calcula el valor mínimo de una acción en un estado dado de la batalla, 
+            considerando las posibles acciones del oponente y su cooldown.
+
+        Args:
+            state (BattleState): El estado actual de la batalla.
+            depth (int): La profundidad de la búsqueda.
+            alpha (float): El límite inferior de la ventana de búsqueda.
+            beta (float): El límite superior de la ventana de búsqueda.
+            my_action (Action): La acción que va a tomar el jugador actual.
+            my_cooldown (int): El cooldown del jugador actual.
+            opp_cooldown (int): El cooldown del oponente.
+
+        Returns:
+            float: El valor mínimo de la acción.
+
+        Raises:
+            No se especifican excepciones explícitas, pero puede lanzar errores si los parámetros no son válidos o si ocurre un error en la simulación de la batalla.
+        """
         if depth == 0 or self._is_match_over(state):
             return evaluate_level4_state(state, self.player_id)
 

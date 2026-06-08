@@ -32,6 +32,20 @@ class Level3Agent(BaseAgent):
             )
 
     def _safe_index(self, idx: int, seq) -> int:
+        """
+        Descripción breve:
+        Obtiene un índice seguro para una secuencia, evitando excepciones de índice fuera de rango.
+
+        Args:
+            idx (int): El índice deseado.
+            seq: La secuencia sobre la que se quiere acceder.
+
+        Returns:
+            int: El índice seguro para la secuencia.
+
+        Raises:
+            No lanza excepciones, en su lugar devuelve 0 cuando el índice no es válido o la secuencia está vacía.
+        """
         if not seq:
             return 0
         if idx is None or idx < 0 or idx >= len(seq):
@@ -53,6 +67,20 @@ class Level3Agent(BaseAgent):
         turns_since_switch: int
     ) -> List[Action]:
 
+        """
+        Obtiene las acciones legales permitidas para un equipo de Pokémon en un momento dado del juego.
+
+        Args:
+            team (List[PokemonState]): El equipo de Pokémon.
+            active_idx (int): El índice del Pokémon activo en el equipo.
+            turns_since_switch (int): El número de turnos desde la última vez que se cambió de Pokémon.
+
+        Returns:
+            List[Action]: Una lista de acciones legales que se pueden realizar, donde cada acción es un objeto con un tipo y un índice de objetivo.
+
+        Raises:
+            No se lanzan excepciones explícitas, pero puede ocurrir un error si el equipo o el índice activo son inválidos.
+        """
         actions = []
         if not team:
             return actions
@@ -109,6 +137,20 @@ class Level3Agent(BaseAgent):
         p2_action: Action
     ) -> BattleState:
 
+        """
+        Simula un turno completo de una batalla, aplicando las acciones de ambos jugadores y actualizando el estado de la batalla.
+
+        Args:
+            state (BattleState): El estado actual de la batalla.
+            p1_action (Action): La acción tomada por el jugador 1.
+            p2_action (Action): La acción tomada por el jugador 2.
+
+        Returns:
+            BattleState: El nuevo estado de la batalla después de aplicar las acciones de ambos jugadores.
+
+        Raises:
+            No se lanzan excepciones explícitas en esta función, pero puede propagar excepciones de las funciones llamadas, como `_build_real_team` o `process_turn`.
+        """
         p1_team = self._build_real_team(state.p1_team)
         p2_team = self._build_real_team(state.p2_team)
 
@@ -136,6 +178,18 @@ class Level3Agent(BaseAgent):
 
     def get_action(self, state: BattleState) -> Action:
 
+        """
+        Obtiene la mejor acción posible para el estado actual de la batalla.
+
+        Args:
+            state (BattleState): El estado actual de la batalla.
+
+        Returns:
+            Action: La mejor acción posible.
+
+        Raises:
+            No se lanzan excepciones explícitas.
+        """
         team, active_idx, _, _ = self._get_team_and_active(state)
         self.turns_since_last_switch += 1
 
@@ -187,6 +241,21 @@ class Level3Agent(BaseAgent):
         beta: float
     ) -> float:
 
+        """
+        Desuelve el valor máximo obtenible en una situación de batalla.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+            depth (int): Nivel de profundidad en la búsqueda.
+            alpha (float): Mejor valor posible para el jugador máximo.
+            beta (float): Mejor valor posible para el jugador mínimo.
+
+        Returns:
+            float: Valor máximo esperado.
+
+        Raises:
+            No se especifican excepciones.
+        """
         if depth == 0 or self._is_match_over(state):
             return evaluate_level3_state(
                 state,
@@ -230,6 +299,24 @@ class Level3Agent(BaseAgent):
         my_action: Action
     ) -> float:
 
+        """
+
+        Calcula el valor mínimo de una situación de batalla mediante el algoritmo minimax.
+
+        Args:
+            state (BattleState): El estado actual de la batalla.
+            depth (int): La profundidad máxima del árbol de búsqueda.
+            alpha (float): El límite inferior del rango de búsqueda.
+            beta (float): El límite superior del rango de búsqueda.
+            my_action (Action): La acción que se va a realizar.
+
+        Returns:
+            float: El valor mínimo de la situación de batalla.
+
+        Raises:
+            Exception: No se lanzan excepciones explícitas, pero puede ocurrir un error si el estado de la batalla es inválido o si se produce un error en la evaluación del estado.
+
+        """
         if depth == 0 or self._is_match_over(state):
             return evaluate_level3_state(
                 state,

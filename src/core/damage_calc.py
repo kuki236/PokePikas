@@ -161,6 +161,20 @@ TYPE_CHART: dict[PokemonType, dict[PokemonType, float]] = {
 
 
 def get_type_multiplier(attack_type: PokemonType, defender_types: list[PokemonType]) -> float:
+    """
+    Descripción breve:
+    Calcula el multiplicador de tipo de un ataque de Pokémon en función del tipo de ataque y los tipos del defensor.
+
+    Args:
+        attack_type (PokemonType): El tipo de ataque del Pokémon.
+        defender_types (list[PokemonType]): La lista de tipos del defensor.
+
+    Returns:
+        float: El multiplicador de tipo del ataque.
+
+    Raises:
+        No se lanzan excepciones explícitas. Sin embargo, puede que se produzcan errores si `attack_type` o `defender_types` no son del tipo esperado.
+    """
     multiplier = 1.0
     if attack_type not in TYPE_CHART:
         return multiplier
@@ -169,6 +183,23 @@ def get_type_multiplier(attack_type: PokemonType, defender_types: list[PokemonTy
     return multiplier
 
 def get_modified_stat(base_value: int, stage: int, ailment: AilmentType = AilmentType.NONE, is_speed: bool = False) -> int:
+    """
+    Descripción breve de la función:
+    Calcula un estadístico modificado en base a un valor base, un estado de etapa y una afección, 
+    considerando si el estadístico es de velocidad o no.
+
+    Args:
+        base_value (int): El valor base del estadístico.
+        stage (int): El estado de etapa.
+        ailment (AilmentType, opcional): La afección aplicada. Por defecto es AilmentType.NONE.
+        is_speed (bool, opcional): Indica si el estadístico es de velocidad. Por defecto es False.
+
+    Returns:
+        int: El estadístico modificado.
+
+    Raises:
+        No se lanzan excepciones.
+    """
     if stage >= 0:
         multiplier = (2 + stage) / 2
     else:
@@ -196,6 +227,28 @@ def calculate_damage(
     attacker_ailment: AilmentType = AilmentType.NONE
 ) -> tuple[int, float]:
     
+    """
+    .\"\"\" 
+    Calcule el daño de un ataque en una batalla de Pokémon.
+
+    Args:
+        attacker_base_stat (int): La estadística base del atacante.
+        defender_base_stat (int): La estadística base del defensor.
+        defender_spd (int): La velocidad del defensor.
+        move_power (int): El poder del movimiento.
+        move_type (PokemonType): El tipo del movimiento.
+        defender_types (list[PokemonType]): Los tipos del defensor.
+        attacker_stage (int, opcional): El nivel del atacante. Por defecto es 0.
+        defender_stage (int, opcional): El nivel del defensor. Por defecto es 0.
+        attacker_ailment (AilmentType, opcional): El estado del atacante. Por defecto es AilmentType.NONE.
+
+    Returns:
+        tuple[int, float]: Una tupla que contiene el daño final (int) y el multiplicador de tipo (float).
+
+    Raises:
+        No lanza excepciones explícitas, pero puede producir errores de tipo o división por cero si los parámetros no son válidos.
+
+    """
     if move_power == 0:
         return 0, 1.0 
     

@@ -24,6 +24,19 @@ class Level1Agent(BaseAgent):
         return state.p2_team, state.p2_active_index
 
     def _get_valid_switches(self, team, active_idx):
+        """
+        Obtiene los índices de los miembros del equipo que pueden ser cambiados válidamente.
+
+        Args:
+            team (list): Lista de miembros del equipo.
+            active_idx (int): Índice del miembro del equipo actualmente activo.
+
+        Returns:
+            list: Lista de índices de los miembros del equipo que pueden ser cambiados y tienen salud actual mayor a 0.
+
+        Raises:
+            AttributeError: Si algún miembro del equipo no tiene el atributo 'current_hp'.
+        """
         valid_switches = []
         for i, p in enumerate(team):
             if i == active_idx:
@@ -33,6 +46,19 @@ class Level1Agent(BaseAgent):
         return valid_switches
 
     def _get_valid_moves(self, active):
+        """
+        Descripción breve:
+        Obtiene los movimientos válidos para un objeto activo.
+
+        Args:
+            active: objeto que contiene los movimientos.
+
+        Returns:
+            list: lista de índices de los movimientos válidos.
+
+        Raises:
+            No se anticipan excepciones.
+        """
         moves = getattr(active, "moves", []) or []
         valid_moves = []
 
@@ -49,6 +75,19 @@ class Level1Agent(BaseAgent):
         return valid_moves
 
     def get_action(self, state: BattleState) -> Action:
+        """
+        Obtiene la acción a realizar en función del estado actual de la batalla.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            Action: Acción a realizar, que puede ser un movimiento o un intercambio.
+
+        Raises:
+            None: No se lanzan excepciones.
+
+        """
         team, active_idx = self._get_team_and_active(state)
 
         if not team:

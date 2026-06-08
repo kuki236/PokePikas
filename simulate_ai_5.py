@@ -19,6 +19,10 @@ MAX_TURNS = 100
 
 
 def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs: bool = False):
+    """
+    Descripción breve:
+    Ejecuta una batalla entre dos equipos de Pokémon de forma headless.
+    """
     p1_active_idx = 0
     p2_active_idx = 0
     match_over = False
@@ -121,6 +125,10 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs: bool = Fal
 
 
 def correr_bateria_enfrentamiento(agent_class_p1, agent_class_p2, team_size: int = 3, batallas: int = 200):
+    """
+    Descripción breve:
+    Realiza una batería de enfrentamientos entre dos agentes de batalla y devuelve las estadísticas.
+    """
     loader = DataLoader(DEFAULT_POKEMON_PATH, DEFAULT_MOVES_PATH)
     wins_p1 = 0
     wins_p2 = 0
@@ -160,45 +168,56 @@ def ejecutar_emparejamiento(label: str, cls1, cls2, team_size: int, batallas: in
 
 
 def imprimir_resultado(label: str, wr1: float, wr2: float, turns: float, ties: int, elapsed: float):
-    print(f"{label:<40} | {str(wr1) + '%':>8} | {str(wr2) + '%':>8} | {ties:>8} | {turns:>8} | {str(elapsed) + 's':>10}")
+    print(f"{label:<45} | {str(wr1) + '%':>8} | {str(wr2) + '%':>8} | {ties:>8} | {turns:>8} | {str(elapsed) + 's':>10}")
 
 
 def torneo_level5(team_size: int = 3, batallas: int = 200):
-    print('\n' + '=' * 108)
-    print(f"{'PRUEBAS DE NIVEL 5 (' + str(team_size) + 'v' + str(team_size) + ')':^108}")
-    print(f"{'Muestra estadística: ' + str(batallas) + ' batallas por emparejamiento':^108}")
-    print('=' * 108)
-    print(f"{'EMPAREJAMIENTO (P1 vs P2)':<40} | {'WR P1':>8} | {'WR P2':>8} | {'EMPATES':>8} | {'TURNOS':>8} | {'TIEMPO':>10}")
-    print('-' * 108)
+    """
+    Descripción breve:
+    Realiza pruebas de nivel 5 asegurando que IA 5 es el Jugador 1.
+    """
+    print('\n' + '=' * 115)
+    print(f"{'PRUEBAS DE NIVEL 5 (' + str(team_size) + 'v' + str(team_size) + ')':^115}")
+    print(f"{'Muestra estadística: ' + str(batallas) + ' batallas por emparejamiento':^115}")
+    print('=' * 115)
+    # [MODIFICADO] Amplié ligeramente el espacio del Label para que encajen los nuevos nombres
+    print(f"{'EMPAREJAMIENTO (P1 vs P2)':<45} | {'WR P1':>8} | {'WR P2':>8} | {'EMPATES':>8} | {'TURNOS':>8} | {'TIEMPO':>10}")
+    print('-' * 115)
 
+    # [MODIFICADO] Ahora Level5Agent se pasa primero para que sea instanciado como P1
     pairings: List[Tuple[str, object, object]] = [
-        ('Nivel 1 (Azar) vs Nivel 5 (Evolutivo)', Level1Agent, Level5Agent),
-        ('Nivel 2 (Greedy) vs Nivel 5 (Evolutivo)', Level2Agent, Level5Agent),
-        ('Nivel 3 (Minimax) vs Nivel 5 (Evolutivo)', Level3Agent, Level5Agent),
-        ('Nivel 4 (Avanzado) vs Nivel 5 (Evolutivo)', Level4Agent, Level5Agent),
+        ('Nivel 5 (Evolutivo) vs Nivel 1 (Azar)', Level5Agent, Level1Agent),
+        ('Nivel 5 (Evolutivo) vs Nivel 2 (Greedy)', Level5Agent, Level2Agent),
+        ('Nivel 5 (Evolutivo) vs Nivel 3 (Minimax)', Level5Agent, Level3Agent),
+        ('Nivel 5 (Evolutivo) vs Nivel 4 (Avanzado)', Level5Agent, Level4Agent),
     ]
 
     for label, c1, c2 in pairings:
         result = ejecutar_emparejamiento(label, c1, c2, team_size, batallas)
         imprimir_resultado(*result)
 
-    print('=' * 108 + '\n')
+    print('=' * 115 + '\n')
 
 
 def prueba_rapida_level4_vs_level5(team_size: int = 3):
+    """
+    Descripción breve:
+    Realiza una prueba rápida asignando a IA 5 como P1 y a IA 4 como P2.
+    """
     loader = DataLoader(DEFAULT_POKEMON_PATH, DEFAULT_MOVES_PATH)
     p1_team = loader.generate_random_team(team_size)
     p2_team = loader.generate_random_team(team_size)
 
-    agent1 = Level4Agent(player_id=1)
-    agent2 = Level5Agent(player_id=2)
+    # [MODIFICADO] Se invierten las asignaciones. Ahora agent1 es IA 5.
+    agent1 = Level5Agent(player_id=1)
+    agent2 = Level4Agent(player_id=2)
 
-    print('Agentes creados, iniciando batalla...')
+    print('Agentes creados, iniciando batalla (P1=IA5, P2=IA4)...')
     winner, turns = run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=True)
-    print(f'Ganador: {winner}, Turnos: {turns}')
+    print(f'Ganador: Jugador {winner}, Turnos: {turns}')
 
 
 if __name__ == '__main__':
-    print('Iniciando simulación Headless de pruebas para IA 5...')
+    print('Iniciando simulación Headless de pruebas (IA 5 siempre como P1)...')
     prueba_rapida_level4_vs_level5(team_size=3)
     torneo_level5(team_size=3, batallas=200)

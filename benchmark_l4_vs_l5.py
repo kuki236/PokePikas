@@ -101,6 +101,28 @@ def _run_battle(args) -> Tuple[int, int, float, float]:
 
 
 def run_benchmark(n_battles: int = 500, n_cores: int = None) -> None:
+    """
+    Ejecuta un benchmark entre Level4Agent y Level5Agent a lo largo de múltiples
+    batallas simuladas, opcionalmente en paralelo.
+
+    Alterna qué agente actúa como jugador 1 en cada batalla para reducir el sesgo
+    asociado al orden de turno. Al finalizar, calcula e imprime en consola
+    estadísticas agregadas, incluyendo victorias, empates, win rate de IA5,
+    intervalo de confianza del 95%, HP restante promedio, Pokémon vivos promedio
+    y duración media de las partidas.
+
+    Args:
+        n_battles: Cantidad total de batallas a simular.
+        n_cores: Número de procesos a usar. Si es None, usa cpu_count() - 1
+            con un mínimo de 1.
+
+    Returns:
+        None.
+
+    Raises:
+        Puede propagar excepciones relacionadas con multiprocessing, carga de datos
+        o errores internos durante la simulación de batallas.
+    """
     if n_cores is None:
         n_cores = max(1, cpu_count() - 1)
 

@@ -19,6 +19,27 @@ class Pokemon:
         types: List[PokemonType],
         moves: List[Move]
     ):
+        """
+        Inicializa un objeto Pokémon con sus estadísticas y propiedades.
+
+        Args:
+            poke_id (int): El ID único del Pokémon.
+            name (str): El nombre del Pokémon.
+            max_hp (int): Los puntos de salud máximos del Pokémon.
+            attack (int): El valor de ataque del Pokémon.
+            defense (int): El valor de defensa del Pokémon.
+            special_attack (int): El valor de ataque especial del Pokémon.
+            special_defense (int): El valor de defensa especial del Pokémon.
+            speed (int): La velocidad del Pokémon.
+            types (List[PokemonType]): Los tipos de Pokémon.
+            moves (List[Move]): Las movidas que conoce el Pokémon.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
         self.id              = poke_id
         self.name            = name
         self.max_hp          = max_hp

@@ -142,6 +142,19 @@ def correr_bateria_enfrentamiento(agent_class_p1, agent_class_p2, team_size=3, b
     return wr_p1, wr_p2, avg_turns
 
 def imprimir_matriz_competitiva(team_size, batallas):
+    """
+    Imprime una matriz competitiva de torneos de poké pikas.
+
+    Args:
+        team_size (int): Tamaño del equipo.
+        batallas (int): Número de batallas por emparejamiento.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: Si ocurre un error durante la ejecución del torneo.
+    """
     print("\n" + "="*85)
     print(f"{f'TORNEO MULTI-AGENTE POKÉPIKAS ({team_size}v{team_size})':^85}")
     print(f"{f'Muestra estadística: {batallas} batallas por emparejamiento':^85}")

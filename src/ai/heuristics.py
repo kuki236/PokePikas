@@ -5,6 +5,19 @@ from src.entities.enums import PokemonType
 
 def evaluate_level3_state(state: BattleState, player_id: int) -> float:
 
+    """
+    Evalúa el estado de batalla de nivel 3 y asigna una puntuación numérica basada en las condiciones actuales de los equipos.
+
+    Args:
+        state (BattleState): El estado actual de la batalla.
+        player_id (int): El identificador del jugador (1 o 2).
+
+    Returns:
+        float: Una puntuación que indica la ventaja o desventaja del jugador en la batalla.
+
+    Raises:
+        No se lanzan excepciones explícitas, pero podría producirse un error si el objeto BattleState no contiene los atributos esperados o si el player_id no es válido.
+    """
     if player_id == 1:
         my_team, opp_team = state.p1_team, state.p2_team
         my_idx = state.p1_active_index
@@ -52,6 +65,19 @@ from src.entities.enums import PokemonType
 def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     
     # BALANCEO 
+    """
+    Evaluación del estado de nivel 4 en una batalla de Pokémon.
+
+    Args:
+        state (BattleState): Estado actual de la batalla.
+        player_id (int): Identificador del jugador (1 o 2).
+
+    Returns:
+        float: Puntuación que refleja la ventaja o desventaja del jugador en la batalla.
+
+    Raises:
+        No se lanzan excepciones explícitas, pero puede ocurrir un error si el estado de la batalla o el identificador del jugador son inválidos.
+    """
     HP_WEIGHT = 0.50
     ALIVE_WEIGHT = 0.30
     TYPE_WEIGHT = 0.15

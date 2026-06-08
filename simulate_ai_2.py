@@ -102,6 +102,20 @@ def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
 # LÓGICA DE TABLAS 
 
 def imprimir_tabla_winrates(resultados_3v3, resultados_4v4):
+    """
+    Imprime una tabla que resume los resultados de simulaciones de juegos 3v3 y 4v4.
+
+    Args:
+        resultados_3v3 (dict): Diccionario con los resultados de las simulaciones 3v3.
+        resultados_4v4 (dict): Diccionario con los resultados de las simulaciones 4v4.
+
+    Returns:
+        None
+
+    Raises:
+        KeyError: Si alguno de los diccionarios no contiene las claves esperadas (nivel_1, nivel_2, turnos, tiempos).
+        TypeError: Si alguno de los valores en los diccionarios no es una lista.
+    """
     print("\n" + "="*85)
     print(f"{'RESULTADOS DE SIMULACIONES':^85}")
     print("="*85)
@@ -130,6 +144,21 @@ def imprimir_tabla_winrates(resultados_3v3, resultados_4v4):
     print("="*85 + "\n")
 
 def correr_simulaciones_winrate(team_size, num_simulaciones=5, batallas_por_sim=100):
+    """
+    Descripción breve:
+     Ejecuta simulaciones de batallas de Pokémon entre equipos aleatorios y devuelve las tasas de victoria para cada nivel de agente.
+
+    Args:
+        team_size (int): Tamaño del equipo de Pokémon.
+        num_simulaciones (int, optional): Número de simulaciones a ejecutar. Valor por defecto: 5.
+        batallas_por_sim (int, optional): Número de batallas por simulación. Valor por defecto: 100.
+
+    Returns:
+        dict: Un diccionario con las tasas de victoria para cada nivel de agente, el número promedio de turnos y los tiempos de ejecución.
+
+    Raises:
+        No se lanzan excepciones explícitas. Sin embargo, puede producirse un error si no se pueden cargar los datos de los Pokémon o si hay un problema con la ejecución de las batallas.
+    """
     loader = DataLoader("data/pokemon_pool.json", "data/moves_pool.json")
     
     winrates_l1 = []

@@ -16,6 +16,25 @@ from src.entities.enums import AilmentType
 
 class BattleScreen:
     def __init__(self, screen, renderer, p1_team, difficulty, mode):
+        """
+        Descripción breve:
+            Inicializa un objeto para gestionar una batalla de Pokémon con habilidades básicas como 
+            assignment de equipos y control de los tiempos de juego.
+
+        Args:
+            screen: El objeto de pantalla donde se mostrará la batalla.
+            renderer: El objeto que se encarga de cargar y mostrar los recursos visuales.
+            p1_team: Una lista con los nombres de los Pokémon del equipo del jugador 1.
+            difficulty: El nivel de dificultad de la batalla.
+            mode: El modo de juego (p. ej., manual, humano, etc.).
+
+        Returns:
+            No retorna ningún valor, ya que se trata de un constructor.
+
+        Raises:
+            Posibles excepciones al cargar los recursos visuales o al crear los objetos de batalla, 
+            como errores de tipo ``Exception`` si no se puede crear un Pokémon de batalla.
+        """
         self.screen = screen
         self.renderer = renderer
         self.p1_team_names = p1_team
@@ -77,6 +96,19 @@ class BattleScreen:
         self.p2_visual_idx = 0
 
         def _agent_for_level(pid, lvl):
+            """
+            Obtiene un agente adecuado para un nivel de juego determinado.
+
+            Args:
+                pid (int): ID del jugador.
+                lvl (int): Nivel de juego.
+
+            Returns:
+                object: Instancia de un agente para el nivel especificado.
+
+            Raises:
+                ImportError: Si no se puede importar el agente para el nivel solicitado. En este caso, se devuelve un agente para el nivel 2 por defecto.
+            """
             if lvl == 1:
                 return Level1Agent(player_id=pid)
             elif lvl == 2:
@@ -216,6 +248,18 @@ class BattleScreen:
         )
 
     def _advance_message(self):
+        """
+        Avanza al siguiente mensaje en la cola de mensajes.
+
+        Args:
+            None: Esta función no acepta argumentos.
+
+        Returns:
+            None: No devuelve ningún valor.
+
+        Raises:
+            None: No lanza excepciones explícitas.
+        """
         if self.animating_blocking:
             return
 
@@ -309,6 +353,19 @@ class BattleScreen:
             self._check_post_turn()
 
     def _check_post_turn(self):
+        """
+        Descripción breve:
+         Verifica el estado de los Pokémon después de un turno y realiza las acciones necesarias, como cambiar de Pokémon si es necesario.
+
+        Args:
+            No tiene parámetros explícitos ya que es un método de una clase.
+
+        Returns:
+            No devuelve ningún valor.
+
+        Raises:
+            No lanza excepciones explícitas.
+        """
         if self.battle_finished:
             return
 
@@ -339,6 +396,21 @@ class BattleScreen:
             self.last_turn_time = perf_counter()
 
     def _describe_outcomes(self, outcomes, pre_turn_p1_name, pre_turn_p2_name):
+        """
+        Descripción breve:
+         Procesa los resultados de un turno de batalla y devuelve informes de texto descriptivos sobre las acciones realizadas en el turno.
+
+        Args:
+            outcomes (list): Resultados del turno de batalla.
+            pre_turn_p1_name (str): Nombre del pokémon actual del jugador 1 antes del turno.
+            pre_turn_p2_name (str): Nombre del pokémon actual del jugador 2 antes del turno.
+
+        Returns:
+            None: No devuelve nada, en su lugar actualiza la cola de mensajes con informes de texto descriptivos.
+
+        Raises:
+            None: No lanza excepciones.
+        """
         current_p1_name = pre_turn_p1_name
         current_p2_name = pre_turn_p2_name
 
@@ -511,6 +583,27 @@ class BattleScreen:
         return moves
 
     def run(self):
+        """
+        Descripción breve
+        -----------------
+
+        Ejecuta el loop principal de la batalla, procesando eventos, actualizando la lógica de la batalla y renderizando la pantalla.
+
+        Args
+        ----
+
+        * Sin argumentos explícitos, ya que es un método de una clase.
+
+        Returns
+        -------
+
+        * `self.action_after_battle` (str): La acción que se realizará después de que termine la batalla.
+
+        Raises
+        ------
+
+        * No se describen excepciones específicas, pero puede lanzar excepciones relacionadas con la inicialización de Pygame, el manejo de eventos o la renderización de la pantalla.
+        """
         while self.running:
             now = perf_counter()
             mouse_pos = pygame.mouse.get_pos()
@@ -880,6 +973,18 @@ class BattleScreen:
         return self.action_after_battle
 
     def _draw_main_dialog_box(self):
+        """
+        Dibuja el cuadro de diálogo principal en la pantalla.
+
+        Args:
+            None: Este método no recibe parámetros.
+
+        Returns:
+            None: No devuelve ningún valor.
+
+        Raises:
+            None: No lanza excepciones conocidas.
+        """
         pygame.draw.rect(self.screen, (240, 240, 240), self.main_dialog_rect, border_radius=10)
         pygame.draw.rect(self.screen, (50, 50, 150), self.main_dialog_rect, width=6, border_radius=10)
         
@@ -900,6 +1005,18 @@ class BattleScreen:
                 self.screen.blit(text_surface, (self.main_dialog_rect.x + 20, y))
 
     def _draw_full_dialog_box(self):
+        """
+        Dibuja un cuadro de diálogo completo en la pantalla.
+
+         Args:
+             self: Instancia de la clase que llama a este método.
+
+         Returns:
+             None
+
+         Raises:
+             None: No se lanzan excepciones explícitas en esta función. Sin embargo, puede haber errores relacionados con la configuración de Pygame o la renderización de fuentes.
+        """
         full_rect = pygame.Rect(20, self.top_h + 20, self.sw - 40, self.bottom_h - 40)
         pygame.draw.rect(self.screen, (240, 240, 240), full_rect, border_radius=10)
         pygame.draw.rect(self.screen, (50, 50, 150), full_rect, width=6, border_radius=10)
@@ -929,6 +1046,25 @@ class BattleScreen:
         self._draw_colored_button(self.btn_pokemon, "POKéMON", is_hovered_pokemon, (60, 210, 60))
 
     def _draw_colored_button(self, rect, text, is_hovered, base_color, sub_text=None, font_override=None, text_offset_y=0):
+        """
+        Dibuja un botón coloreado con texto en la pantalla.
+
+        Args:
+            rect (Rect): Rectángulo que define el tamaño y posición del botón.
+            text (str): Texto que se mostrará en el botón.
+            is_hovered (bool): Indica si el botón está siendo seleccionado.
+            base_color (tuple): Color base del botón.
+            sub_text (str, opcional): Texto secundario que se mostrará debajo del texto principal. Por defecto es None.
+            font_override (Font, opcional): Fuente que se utilizará para dibujar el texto. Por defecto es None.
+            text_offset_y (int, opcional): Desplazamiento vertical del texto. Por defecto es 0.
+
+        Returns:
+            None
+
+        Raises:
+            AttributeError: si se intenta acceder a un atributo no existente.
+            TypeError: si se pasa un parámetro con un tipo incorrecto.
+        """
         button_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         
         if is_hovered:
@@ -976,6 +1112,19 @@ class BattleScreen:
 
 
     def _process_full_turn(self, player_action: Action = None):
+        """
+        Descripción breve:
+        Procesa un turno completo en la batalla, actualizando el estado y ejecutando las acciones del jugador y la IA.
+
+        Args:
+            player_action (Action, opcional): Acción del jugador, si se proporciona. Por defecto es None.
+
+        Returns:
+            None
+
+        Raises:
+            No se lanzan excepciones explícitas, pero puede producir errores si los objetos o estados no están correctamente inicializados o configurados.
+        """
         if self.battle_finished:
             return
 
@@ -1028,6 +1177,19 @@ class BattleScreen:
                 self.message_queue.append({"text": "Resultado: empate."})
 
     def _draw_move_buttons(self, mouse_pos, move_data=None):
+        """
+        Dibuja los botones de movimiento en la pantalla.
+
+        Args:
+            mouse_pos (tuple): Posición del cursor del ratón.
+            move_data (list, optional): Lista de datos de movimiento. Por defecto, es None.
+
+        Returns:
+            None
+
+        Raises:
+            No se lanzan excepciones explícitas. Sin embargo, es posible que se produzcan errores si no se proporciona un valor válido para el parámetro move_data o si el método _get_active_move_data no devuelve un valor esperado.
+        """
         if move_data is None:
             move_data = self._get_active_move_data()
 
@@ -1072,6 +1234,19 @@ class BattleScreen:
                 self._draw_colored_button(rect, "-", False, (200, 200, 200))
 
     def _handle_move_click(self, mouse_pos):
+        """
+        Descripción breve:
+        Gestiona el evento de clic en una casilla de movimiento.
+
+        Args:
+            mouse_pos (Tuple[int, int]): La posición del cursor del mouse en el momento del clic.
+
+        Returns:
+            None
+
+        Raises:
+            None: No lanza excepciones directamente, pero puede generar mensajes de error si se intenta realizar un movimiento inválido.
+        """
         active = self.p1_team[self.p1_active_idx]
         moves = getattr(active, 'moves', []) if active else []
 
@@ -1097,6 +1272,19 @@ class BattleScreen:
                 return
 
     def _draw_switch_options(self, mouse_pos):
+        """
+        Descripción breve:
+        Dibuja las opciones de cambio de Pokémon en la pantalla, incluyendo botones para cada Pokémon disponible del equipo.
+
+        Args:
+            mouse_pos (tuple): La posición del cursor del ratón en la pantalla.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
         available_pokemon = []
         for i, pkm in enumerate(self.p1_team):
             if pkm.current_hp > 0 and i != self.p1_visual_idx:
@@ -1125,6 +1313,18 @@ class BattleScreen:
             self._draw_colored_button(rect, pkm.name.capitalize(), is_hovered, (80, 200, 80), sub_text=hp_text, font_override=self.renderer.font_subtitle)
 
     def _handle_switch_click(self, mouse_pos):
+        """
+        Maneja el evento de clic en un botón de cambio de personaje.
+
+        Args:
+            mouse_pos (tuple): Posición del puntero del mouse.
+
+        Returns:
+            None
+
+        Raises:
+            No se lanzan excepciones explícitamente, pero se asume que el objeto tiene los atributos y métodos necesarios para funcionar correctamente.
+        """
         for rect, pkm_idx in self.switch_buttons_rects:
             if rect.collidepoint(mouse_pos):
                 if self.p1_team[self.p1_active_idx].current_hp > 0:
@@ -1147,6 +1347,19 @@ class BattleScreen:
                 return
 
     def _ai_switch_pokemon(self, player_id):
+        """
+        Descripción breve:
+        Realiza un intercambio de Pokémon de forma automática para un jugador dado.
+
+        Args:
+            player_id (int): El identificador del jugador que realizará el intercambio.
+
+        Returns:
+            bool: Indica si el intercambio se realizó con éxito.
+
+        Raises:
+            No se lanzan excepciones. En caso de que no haya Pokémon disponibles para el intercambio, la función devuelve False.
+        """
         team = self.p1_team if player_id == 1 else self.p2_team
         active_idx = self.p1_active_idx if player_id == 1 else self.p2_active_idx
 

@@ -7,6 +7,17 @@ from src.entities.enums import AilmentType
 
 class Renderer:
     def __init__(self, screen):
+        """
+        Inicializa un objeto para manejar la renderización de texto en una pantalla de Pygame.
+
+        Args:
+            screen: La pantalla de Pygame en la que se renderizará el texto.
+
+        Raises:
+            No lanza excepciones explícitamente, pero puede fallar si no se encuentra la fuente especificada o si hay un error al inicializar Pygame.
+
+        Nota: Esta función es un constructor y no devuelve nada explícitamente (equivale a None). Se utiliza para inicializar los atributos de la clase, incluyendo fuentes de texto y una caché de imágenes.
+        """
         self.screen = screen
 
         ruta_fuente = os.path.join('assets', 'pokemon_pixel.ttf')
@@ -32,6 +43,19 @@ class Renderer:
         return None
 
     def draw_background(self, img, apply_dark_overlay=False):
+        """
+        Dibuja el fondo de la pantalla con la imagen proporcionada.
+
+        Args:
+            img: La imagen que se utilizará como fondo. (pygame.Surface)
+            apply_dark_overlay (bool): Indica si se debe aplicar una capa oscura sobre la imagen de fondo. Por defecto es False.
+
+        Returns:
+            None
+
+        Raises:
+            No lanza excepciones explícitas, pero puede propagar excepciones de pygame si ocurre un error al dibujar la imagen o la capa oscura.
+        """
         if img:
             self.screen.blit(img, (0, 0))
             if apply_dark_overlay:
@@ -43,6 +67,19 @@ class Renderer:
             self.clear_screen()
 
     def draw_lightning_flash(self, intensity, color=(255, 255, 255)):
+        """
+        Dibuja un relámpago en la pantalla.
+
+        Args:
+            intensity (int): Intensidad del relámpago, donde 0 significa no se dibuja.
+            color (tuple): Color del relámpago, por defecto es blanco (255, 255, 255).
+
+        Returns:
+            None
+
+        Raises:
+            No se lanzan excepciones explícitamente, pero puede lanzar errores de Pygame si no se ha iniciado correctamente o si hay problemas con la superficie de la pantalla.
+        """
         if intensity > 0:
             flash_surface = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
             flash_surface.set_alpha(intensity)
@@ -50,6 +87,24 @@ class Renderer:
             self.screen.blit(flash_surface, (0, 0))
 
     def draw_text(self, text, font_type, color, x, y, center=False, shadow=True):
+        """
+        Dibuja texto en la pantalla.
+
+        Args:
+            text (str): El texto a dibujar.
+            font_type (str): El tipo de fuente, puede ser 'title','subtitle' o cualquier otro valor para fuente pequeña.
+            color (tuple): El color del texto como tupla RGB.
+            x (int): La coordenada x del texto.
+            y (int): La coordenada y del texto.
+            center (bool): Indica si el texto debe centrarse en la posición dada. Por defecto es False.
+            shadow (bool): Indica si el texto debe tener una sombra. Por defecto es True.
+
+        Returns:
+            None
+
+        Raises:
+            No lanza excepciones.
+        """
         if font_type == 'title': font = self.font_title
         elif font_type == 'subtitle': font = self.font_subtitle
         else: font = self.font_small
@@ -67,6 +122,20 @@ class Renderer:
         self.screen.blit(surface, (x, y))
 
     def draw_button(self, rect, text, is_hovered):
+        """
+        Dibuja un botón en la pantalla con ciertos efectos visuales cuando se pasa sobre él.
+
+        Args:
+            rect (Rect): El rectángulo que ocupa el botón.
+            text (str): El texto que se muestra en el botón.
+            is_hovered (bool): Indica si el cursor está sobre el botón.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
         button_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         
         if is_hovered:
@@ -83,6 +152,20 @@ class Renderer:
         self.draw_text(text, 'subtitle', (255, 255, 255), rect.centerx, rect.centery, center=True)
 
     def load_sprite(self, name, filepath):
+        """
+        Carga un sprite en el caché de imágenes si no existe ya, redimensionándolo a un tamaño fijo.
+
+        Args:
+            name (str): Nombre del sprite para su identificación en el caché.
+            filepath (str): Ruta del archivo de imagen del sprite.
+
+        Returns:
+            pygame.Surface o None: El sprite cargado y redimensionado, o None si el archivo de imagen no existe.
+
+        Raises:
+            FileNotFoundError: Si ocurre un problema al intentar acceder al archivo de imagen en la ruta proporcionada.
+            pygame.error: Si ocurre un error al cargar o procesar la imagen con Pygame.
+        """
         if name not in self.image_cache:
             if os.path.exists(filepath):
                 img = pygame.image.load(filepath).convert_alpha()
@@ -92,6 +175,22 @@ class Renderer:
         return self.image_cache.get(name)
 
     def load_battle_sprite(self, name, filepath, is_back=False):
+        """
+        Descripción breve:
+            Carga un sprite de batalla del archivo especificado y lo almacena en la caché de imágenes.
+
+        Args:
+            name (str): Nombre del sprite.
+            filepath (str): Ruta del archivo del sprite.
+            is_back (bool): Indica si el sprite es el lado trasero o no. Por defecto es False.
+
+        Returns:
+            Surface: El sprite cargado y escalado a 250x250 pixeles, o None si el archivo no existe.
+
+        Raises:
+            FileNotFoundError: Si el archivo del sprite no existe en la ruta especificada.
+            pygame.Error: Si ocurre un error al cargar o procesar la imagen.
+        """
         cache_key = f"battle_{'back' if is_back else 'front'}_{name}"
         if cache_key not in self.image_cache:
             if os.path.exists(filepath):
@@ -114,6 +213,24 @@ class Renderer:
         return self.image_cache.get(cache_key)
         
     def draw_pokemon_grid(self, pokemon_list, start_x, start_y, selected_names, columns=6, spacing_x=75, spacing_y=75):
+        """
+        Dibuja una cuadrícula de Pokémon en la pantalla.
+
+        Args:
+            pokemon_list (list): Lista de diccionarios que contienen la información de cada Pokémon.
+            start_x (int): Coordenada x inicial de la cuadrícula.
+            start_y (int): Coordenada y inicial de la cuadrícula.
+            selected_names (list): Lista de nombres de Pokémon seleccionados.
+            columns (int, optional): Número de columnas en la cuadrícula. Por defecto es 6.
+            spacing_x (int, optional): Espacio horizontal entre cada celda de la cuadrícula. Por defecto es 75.
+            spacing_y (int, optional): Espacio vertical entre cada celda de la cuadrícula. Por defecto es 75.
+
+        Returns:
+            None
+
+        Raises:
+            No se lanzan excepciones explícitas, pero puede generar errores si no se proporciona una lista válida de Pokémon o si no se puede cargar la imagen de un Pokémon.
+        """
         for i, pkm in enumerate(pokemon_list):
             name = pkm['name']
             col = i % columns
@@ -136,6 +253,21 @@ class Renderer:
             self.draw_text(display_name, 'small', (200, 200, 200), x + 30, y + 65, center=True)
 
     def _wrap_text(self, text, font, max_width):
+        """
+        Descripción breve:
+            Esta función envuelve un texto dentro de un ancho máximo, considerando el tamaño de la fuente.
+
+        Args:
+            text (str): El texto a envolver.
+            font: La fuente utilizada para medir el tamaño del texto.
+            max_width (int): El ancho máximo permitido para el texto.
+
+        Returns:
+            list: Una lista de cadenas, cada una representando una línea del texto envuelto.
+
+        Raises:
+            None: No se lanzan excepciones explícitas. Sin embargo, es posible que se produzcan errores si el objeto font no tiene el método size o si max_width no es numérico.
+        """
         wrapped_lines = []
         paragraphs = str(text).split('\n')
 
@@ -160,6 +292,18 @@ class Renderer:
         return wrapped_lines
 
     def draw_dialog_box(self, text):
+        """
+        Dibuja una caja de diálogo en la pantalla con el texto proporcionado.
+
+        Args:
+            text (str): El texto a mostrar en la caja de diálogo.
+
+        Returns:
+            None
+
+        Raises:
+            No se lanzan excepciones explícitas, pero se puede producir un error si el texto proporcionado es demasiado largo para la caja de diálogo o si hay un error al renderizar el texto.
+        """
         box_rect = pygame.Rect(20, self.screen.get_height() - 120, self.screen.get_width() - 40, 100)
         pygame.draw.rect(self.screen, (40, 40, 50), box_rect, border_radius=10)
         pygame.draw.rect(self.screen, (200, 200, 200), box_rect, width=4, border_radius=10)
@@ -183,6 +327,25 @@ class Renderer:
             self.screen.blit(text_surface, (box_rect.x + 30, y))
 
     def draw_health_bar(self, x, y, name, hp, max_hp, level, is_player=False, status=AilmentType.NONE):
+        """
+        Dibuja una barra de salud en la pantalla.
+
+        Args:
+            x (int): La coordenada x donde se dibujará la barra de salud.
+            y (int): La coordenada y donde se dibujará la barra de salud.
+            name (str): El nombre del personaje o entidad que posee la barra de salud.
+            hp (int): La cantidad de puntos de salud actuales.
+            max_hp (int): La cantidad máxima de puntos de salud.
+            level (int): El nivel del personaje o entidad.
+            is_player (bool, opcional): Un indicador que especifica si la barra de salud es para el jugador. Por defecto es False.
+            status (AilmentType, opcional): El estado de afectación del personaje o entidad. Por defecto es AilmentType.NONE.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
         box_rect = pygame.Rect(x, y, 280, 80)
         pygame.draw.rect(self.screen, (240, 240, 230), box_rect, border_radius=10)
         pygame.draw.rect(self.screen, (50, 50, 50), box_rect, width=3, border_radius=10)

@@ -26,6 +26,28 @@ WINDOW_HEIGHT = 700
 FPS = 60
 
 def main():
+    """
+    ```python
+    def main():
+        \"\"\"
+        Inicia y controla la ejecución del juego.
+
+        Inicializa Pygame, carga los recursos necesarios y configura la pantalla.
+        Administra los diferentes estados del juego, como el menú de inicio, la selección de modos,
+        la elección de equipos y la configuración de dificultad.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            FileNotFoundError: Si no se encuentra alguno de los archivos necesarios para el juego.
+            pygame.error: Si ocurre un error al inicializar Pygame o al cargar los recursos.
+        \"\"\"
+    ```
+    """
     pygame.init()
     pygame.mixer.init() # Inicializa el módulo de música
 

@@ -7,6 +7,20 @@ from src.entities.enums import PokemonType, AilmentType
 
 class DataLoader:
     def __init__(self, pokemon_file_path: str, moves_file_path: str):
+        """
+        Inicializa un objeto con datos de pokémon y movimientos.
+
+        Args:
+            pokemon_file_path (str): Ruta al archivo que contiene los datos de los pokémon.
+            moves_file_path (str): Ruta al archivo que contiene los datos de los movimientos.
+
+        Returns:
+            None
+
+        Raises:
+            FileNotFoundError: Si alguno de los archivos proporcionados no existe.
+            json.JSONDecodeError: Si los archivos proporcionados no contienen un formato JSON válido.
+        """
         with open(pokemon_file_path, 'r', encoding='utf-8') as f:
             self.pokemon_data = json.load(f)
             

@@ -7,6 +7,22 @@ from src.entities.enums import AilmentType
 from .damage_calc import calculate_damage, get_type_multiplier
 
 def _is_valid_switch(team: List[Pokemon], current_idx: int, target_idx: int) -> bool:
+    """
+
+    Determina si se puede realizar un intercambio válido en el equipo.
+
+    Args:
+        team (List[Pokemon]): El equipo de Pokémon.
+        current_idx (int): El índice actual en el equipo.
+        target_idx (int): El índice objetivo en el equipo.
+
+    Returns:
+        bool: True si el intercambio es válido, False en caso contrario.
+
+    Raises:
+        No se conocen excepciones.
+
+    """
     if target_idx < 0 or target_idx >= len(team):
         return False
     if target_idx == current_idx:
@@ -22,6 +38,20 @@ def _is_valid_move(pokemon: Pokemon, move_idx: int) -> bool:
     return move is not None and move.current_pp > 0
 
 def _first_available_alive(team: List[Pokemon], exclude_idx: int | None = None) -> int | None:
+    """
+    Descripción breve:
+    Devuelve el índice del primer Pokémon vivo y disponible en el equipo, excluyendo el índice especificado.
+
+    Args:
+        team (List[Pokemon]): El equipo de Pokémon.
+        exclude_idx (int | None, opcional): El índice del Pokémon a excluir. Defaults to None.
+
+    Returns:
+        int | None: El índice del primer Pokémon vivo y disponible, o None si no se encuentra ningún Pokémon vivo.
+
+    Raises:
+        No lanza excepciones.
+    """
     for i, p in enumerate(team):
         if i == exclude_idx:
             continue
@@ -36,6 +66,21 @@ def determine_turn_order(
     p2_pokemon: Pokemon,
     p2_action: Action
 ) -> list[tuple[int, Pokemon, Action]]:
+    """
+    Determina el orden de turno de los pokemon en base a sus acciones.
+
+    Args:
+        p1_pokemon (Pokemon): El pokemon del jugador 1.
+        p1_action (Action): La acción del pokemon del jugador 1.
+        p2_pokemon (Pokemon): El pokemon del jugador 2.
+        p2_action (Action): La acción del pokemon del jugador 2.
+
+    Returns:
+        list[tuple[int, Pokemon, Action]]: Una lista de tuplas que contienen el orden de turno, el pokemon y la acción correspondientes.
+
+    Raises:
+        No se contempla explícitamente ninguna excepción en esta función, aunque puede generar errores si los parámetros no son del tipo esperado o si no se cumplen ciertas condiciones en la lógica de determinación del orden de turno.
+    """
     order = []
 
     if p1_action.type == ActionType.SWITCH:
@@ -73,6 +118,23 @@ def process_turn(
     p2_active_idx: int,
     p2_action: Action
 ) -> tuple[TurnResult, int, int]:
+    """
+    Procesa un turno en una batalla de Pokémon.
+
+    Args:
+        p1_team (List[Pokemon]): Equipo de Pokémon del jugador 1.
+        p1_active_idx (int): Índice del Pokémon activo del jugador 1.
+        p1_action (Action): Acción del jugador 1.
+        p2_team (List[Pokemon]): Equipo de Pokémon del jugador 2.
+        p2_active_idx (int): Índice del Pokémon activo del jugador 2.
+        p2_action (Action): Acción del jugador 2.
+
+    Returns:
+        tuple[TurnResult, int, int]: Un objeto TurnResult que contiene los resultados del turno, y los nuevos índices de los Pokémon activos de ambos jugadores.
+
+    Raises:
+        Exception: Si se produce un error durante el procesamiento del turno.
+    """
     outcomes: List[ActionOutcome] = []
     match_over = False
     winner = None
