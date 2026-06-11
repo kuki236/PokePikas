@@ -1301,16 +1301,24 @@ class BattleScreen:
         
         switch_bg = pygame.Rect(10, self.top_h + 10, self.sw - 20, self.bottom_h - 20)
         pygame.draw.rect(self.screen, (200, 240, 200), switch_bg, border_radius=10)
-        self.renderer.draw_text("Elige un Pokémon:", 'subtitle', (40, 40, 40), self.sw//2, self.top_h + 30, center=True, shadow=False)
 
-        for i, (idx, pkm) in enumerate(available_pokemon):
-            rect = pygame.Rect(start_x + i * (btn_w + pad), start_y, btn_w, btn_h)
-            self.switch_buttons_rects.append((rect, idx))
-            
+        if not available_pokemon:
+            self.renderer.draw_text("¡No tienes otros Pokémon disponibles!", 'subtitle', (40, 40, 40), self.sw//2, self.top_h + 40, center=True, shadow=False)
+            rect = pygame.Rect(self.sw//2 - btn_w//2, self.top_h + 80, btn_w, btn_h)
+            self.switch_buttons_rects.append((rect, "VOLVER"))
             is_hovered = rect.collidepoint(mouse_pos)
-            
-            hp_text = f"HP: {pkm.current_hp}/{pkm.max_hp}"
-            self._draw_colored_button(rect, pkm.name.capitalize(), is_hovered, (80, 200, 80), sub_text=hp_text, font_override=self.renderer.font_subtitle)
+            self._draw_colored_button(rect, "Volver", is_hovered, (200, 80, 80))
+        else:
+            self.renderer.draw_text("Elige un Pokémon:", 'subtitle', (40, 40, 40), self.sw//2, self.top_h + 30, center=True, shadow=False)
+
+            for i, (idx, pkm) in enumerate(available_pokemon):
+                rect = pygame.Rect(start_x + i * (btn_w + pad), start_y, btn_w, btn_h)
+                self.switch_buttons_rects.append((rect, idx))
+                
+                is_hovered = rect.collidepoint(mouse_pos)
+                
+                hp_text = f"HP: {pkm.current_hp}/{pkm.max_hp}"
+                self._draw_colored_button(rect, pkm.name.capitalize(), is_hovered, (80, 200, 80), sub_text=hp_text, font_override=self.renderer.font_subtitle)
 
     def _handle_switch_click(self, mouse_pos):
         """
@@ -1327,6 +1335,12 @@ class BattleScreen:
         """
         for rect, pkm_idx in self.switch_buttons_rects:
             if rect.collidepoint(mouse_pos):
+                if pkm_idx == "VOLVER":
+                    self.waiting_for_player_switch = False
+                    self.waiting_for_player_action = True
+                    self.showing_moves = True
+                    return
+
                 if self.p1_team[self.p1_active_idx].current_hp > 0:
                     action = Action(type=ActionType.SWITCH, target_index=pkm_idx)
                     self.player_pending_action = action
