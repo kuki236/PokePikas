@@ -1,7 +1,7 @@
 [
     {
         "id": 53,
-        "name": "flamethrower",
+        "name": "lanzallamas",
         "power": 90,
         "accuracy": 100,
         "move_type": "FIRE",
@@ -15,7 +15,7 @@
     },
     {
         "id": 126,
-        "name": "fire-blast",
+        "name": "llamarada",
         "power": 110,
         "accuracy": 85,
         "move_type": "FIRE",
@@ -29,7 +29,7 @@
     },
     {
         "id": 337,
-        "name": "dragon-claw",
+        "name": "garra-dragon",
         "power": 80,
         "accuracy": 100,
         "move_type": "DRAGON",
@@ -43,7 +43,7 @@
     },
     {
         "id": 403,
-        "name": "air-slash",
+        "name": "corte-aereo",
         "power": 75,
         "accuracy": 95,
         "move_type": "FLYING",
@@ -57,7 +57,7 @@
     },
     {
         "id": 355,
-        "name": "roost",
+        "name": "respiro",
         "power": 0,
         "accuracy": 100,
         "move_type": "FLYING",
@@ -71,7 +71,7 @@
     },
     {
         "id": 412,
-        "name": "energy-ball",
+        "name": "energia-bola",
         "power": 90,
         "accuracy": 100,
         "move_type": "GRASS",
@@ -85,7 +85,7 @@
     },
     {
         "id": 89,
-        "name": "earthquake",
+        "name": "terremoto",
         "power": 90,
         "accuracy": 90,
         "move_type": "GROUND",
@@ -99,7 +99,7 @@
     },
     {
         "id": 394,
-        "name": "flare-blitz",
+        "name": "envite-igneo",
         "power": 120,
         "accuracy": 100,
         "move_type": "FIRE",
@@ -113,7 +113,7 @@
     },
     {
         "id": 188,
-        "name": "sludge-bomb",
+        "name": "bomba-lodo",
         "power": 90,
         "accuracy": 100,
         "move_type": "POISON",
@@ -127,7 +127,7 @@
     },
     {
         "id": 235,
-        "name": "synthesis",
+        "name": "sintesis",
         "power": 0,
         "accuracy": 100,
         "move_type": "GRASS",
@@ -141,7 +141,7 @@
     },
     {
         "id": 73,
-        "name": "leech-seed",
+        "name": "drenadoras",
         "power": 0,
         "accuracy": 90,
         "move_type": "GRASS",
@@ -155,7 +155,7 @@
     },
     {
         "id": 79,
-        "name": "sleep-powder",
+        "name": "polvo-sueno",
         "power": 0,
         "accuracy": 75,
         "move_type": "GRASS",
@@ -169,7 +169,7 @@
     },
     {
         "id": 202,
-        "name": "giga-drain",
+        "name": "gigadrenado",
         "power": 75,
         "accuracy": 100,
         "move_type": "GRASS",
@@ -183,7 +183,7 @@
     },
     {
         "id": 92,
-        "name": "toxic",
+        "name": "toxico",
         "power": 0,
         "accuracy": 90,
         "move_type": "POISON",
@@ -197,7 +197,7 @@
     },
     {
         "id": 56,
-        "name": "hydro-pump",
+        "name": "hidrobomba",
         "power": 110,
         "accuracy": 80,
         "move_type": "WATER",
@@ -225,7 +225,7 @@
     },
     {
         "id": 58,
-        "name": "ice-beam",
+        "name": "rayo-hielo",
         "power": 90,
         "accuracy": 100,
         "move_type": "ICE",
@@ -239,7 +239,7 @@
     },
     {
         "id": 430,
-        "name": "flash-cannon",
+        "name": "canon-flash",
         "power": 80,
         "accuracy": 100,
         "move_type": "STEEL",
@@ -253,7 +253,7 @@
     },
     {
         "id": 396,
-        "name": "aura-sphere",
+        "name": "esfera-aura",
         "power": 80,
         "accuracy": 100,
         "move_type": "FIGHTING",
@@ -267,7 +267,7 @@
     },
     {
         "id": 323,
-        "name": "water-spout",
+        "name": "surtidor",
         "power": 100,
         "accuracy": 85,
         "move_type": "WATER",
@@ -281,7 +281,7 @@
     },
     {
         "id": 229,
-        "name": "rapid-spin",
+        "name": "giro-rapido",
         "power": 50,
         "accuracy": 100,
         "move_type": "NORMAL",
@@ -295,7 +295,7 @@
     },
     {
         "id": 247,
-        "name": "shadow-ball",
+        "name": "esfera-sombra",
         "power": 80,
         "accuracy": 100,
         "move_type": "GHOST",
@@ -309,7 +309,7 @@
     },
     {
         "id": 411,
-        "name": "focus-blast",
+        "name": "onda-certera",
         "power": 120,
         "accuracy": 70,
         "move_type": "FIGHTING",
@@ -323,7 +323,7 @@
     },
     {
         "id": 85,
-        "name": "thunderbolt",
+        "name": "rayo",
         "power": 90,
         "accuracy": 100,
         "move_type": "ELECTRIC",
@@ -337,7 +337,7 @@
     },
     {
         "id": 506,
-        "name": "hex",
+        "name": "maleficio",
         "power": 65,
         "accuracy": 100,
         "move_type": "GHOST",
@@ -351,7 +351,7 @@
     },
     {
         "id": 261,
-        "name": "will-o-wisp",
+        "name": "fuego-fatuo",
         "power": 0,
         "accuracy": 85,
         "move_type": "FIRE",
@@ -365,7 +365,7 @@
     },
     {
         "id": 399,
-        "name": "dark-pulse",
+        "name": "pulso-umbrio",
         "power": 80,
         "accuracy": 100,
         "move_type": "DARK",
@@ -379,7 +379,7 @@
     },
     {
         "id": 34,
-        "name": "body-slam",
+        "name": "golpe-cuerpo",
         "power": 85,
         "accuracy": 100,
         "move_type": "NORMAL",
@@ -393,7 +393,7 @@
     },
     {
         "id": 242,
-        "name": "crunch",
+        "name": "triturar",
         "power": 80,
         "accuracy": 100,
         "move_type": "DARK",
@@ -407,7 +407,7 @@
     },
     {
         "id": 484,
-        "name": "heavy-slam",
+        "name": "golpe-pesado",
         "power": 0,
         "accuracy": 100,
         "move_type": "STEEL",
@@ -421,7 +421,7 @@
     },
     {
         "id": 156,
-        "name": "rest",
+        "name": "descanso",
         "power": 0,
         "accuracy": 100,
         "move_type": "PSYCHIC",
@@ -435,7 +435,7 @@
     },
     {
         "id": 94,
-        "name": "psychic",
+        "name": "psiquico",
         "power": 90,
         "accuracy": 100,
         "move_type": "PSYCHIC",
@@ -449,7 +449,7 @@
     },
     {
         "id": 428,
-        "name": "zen-headbutt",
+        "name": "cabezazo-zen",
         "power": 80,
         "accuracy": 90,
         "move_type": "PSYCHIC",
@@ -463,7 +463,7 @@
     },
     {
         "id": 667,
-        "name": "high-horsepower",
+        "name": "alta-potencia",
         "power": 95,
         "accuracy": 95,
         "move_type": "GROUND",
@@ -477,7 +477,7 @@
     },
     {
         "id": 348,
-        "name": "leaf-blade",
+        "name": "hoja-aguda",
         "power": 90,
         "accuracy": 100,
         "move_type": "GRASS",
@@ -491,7 +491,7 @@
     },
     {
         "id": 406,
-        "name": "dragon-pulse",
+        "name": "pulso-dragon",
         "power": 85,
         "accuracy": 100,
         "move_type": "DRAGON",
@@ -505,7 +505,7 @@
     },
     {
         "id": 404,
-        "name": "x-scissor",
+        "name": "tijera-x",
         "power": 80,
         "accuracy": 100,
         "move_type": "BUG",
@@ -519,7 +519,7 @@
     },
     {
         "id": 437,
-        "name": "leaf-storm",
+        "name": "tormenta-foliar",
         "power": 105,
         "accuracy": 75,
         "move_type": "GRASS",
@@ -533,7 +533,7 @@
     },
     {
         "id": 136,
-        "name": "high-jump-kick",
+        "name": "patada-salto-alta",
         "power": 130,
         "accuracy": 90,
         "move_type": "FIGHTING",
@@ -547,7 +547,7 @@
     },
     {
         "id": 413,
-        "name": "brave-bird",
+        "name": "ave-brava",
         "power": 120,
         "accuracy": 100,
         "move_type": "FLYING",
@@ -561,7 +561,7 @@
     },
     {
         "id": 444,
-        "name": "stone-edge",
+        "name": "filo-de-piedra",
         "power": 100,
         "accuracy": 80,
         "move_type": "ROCK",
@@ -575,7 +575,7 @@
     },
     {
         "id": 421,
-        "name": "shadow-claw",
+        "name": "garra-sombra",
         "power": 70,
         "accuracy": 100,
         "move_type": "GHOST",
@@ -589,7 +589,7 @@
     },
     {
         "id": 299,
-        "name": "blaze-kick",
+        "name": "patada-llameante",
         "power": 85,
         "accuracy": 90,
         "move_type": "FIRE",
@@ -603,7 +603,7 @@
     },
     {
         "id": 370,
-        "name": "close-combat",
+        "name": "combate-cercano",
         "power": 95,
         "accuracy": 80,
         "move_type": "FIGHTING",
@@ -617,7 +617,7 @@
     },
     {
         "id": 127,
-        "name": "waterfall",
+        "name": "cascada",
         "power": 80,
         "accuracy": 100,
         "move_type": "WATER",
@@ -631,7 +631,7 @@
     },
     {
         "id": 8,
-        "name": "ice-punch",
+        "name": "puno-hielo",
         "power": 75,
         "accuracy": 100,
         "move_type": "ICE",
@@ -645,7 +645,7 @@
     },
     {
         "id": 330,
-        "name": "muddy-water",
+        "name": "agua-fangosa",
         "power": 90,
         "accuracy": 85,
         "move_type": "WATER",
@@ -659,7 +659,7 @@
     },
     {
         "id": 276,
-        "name": "superpower",
+        "name": "superpoder",
         "power": 95,
         "accuracy": 80,
         "move_type": "FIGHTING",
@@ -673,7 +673,7 @@
     },
     {
         "id": 585,
-        "name": "moonblast",
+        "name": "fuerza-lunar",
         "power": 95,
         "accuracy": 100,
         "move_type": "FAIRY",
@@ -687,7 +687,7 @@
     },
     {
         "id": 473,
-        "name": "psyshock",
+        "name": "psicocarga",
         "power": 80,
         "accuracy": 100,
         "move_type": "PSYCHIC",
@@ -701,7 +701,7 @@
     },
     {
         "id": 595,
-        "name": "mystical-fire",
+        "name": "fuego-mistico",
         "power": 75,
         "accuracy": 100,
         "move_type": "FIRE",
@@ -715,7 +715,7 @@
     },
     {
         "id": 309,
-        "name": "meteor-mash",
+        "name": "puno-meteoro",
         "power": 90,
         "accuracy": 90,
         "move_type": "STEEL",
@@ -729,7 +729,7 @@
     },
     {
         "id": 418,
-        "name": "bullet-punch",
+        "name": "puno-bala",
         "power": 40,
         "accuracy": 100,
         "move_type": "STEEL",
@@ -743,7 +743,7 @@
     },
     {
         "id": 9,
-        "name": "thunder-punch",
+        "name": "puno-trueno",
         "power": 75,
         "accuracy": 100,
         "move_type": "ELECTRIC",
@@ -757,7 +757,7 @@
     },
     {
         "id": 359,
-        "name": "hammer-arm",
+        "name": "brazo-martillo",
         "power": 100,
         "accuracy": 90,
         "move_type": "FIGHTING",
@@ -771,7 +771,7 @@
     },
     {
         "id": 245,
-        "name": "extreme-speed",
+        "name": "velocidad-extrema",
         "power": 80,
         "accuracy": 100,
         "move_type": "NORMAL",
@@ -785,7 +785,7 @@
     },
     {
         "id": 200,
-        "name": "outrage",
+        "name": "ultraataque",
         "power": 100,
         "accuracy": 80,
         "move_type": "DRAGON",
@@ -799,7 +799,7 @@
     },
     {
         "id": 424,
-        "name": "fire-fang",
+        "name": "colmillo-igneo",
         "power": 65,
         "accuracy": 95,
         "move_type": "FIRE",
@@ -813,7 +813,7 @@
     },
     {
         "id": 442,
-        "name": "iron-head",
+        "name": "cabezazo-hierro",
         "power": 80,
         "accuracy": 100,
         "move_type": "STEEL",
@@ -827,7 +827,7 @@
     },
     {
         "id": 398,
-        "name": "poison-jab",
+        "name": "puntada-toxica",
         "power": 80,
         "accuracy": 100,
         "move_type": "POISON",
@@ -841,7 +841,7 @@
     },
     {
         "id": 183,
-        "name": "mach-punch",
+        "name": "puno-mach",
         "power": 40,
         "accuracy": 100,
         "move_type": "FIGHTING",
@@ -855,7 +855,7 @@
     },
     {
         "id": 605,
-        "name": "dazzling-gleam",
+        "name": "brillo-magico",
         "power": 80,
         "accuracy": 100,
         "move_type": "FAIRY",
@@ -869,7 +869,7 @@
     },
     {
         "id": 304,
-        "name": "hyper-voice",
+        "name": "voz-arrolladora",
         "power": 90,
         "accuracy": 100,
         "move_type": "NORMAL",
@@ -883,7 +883,7 @@
     },
     {
         "id": 528,
-        "name": "wild-charge",
+        "name": "carga-salvaje",
         "power": 90,
         "accuracy": 100,
         "move_type": "ELECTRIC",
@@ -897,7 +897,7 @@
     },
     {
         "id": 7,
-        "name": "fire-punch",
+        "name": "puno-igneo",
         "power": 75,
         "accuracy": 100,
         "move_type": "FIRE",
@@ -911,7 +911,7 @@
     },
     {
         "id": 238,
-        "name": "cross-chop",
+        "name": "golpe-cruzado",
         "power": 100,
         "accuracy": 80,
         "move_type": "FIGHTING",
@@ -925,7 +925,7 @@
     },
     {
         "id": 211,
-        "name": "steel-wing",
+        "name": "ala-de-acero",
         "power": 70,
         "accuracy": 90,
         "move_type": "STEEL",
@@ -939,7 +939,7 @@
     },
     {
         "id": 512,
-        "name": "acrobatics",
+        "name": "acrobacias",
         "power": 55,
         "accuracy": 100,
         "move_type": "FLYING",
@@ -953,7 +953,7 @@
     },
     {
         "id": 488,
-        "name": "flame-charge",
+        "name": "carga-llamas",
         "power": 50,
         "accuracy": 100,
         "move_type": "FIRE",
@@ -967,7 +967,7 @@
     },
     {
         "id": 98,
-        "name": "quick-attack",
+        "name": "ataque-rapido",
         "power": 40,
         "accuracy": 100,
         "move_type": "NORMAL",
@@ -981,7 +981,7 @@
     },
     {
         "id": 577,
-        "name": "draining-kiss",
+        "name": "beso-drenaje",
         "power": 50,
         "accuracy": 100,
         "move_type": "FAIRY",
@@ -995,7 +995,7 @@
     },
     {
         "id": 434,
-        "name": "draco-meteor",
+        "name": "meteorodragon",
         "power": 105,
         "accuracy": 75,
         "move_type": "DRAGON",
@@ -1009,7 +1009,7 @@
     },
     {
         "id": 438,
-        "name": "power-whip",
+        "name": "latigazo",
         "power": 120,
         "accuracy": 85,
         "move_type": "GRASS",
@@ -1023,7 +1023,7 @@
     },
     {
         "id": 560,
-        "name": "flying-press",
+        "name": "presion-voladora",
         "power": 100,
         "accuracy": 95,
         "move_type": "FIGHTING",
@@ -1037,7 +1037,7 @@
     },
     {
         "id": 542,
-        "name": "hurricane",
+        "name": "huracan",
         "power": 110,
         "accuracy": 70,
         "move_type": "FLYING",
@@ -1051,7 +1051,7 @@
     },
     {
         "id": 586,
-        "name": "boomburst",
+        "name": "estruendo",
         "power": 100,
         "accuracy": 85,
         "move_type": "NORMAL",
@@ -1065,7 +1065,7 @@
     },
     {
         "id": 662,
-        "name": "spirit-shackle",
+        "name": "grillete-espectral",
         "power": 80,
         "accuracy": 100,
         "move_type": "GHOST",
@@ -1079,7 +1079,7 @@
     },
     {
         "id": 389,
-        "name": "sucker-punch",
+        "name": "golpe-bajo",
         "power": 70,
         "accuracy": 100,
         "move_type": "DARK",
@@ -1093,7 +1093,7 @@
     },
     {
         "id": 663,
-        "name": "darkest-lariat",
+        "name": "lariat-siniestro",
         "power": 85,
         "accuracy": 100,
         "move_type": "DARK",
@@ -1107,7 +1107,7 @@
     },
     {
         "id": 664,
-        "name": "sparkling-aria",
+        "name": "aria-espumosa",
         "power": 90,
         "accuracy": 100,
         "move_type": "WATER",
@@ -1121,7 +1121,7 @@
     },
     {
         "id": 710,
-        "name": "liquidation",
+        "name": "liquidacion",
         "power": 85,
         "accuracy": 100,
         "move_type": "WATER",
@@ -1135,7 +1135,7 @@
     },
     {
         "id": 141,
-        "name": "leech-life",
+        "name": "chupavidas",
         "power": 80,
         "accuracy": 100,
         "move_type": "BUG",
@@ -1149,7 +1149,7 @@
     },
     {
         "id": 529,
-        "name": "drill-run",
+        "name": "perforacion",
         "power": 80,
         "accuracy": 95,
         "move_type": "GROUND",
@@ -1163,7 +1163,7 @@
     },
     {
         "id": 691,
-        "name": "clanging-scales",
+        "name": "choque-escamas",
         "power": 110,
         "accuracy": 100,
         "move_type": "DRAGON",
@@ -1177,7 +1177,7 @@
     },
     {
         "id": 780,
-        "name": "pyro-ball",
+        "name": "bola-de-fuego",
         "power": 120,
         "accuracy": 90,
         "move_type": "FIRE",
@@ -1191,7 +1191,7 @@
     },
     {
         "id": 441,
-        "name": "gunk-shot",
+        "name": "bazuca-lodo",
         "power": 120,
         "accuracy": 80,
         "move_type": "POISON",
@@ -1205,7 +1205,7 @@
     },
     {
         "id": 776,
-        "name": "body-press",
+        "name": "planchado",
         "power": 80,
         "accuracy": 100,
         "move_type": "FIGHTING",
@@ -1219,7 +1219,7 @@
     },
     {
         "id": 65,
-        "name": "drill-peck",
+        "name": "pico-taladro",
         "power": 80,
         "accuracy": 100,
         "move_type": "FLYING",
@@ -1233,7 +1233,7 @@
     },
     {
         "id": 371,
-        "name": "payback",
+        "name": "venganza",
         "power": 50,
         "accuracy": 100,
         "move_type": "DARK",
@@ -1247,7 +1247,7 @@
     },
     {
         "id": 789,
-        "name": "spirit-break",
+        "name": "quiebre-espiritu",
         "power": 75,
         "accuracy": 100,
         "move_type": "FAIRY",
@@ -1261,7 +1261,7 @@
     },
     {
         "id": 583,
-        "name": "play-rough",
+        "name": "carantona",
         "power": 90,
         "accuracy": 90,
         "move_type": "FAIRY",
@@ -1275,7 +1275,7 @@
     },
     {
         "id": 409,
-        "name": "drain-punch",
+        "name": "puno-drenaje",
         "power": 75,
         "accuracy": 100,
         "move_type": "FIGHTING",
@@ -1289,7 +1289,7 @@
     },
     {
         "id": 594,
-        "name": "water-shuriken",
+        "name": "shuriken-de-agua",
         "power": 15,
         "accuracy": 100,
         "move_type": "WATER",
@@ -1303,7 +1303,7 @@
     },
     {
         "id": 326,
-        "name": "extrasensory",
+        "name": "extrasensible",
         "power": 80,
         "accuracy": 100,
         "move_type": "PSYCHIC",
@@ -1317,7 +1317,7 @@
     },
     {
         "id": 400,
-        "name": "night-slash",
+        "name": "tajo-nocturno",
         "power": 70,
         "accuracy": 100,
         "move_type": "DARK",

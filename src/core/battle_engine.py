@@ -225,7 +225,7 @@ def process_turn(
             if hit_success:
                 if move.category == "STATUS":
                     multi = get_type_multiplier(move.move_type, defender.types)
-                    if move.name.lower() == "rest":
+                    if move.name.lower() == "descanso":
                         if not attacker.is_fainted():
                             attacker.heal(attacker.max_hp)
                             attacker.status_ailment = AilmentType.SLEEP

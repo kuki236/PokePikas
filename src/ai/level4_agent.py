@@ -127,7 +127,7 @@ class Level4Agent(BaseAgent):
 
                     healing_val = getattr(move, 'healing', 0)
                     if healing_val > 0:
-                        mod_rest = 0.4 if getattr(move, 'name', '').lower() == 'rest' else 1.0
+                        mod_rest = 0.4 if getattr(move, 'name', '').lower() == 'descanso' else 1.0
                         possible_cure += int(active.max_hp * (healing_val / 100.0) * mod_rest)
 
                     score = damage + possible_cure
