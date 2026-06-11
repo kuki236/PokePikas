@@ -226,11 +226,13 @@ def process_turn(
                 if move.category == "STATUS":
                     multi = get_type_multiplier(move.move_type, defender.types)
                     if move.name.lower() == "rest":
-                        attacker.heal(attacker.max_hp) 
-                        attacker.status_ailment = AilmentType.SLEEP
-                        status_applied = AilmentType.SLEEP
+                        if not attacker.is_fainted():
+                            attacker.heal(attacker.max_hp)
+                            attacker.status_ailment = AilmentType.SLEEP
+                            status_applied = AilmentType.SLEEP
                     elif move.healing > 0:
-                        attacker.heal(int(attacker.max_hp * (move.healing / 100.0)))
+                        if not attacker.is_fainted():
+                            attacker.heal(int(attacker.max_hp * (move.healing / 100.0)))
                     
                     is_fire_burn = move.ailment == AilmentType.BURN and "FIRE" in defender.types
                     if move.ailment != AilmentType.NONE and defender.status_ailment == AilmentType.NONE and multi > 0 and not is_fire_burn:
@@ -273,7 +275,7 @@ def process_turn(
                     multi = last_multi
                     defender.take_damage(damage)
                
-                    if move.drain > 0 and damage > 0:
+                    if move.drain > 0 and damage > 0 and not attacker.is_fainted():
                         attacker.heal(int(damage * (move.drain / 100.0)))
                     
                     if move.id in [528, 413] and damage > 0:

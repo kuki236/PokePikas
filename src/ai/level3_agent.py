@@ -214,12 +214,19 @@ class Level3Agent(BaseAgent):
         )
 
         for my_action in legal_actions:
+            next_my_cooldown = (
+                0
+                if my_action.type == ActionType.SWITCH
+                else self.turns_since_last_switch + 1
+            )
             value = self._min_value(
                 state,
                 AI_LEVEL3_DEPTH - 1,
                 alpha,
                 beta,
-                my_action
+                my_action,
+                next_my_cooldown,
+                2
             )
 
             if value > best_value:
@@ -238,7 +245,9 @@ class Level3Agent(BaseAgent):
         state: BattleState,
         depth: int,
         alpha: float,
-        beta: float
+        beta: float,
+        my_cooldown: int,
+        opp_cooldown: int
     ) -> float:
 
         """
@@ -267,18 +276,25 @@ class Level3Agent(BaseAgent):
         legal_actions = self._get_legal_actions(
             team,
             active_idx,
-            2
+            my_cooldown
         )
 
         v = -INF
 
         for my_action in legal_actions:
+            next_my_cd = (
+                0
+                if my_action.type == ActionType.SWITCH
+                else my_cooldown + 1
+            )
             value = self._min_value(
                 state,
                 depth - 1,
                 alpha,
                 beta,
-                my_action
+                my_action,
+                next_my_cd,
+                opp_cooldown
             )
 
             v = max(v, value)
@@ -296,7 +312,9 @@ class Level3Agent(BaseAgent):
         depth: int,
         alpha: float,
         beta: float,
-        my_action: Action
+        my_action: Action,
+        my_cooldown: int,
+        opp_cooldown: int
     ) -> float:
 
         """
@@ -334,7 +352,7 @@ class Level3Agent(BaseAgent):
         opp_actions = self._get_legal_actions(
             opp_team,
             opp_active_idx,
-            2
+            opp_cooldown
         )
 
         v = INF
@@ -353,11 +371,18 @@ class Level3Agent(BaseAgent):
                     my_action
                 )
 
+            next_opp_cd = (
+                0
+                if opp_action.type == ActionType.SWITCH
+                else opp_cooldown + 1
+            )
             value = self._max_value(
                 next_state,
                 depth,
                 alpha,
-                beta
+                beta,
+                my_cooldown,
+                next_opp_cd
             )
 
             v = min(v, value)

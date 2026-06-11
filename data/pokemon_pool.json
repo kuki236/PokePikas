@@ -695,11 +695,11 @@
             "DARK"
         ],
         "max_hp": 72,
-        "attack": 145,
-        "defense": 67,
-        "special_attack": 153,
-        "special_defense": 71,
-        "speed": 132,
+        "attack": 125,
+        "defense": 60,
+        "special_attack": 130,
+        "special_defense": 65,
+        "speed": 128,
         "move_ids": [
             594,
             399,

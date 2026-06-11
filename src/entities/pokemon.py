@@ -67,9 +67,13 @@ class Pokemon:
             self.stat_stages[stat] = 0
 
     def take_damage(self, amount: int) -> None:
+        if amount <= 0:
+            return
         self.current_hp = max(0, self.current_hp - amount)
 
     def heal(self, amount: int) -> None:
+        if self.is_fainted() or amount <= 0:
+            return
         self.current_hp = min(self.max_hp, self.current_hp + amount)
 
     def is_fainted(self) -> bool:

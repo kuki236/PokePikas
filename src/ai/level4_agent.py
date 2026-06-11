@@ -334,7 +334,7 @@ class Level4Agent(BaseAgent):
                 beta,
                 my_action,
                 next_my_cd,
-                opp_cooldown + 1
+                opp_cooldown
             )
 
             v = max(v, value)
