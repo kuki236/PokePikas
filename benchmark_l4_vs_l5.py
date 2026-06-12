@@ -22,13 +22,18 @@ from src.ai.level5_agent import Level5Agent
 from src.core.battle_engine import process_turn
 from src.core.interfaces import BattleState
 from src.entities.pokemon import Pokemon
-from src.utils.data_loader import DataLoader
+from src.utils.move_registry import get_data_loader
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 POKEMON_PATH = os.path.join(ROOT_DIR, 'data', 'pokemon_pool.json')
 MOVES_PATH   = os.path.join(ROOT_DIR, 'data', 'moves_pool.json')
-TEAM_SIZE    = 3
+TEAM_SIZE    = 4
 MAX_TURNS    = 120
+
+
+def _init_worker() -> None:
+    """Pre-carga el singleton de DataLoader en cada worker."""
+    get_data_loader(POKEMON_PATH, MOVES_PATH)
 
 
 def _run_battle(args) -> Tuple[int, int, float, float]:
@@ -42,7 +47,7 @@ def _run_battle(args) -> Tuple[int, int, float, float]:
     import random
     random.seed(seed)
 
-    loader = DataLoader(POKEMON_PATH, MOVES_PATH)
+    loader = get_data_loader(POKEMON_PATH, MOVES_PATH)
     p1_team = loader.generate_random_team(TEAM_SIZE)
     p2_team = loader.generate_random_team(TEAM_SIZE)
 
@@ -136,9 +141,10 @@ def run_benchmark(n_battles: int = 500, n_cores: int = None) -> None:
 
     t0 = time.time()
     if n_cores > 1:
-        with Pool(processes=n_cores) as pool:
+        with Pool(processes=n_cores, initializer=_init_worker) as pool:
             results = pool.map(_run_battle, args_list)
     else:
+        _init_worker()
         results = [_run_battle(a) for a in args_list]
     elapsed = time.time() - t0
 

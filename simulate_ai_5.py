@@ -220,4 +220,4 @@ def prueba_rapida_level4_vs_level5(team_size: int = 3):
 if __name__ == '__main__':
     print('Iniciando simulación Headless de pruebas (IA 5 siempre como P1)...')
     prueba_rapida_level4_vs_level5(team_size=3)
-    torneo_level5(team_size=3, batallas=200)
+    torneo_level5(team_size=4, batallas=200)
