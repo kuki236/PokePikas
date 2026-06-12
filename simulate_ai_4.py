@@ -1,192 +1,250 @@
-import sys
-import os
-import copy
-from time import perf_counter
-import random
+"""
+simulate_ai_4.py
+================
+Matriz competitiva completa entre Level1Agent, Level2Agent, Level3Agent y
+Level4Agent. Para cada par alterna quién va de P1/P2 para eliminar el sesgo
+de turno, reporta empates explícitamente y calcula el IC 95% de Wilson.
 
-from src.core.battle_engine import process_turn
-from src.core.interfaces import BattleState, ActionType
+Uso:
+    python simulate_ai_4.py                       # 200 batallas, 3v3 y 4v4
+    python simulate_ai_4.py --n 500               # 500 batallas por par
+    python simulate_ai_4.py --size 3              # solo 3v3
+    python simulate_ai_4.py --size 4              # solo 4v4
+    python simulate_ai_4.py --cores 10             # forzar 10 procesos
+"""
+
+import argparse
+import math
+import os
+import time
+from multiprocessing import Pool, cpu_count
+from statistics import mean
+from typing import List, Tuple
+
 from src.ai.level1_agent import Level1Agent
 from src.ai.level2_agent import Level2Agent
 from src.ai.level3_agent import Level3Agent
-from src.ai.level4_agent import Level4Agent  
-from src.utils.data_loader import DataLoader
+from src.ai.level4_agent import Level4Agent
+from src.core.battle_engine import process_turn
+from src.core.interfaces import BattleState
+from src.utils.move_registry import get_data_loader
 
-def run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False):
-    """Ejecuta una batalla sin renderizado y retorna el ID del ganador y los turnos."""
-    p1_active_idx = 0
-    p2_active_idx = 0
-    match_over = False
-    winner = None
-    turn_count = 0
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+POKEMON_PATH = os.path.join(ROOT_DIR, 'data', 'pokemon_pool.json')
+MOVES_PATH = os.path.join(ROOT_DIR, 'data', 'moves_pool.json')
+MAX_TURNS = 120
 
-    while not match_over and turn_count < 100:  
-        turn_count += 1
-        
-        p1_state_team = [p.to_state() for p in p1_team]
-        p2_state_team = [p.to_state() for p in p2_team]
+AGENT_REGISTRY = {
+    "L1": (Level1Agent, "Nivel 1 (Azar)"),
+    "L2": (Level2Agent, "Nivel 2 (Greedy)"),
+    "L3": (Level3Agent, "Nivel 3 (Minimax)"),
+    "L4": (Level4Agent, "Nivel 4 (Avanzado)"),
+}
 
-        state = BattleState(
-            p1_team=p1_state_team, p1_active_index=p1_active_idx,
-            p2_team=p2_state_team, p2_active_index=p2_active_idx,
-            turn_number=turn_count
-        )
-        
+MATCHUPS: List[Tuple[str, str]] = [
+    ("L1", "L2"),
+    ("L1", "L3"),
+    ("L1", "L4"),
+    ("L2", "L3"),
+    ("L2", "L4"),
+    ("L3", "L4"),
+]
 
-        p1_action = agent1.get_action(state)
-        p2_action = agent2.get_action(state)
 
-        old_stdout = sys.stdout
-        if not print_logs:
-            sys.stdout = open(os.devnull, 'w')
-            
-        try:
-            turn_result, new_p1_idx, new_p2_idx = process_turn(
-                p1_team, p1_active_idx, p1_action,
-                p2_team, p2_active_idx, p2_action
-            )
-        finally:
-            if not print_logs:
-                sys.stdout.close()
-                sys.stdout = old_stdout
-    
+def _init_worker() -> None:
+    """Pre-carga el singleton de DataLoader en cada worker."""
+    get_data_loader(POKEMON_PATH, MOVES_PATH)
 
-        if print_logs:
-            print(f"\n--- TURNO {turn_count} ---")
-            p1_pkmn = p1_team[p1_active_idx]
-            p2_pkmn = p2_team[p2_active_idx]
 
-            for out in turn_result.outcomes:
-                attacker = p1_pkmn if out.actor == 1 else p2_pkmn
-                defender = p2_pkmn if out.actor == 1 else p1_pkmn
-                
-                actor_name = attacker.name.capitalize()
-                target_name = defender.name.capitalize()
-
-                if out.action_type == ActionType.SWITCH:
-                    switched_pkmn = next((p for p in (p1_team if out.actor == 1 else p2_team) if p.id == out.action_id), None)
-                    name = switched_pkmn.name.capitalize() if switched_pkmn else "???"
-                    print(f"[CAMBIO] Actor {out.actor} sacó a {name}")
-                    
-                    if out.actor == 1: p1_pkmn = switched_pkmn
-                    else: p2_pkmn = switched_pkmn
-                else:
-                    actual_move = None
-                    if attacker and hasattr(attacker, 'moves'):
-                        actual_move = next((m for m in attacker.moves if m.id == out.action_id), None)
-                    
-                    if actual_move is None:
-                        mv_label = "Movimiento Desconocido"
-                        cat_icon = "❓"
-                    else:
-                        mv_label = actual_move.name
-                        category = getattr(actual_move, 'category', 'PHYSICAL')
-                        cat_icon = "💥" if category == "PHYSICAL" else ("🔮" if category == "SPECIAL" else "🛡️")
-                    
-                    if not out.hit_success:
-                        print(f"[{actor_name}] intentó usar {mv_label} pero falló o está incapacitado.")
-                    elif out.damage_dealt > 0:
-                        print(f"[{actor_name}] usó {mv_label} {cat_icon}. Daño: {out.damage_dealt}")
-                        if actual_move and getattr(actual_move, 'drain', 0) > 0:
-                            print(f"  -> [{actor_name}] drenó vida. HP actual: {out.attacker_hp_remaining}")
-                    else:
-                        if getattr(out, 'type_multiplier', 1.0) == 0.0:
-                            print(f"[{actor_name}] usó {mv_label} -> 🚫 NO TIENE EFECTO (Inmunidad de {target_name})")
-                        else:
-                            print(f"[{actor_name}] usó {mv_label} (Efecto)")
-                            if actual_move and getattr(actual_move, 'healing', 0) > 0:
-                                print(f"  -> [{actor_name}] se curó. HP actual: {out.attacker_hp_remaining}")
-
-                    if out.status_applied:
-                        status_str = str(out.status_applied).split('.')[-1].replace('_', ' ')
-                        final_target = actor_name if mv_label.lower() == "rest" else target_name
-                        print(f"  -> [ESTADO] ¡{status_str} aplicado a {final_target}!")
-
-                    if out.target_fainted:
-                        print(f"  -> [KO] {target_name} ha caído.")
-
-        p1_active_idx = new_p1_idx
-        p2_active_idx = new_p2_idx
-        match_over = turn_result.match_over
-        winner = turn_result.winner
-        
-    return winner, turn_count
-
-def correr_bateria_enfrentamiento(agent_class_p1, agent_class_p2, team_size=3, batallas=200):
-    """Ejecuta una batería concentrada de batallas entre dos tipos de agentes específicos."""
-    loader = DataLoader("data/pokemon_pool.json", "data/moves_pool.json")
-    wins_p1 = 0
-    wins_p2 = 0
-    total_turns = 0
-    
-    for _ in range(batallas):
-        p1_team = loader.generate_random_team(team_size)
-        p2_team = loader.generate_random_team(team_size)
-        
-        agent1 = agent_class_p1(player_id=1)
-        agent2 = agent_class_p2(player_id=2)
-        
-        winner, turns = run_headless_battle(p1_team, p2_team, agent1, agent2, print_logs=False)
-        
-        total_turns += turns
-        if winner == 1:
-            wins_p1 += 1
-        elif winner == 2:
-            wins_p2 += 1
-            
-    total_validas = wins_p1 + wins_p2
-    wr_p1 = round((wins_p1 / total_validas) * 100) if total_validas > 0 else 0
-    wr_p2 = round((wins_p2 / total_validas) * 100) if total_validas > 0 else 0
-    avg_turns = round(total_turns / batallas, 1) if batallas > 0 else 0
-    
-    return wr_p1, wr_p2, avg_turns
-
-def imprimir_matriz_competitiva(team_size, batallas):
+def _run_battle(args) -> Tuple[int, int]:
     """
-    Imprime una matriz competitiva de torneos de poké pikas.
+    Ejecuta una batalla y retorna (winner_a_perspective, turns).
 
-    Args:
-        team_size (int): Tamaño del equipo.
-        batallas (int): Número de batallas por emparejamiento.
+    winner: 1 = ganó A, 2 = ganó B, 0 = empate.
+    a_is_p1 indica si A actúa como P1 (alternancia para eliminar sesgo).
+    """
+    seed, agent_a_key, agent_b_key, a_is_p1, team_size = args
+
+    import random
+    random.seed(seed)
+
+    loader = get_data_loader(POKEMON_PATH, MOVES_PATH)
+    p1_team = loader.generate_random_team(team_size)
+    p2_team = loader.generate_random_team(team_size)
+
+    cls_a = AGENT_REGISTRY[agent_a_key][0]
+    cls_b = AGENT_REGISTRY[agent_b_key][0]
+
+    if a_is_p1:
+        agent_p1 = cls_a(player_id=1)
+        agent_p2 = cls_b(player_id=2)
+    else:
+        agent_p1 = cls_b(player_id=1)
+        agent_p2 = cls_a(player_id=2)
+
+    p1_idx = p2_idx = 0
+    winner_raw = None
+    turns_played = 0
+
+    for turn in range(1, MAX_TURNS + 1):
+        turns_played = turn
+        state = BattleState(
+            p1_team=[p.to_state() for p in p1_team],
+            p2_team=[p.to_state() for p in p2_team],
+            p1_active_index=p1_idx,
+            p2_active_index=p2_idx,
+            turn_number=turn,
+        )
+        a1 = agent_p1.get_action(state)
+        a2 = agent_p2.get_action(state)
+        result, p1_idx, p2_idx = process_turn(p1_team, p1_idx, a1, p2_team, p2_idx, a2)
+        winner_raw = result.winner
+        if result.match_over:
+            break
+
+    if winner_raw is None:
+        winner = 0
+    elif a_is_p1 and winner_raw == 1:
+        winner = 1
+    elif not a_is_p1 and winner_raw == 2:
+        winner = 1
+    else:
+        winner = 2
+
+    return winner, turns_played
+
+
+def _wilson_interval(wins: int, n: int) -> Tuple[float, float]:
+    """Intervalo de confianza 95% de Wilson para una proporción."""
+    if n == 0:
+        return 0.0, 0.0
+    z = 1.96
+    p = wins / n
+    denom = 1 + z**2 / n
+    centre = (p + z**2 / (2 * n)) / denom
+    half = (z * math.sqrt(p * (1 - p) / n + z**2 / (4 * n**2))) / denom
+    return (centre - half) * 100, (centre + half) * 100
+
+
+def _run_pairing(
+    agent_a_key: str,
+    agent_b_key: str,
+    n_battles: int,
+    team_size: int,
+    n_cores: int,
+) -> dict:
+    """
+    Ejecuta n_battles entre A y B (alternando perspectiva) y retorna métricas.
 
     Returns:
-        None
-
-    Raises:
-        Exception: Si ocurre un error durante la ejecución del torneo.
+        dict con: wins_a, wins_b, draws, wr_a, wr_b, ic_lo, ic_hi,
+                  wr_a_as_p1, wr_a_as_p2, avg_turns, elapsed.
     """
-    print("\n" + "="*85)
-    print(f"{f'TORNEO MULTI-AGENTE POKÉPIKAS ({team_size}v{team_size})':^85}")
-    print(f"{f'Muestra estadística: {batallas} batallas por emparejamiento':^85}")
-    print("="*85)
-    
-    start = perf_counter()
-    wr_l1_a, wr_l2_a, turns_a = correr_bateria_enfrentamiento(Level1Agent, Level2Agent, team_size, batallas)
-    time_a = round(perf_counter() - start, 2)
-    
-    start = perf_counter()
-    wr_l2_b, wr_l3_b, turns_b = correr_bateria_enfrentamiento(Level2Agent, Level3Agent, team_size, batallas)
-    time_b = round(perf_counter() - start, 2)
+    args_list = [
+        (i, agent_a_key, agent_b_key, i % 2 == 0, team_size)
+        for i in range(n_battles)
+    ]
 
-    start = perf_counter()
-    wr_l2_c, wr_l4_c, turns_c = correr_bateria_enfrentamiento(Level2Agent, Level4Agent, team_size, batallas)
-    time_c = round(perf_counter() - start, 2)
+    t0 = time.time()
+    if n_cores > 1:
+        with Pool(processes=n_cores, initializer=_init_worker) as pool:
+            results = pool.map(_run_battle, args_list)
+    else:
+        _init_worker()
+        results = [_run_battle(a) for a in args_list]
+    elapsed = time.time() - t0
 
-    start = perf_counter()
-    wr_l3_d, wr_l4_d, turns_d = correr_bateria_enfrentamiento(Level3Agent, Level4Agent, team_size, batallas)
-    time_d = round(perf_counter() - start, 2)
-    
-    print(f"{'EMPAREJAMIENTO (P1 vs P2)':<38} | {'WIN RATE P1':<11} | {'WIN RATE P2':<11} | {'TURNOS':<6} | {'TIEMPO':<8}")
-    print("-" * 85)
-    print(f"{'Nivel 1 (Azar) vs Nivel 2 (Greedy)':<38} | {f'{wr_l1_a}%':>10} | {f'{wr_l2_a}%':>10} | {turns_a:>6} | {f'{time_a}s':>7}")
-    print("-" * 85)
-    print(f"{'Nivel 2 (Greedy) vs Nivel 3 (Minimax)':<38} | {f'{wr_l2_b}%':>10} | {f'{wr_l3_b}%':>10} | {turns_b:>6} | {f'{time_b}s':>7}")
-    print(f"{'Nivel 2 (Greedy) vs Nivel 4 (Avanzado)':<38} | {f'{wr_l2_c}%':>10} | {f'{wr_l4_c}%':>10} | {turns_c:>6} | {f'{time_c}s':>7}")
-    print("-" * 85)
-    print(f"{'Nivel 3 (Minimax) vs Nivel 4 (Avanzado)':<38} | {f'{wr_l3_d}%':>10} | {f'{wr_l4_d}%':>10} | {turns_d:>6} | {f'{time_d}s':>7}")
-    print("="*85 + "\n")
+    wins_a = sum(1 for r in results if r[0] == 1)
+    wins_b = sum(1 for r in results if r[0] == 2)
+    draws = sum(1 for r in results if r[0] == 0)
 
-if __name__ == "__main__":
-    print("Iniciando simulación Headless de Torneo Cruzado...")
-    imprimir_matriz_competitiva(team_size=3, batallas=200)
-    imprimir_matriz_competitiva(team_size=4, batallas=200)
+    wr_a = wins_a / n_battles * 100
+    wr_b = wins_b / n_battles * 100
+    ic_lo, ic_hi = _wilson_interval(wins_a, n_battles)
+
+    a_as_p1 = [r for r, args in zip(results, args_list) if args[3]]
+    a_as_p2 = [r for r, args in zip(results, args_list) if not args[3]]
+    wr_a_as_p1 = sum(1 for r in a_as_p1 if r[0] == 1) / max(1, len(a_as_p1)) * 100
+    wr_a_as_p2 = sum(1 for r in a_as_p2 if r[0] == 1) / max(1, len(a_as_p2)) * 100
+
+    avg_turns = mean(r[1] for r in results)
+
+    return {
+        "wins_a": wins_a, "wins_b": wins_b, "draws": draws,
+        "wr_a": wr_a, "wr_b": wr_b,
+        "ic_lo": ic_lo, "ic_hi": ic_hi,
+        "wr_a_as_p1": wr_a_as_p1, "wr_a_as_p2": wr_a_as_p2,
+        "avg_turns": avg_turns, "elapsed": elapsed,
+    }
+
+
+def _verdict(ic_lo: float, ic_hi: float, label_a: str, label_b: str) -> str:
+    if ic_lo > 50.0:
+        return f'{label_a} > {label_b}'
+    if ic_hi < 50.0:
+        return f'{label_b} > {label_a}'
+    return 'Empate técnico'
+
+
+def imprimir_matriz(team_size: int, n_battles: int, n_cores: int) -> None:
+    """Ejecuta y reporta la matriz competitiva completa para un team_size dado."""
+    width = 124
+    print()
+    print('=' * width)
+    print(f"{f'MATRIZ COMPETITIVA ({team_size}v{team_size})':^{width}}")
+    sub = f'{n_battles} batallas por par  |  {n_cores} núcleos  |  perspectiva alternada P1/P2'
+    print(f"{sub:^{width}}")
+    print('=' * width)
+
+    header = (
+        f"{'EMPAREJAMIENTO':<32} | "
+        f"{'WR A':>6} | {'WR B':>6} | {'EMP':>4} | "
+        f"{'IC 95% A':>16} | {'TURNOS':>7} | {'TIEMPO':>8} | "
+        f"{'VEREDICTO':<16}"
+    )
+    print(header)
+    print('-' * width)
+
+    total_elapsed = 0.0
+    for key_a, key_b in MATCHUPS:
+        desc_a = AGENT_REGISTRY[key_a][1].split('(')[1].rstrip(')')
+        desc_b = AGENT_REGISTRY[key_b][1].split('(')[1].rstrip(')')
+        pairing_label = f'{key_a} ({desc_a}) vs {key_b} ({desc_b})'
+
+        m = _run_pairing(key_a, key_b, n_battles, team_size, n_cores)
+        total_elapsed += m["elapsed"]
+
+        ic_str = f'[{m["ic_lo"]:>4.1f}, {m["ic_hi"]:>4.1f}]'
+        verdict = _verdict(m['ic_lo'], m['ic_hi'], key_a, key_b)
+        print(
+            f"{pairing_label:<32} | "
+            f"{m['wr_a']:>5.1f}% | {m['wr_b']:>5.1f}% | {m['draws']:>4} | "
+            f"{ic_str:>16} | {m['avg_turns']:>7.1f} | {m['elapsed']:>7.1f}s | "
+            f"{verdict:<16}"
+        )
+
+    print('-' * width)
+    print(f"{'Tiempo total ' + str(team_size) + 'v' + str(team_size) + ':':<32}   {total_elapsed:>6.1f}s")
+    print('=' * width)
+
+
+def main() -> None:
+    """Parse CLI args y ejecuta la matriz para los tamaños solicitados."""
+    parser = argparse.ArgumentParser(description='Matriz competitiva L1-L4')
+    parser.add_argument('--n', type=int, default=200,
+                        help='Batallas por emparejamiento (default: 200)')
+    parser.add_argument('--cores', type=int, default=None,
+                        help='Núcleos a usar (default: cpu_count - 1)')
+    parser.add_argument('--size', choices=['3', '4', 'both'], default='both',
+                        help='Tamaño de equipo: 3, 4, o both (default: both)')
+    args = parser.parse_args()
+
+    n_cores = args.cores if args.cores is not None else max(1, cpu_count() - 1)
+
+    sizes = [3, 4] if args.size == 'both' else [int(args.size)]
+    for ts in sizes:
+        imprimir_matriz(team_size=ts, n_battles=args.n, n_cores=n_cores)
+
+
+if __name__ == '__main__':
+    main()
