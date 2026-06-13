@@ -59,111 +59,111 @@ class Level4Agent(BaseAgent):
             my_cooldown: int
         ) -> List[Action]:
 
-            """
-            Obtiene acciones legales inteligentes para el Pokémon activo en función del estado actual del equipo y el oponente.
+        """
+        Obtiene acciones legales inteligentes para el Pokémon activo en función del estado actual del equipo y el oponente.
 
-            Args:
-                team (List[PokemonState]): Estado del equipo actual.
-                active_idx (int): Índice del Pokémon activo en el equipo.
-                opp (PokemonState): Estado del oponente.
-                my_cooldown (int): Tiempo de enfriamiento del equipo.
+        Args:
+            team (List[PokemonState]): Estado del equipo actual.
+            active_idx (int): Índice del Pokémon activo en el equipo.
+            opp (PokemonState): Estado del oponente.
+            my_cooldown (int): Tiempo de enfriamiento del equipo.
 
-            Returns:
-                List[Action]: Lista de acciones legales para el Pokémon activo, ordenadas según su puntuación.
+        Returns:
+            List[Action]: Lista de acciones legales para el Pokémon activo, ordenadas según su puntuación.
 
-            Raises:
-                Exception: Si hay un error en la evaluación de las acciones.
-            """
-            actions = []
-            if not team:
-                return actions
+        Raises:
+            Exception: Si hay un error en la evaluación de las acciones.
+        """
+        actions = []
+        if not team:
+            return actions
 
-            active_idx = self._safe_index(active_idx, team)
-            active = team[active_idx]
+        active_idx = self._safe_index(active_idx, team)
+        active = team[active_idx]
 
-            opp_types = []
-            if opp:
-                opp_types = [
-                    PokemonType[t.upper()]
-                    for t in getattr(opp, 'types', [])
-                    if t.upper() in PokemonType.__members__
-                ]
-
-            attack_actions = []
-
-            if active.current_hp > 0 and getattr(active, 'moves', []):
-                for i, move in enumerate(active.moves):
-                    if getattr(move, 'current_pp', 0) <= 0:
-                        continue
-
-                    power = getattr(move, 'power', 0)
-                    
-                    m_type_str = getattr(move, 'move_type', 'NORMAL').upper()
-                    m_enum = PokemonType[m_type_str] if m_type_str in PokemonType.__members__ else PokemonType.NORMAL
-                    is_physical = getattr(move, 'category', 'PHYSICAL').upper() == 'PHYSICAL'
-                    atk_key = 'attack' if is_physical else 'special_attack'
-                    def_key = 'defense' if is_physical else 'special_defense'
-
-                    atk_stat = active.attack if is_physical else active.special_attack
-                    def_stat = opp.defense if is_physical else getattr(opp, 'special_defense', 1)
-
-                    damage, type_mult = calculate_damage(
-                        attacker_base_stat=atk_stat,
-                        defender_base_stat=def_stat,
-                        defender_spd=getattr(opp, 'speed', 0) if opp else 0,
-                        move_power=power,
-                        move_type=m_enum,
-                        defender_types=opp_types,
-                        attacker_stage=active.stat_stages.get(atk_key, 0),
-                        defender_stage=getattr(opp, 'stat_stages', {}).get(def_key, 0) if opp else 0,
-                        attacker_ailment=getattr(active, 'status_ailment', 'NONE')
-                    )
-
-                    possible_cure = 0
-                    drain_val = getattr(move, 'drain', 0)
-                    if drain_val > 0:
-                        possible_cure += int(damage * (drain_val / 100.0))
-
-                    healing_val = getattr(move, 'healing', 0)
-                    if healing_val > 0:
-                        mod_rest = 0.4 if getattr(move, 'name', '').lower() == 'descanso' else 1.0
-                        possible_cure += int(active.max_hp * (healing_val / 100.0) * mod_rest)
-
-                    score = damage + possible_cure
-
-                    if type_mult == 0.0:
-                        score -= 5000 
-
-                    if opp and damage >= opp.current_hp:
-                        score += 5000 
-
-                    if getattr(move, 'priority', 0) > 0 and opp and damage >= opp.current_hp:
-                        score += 2000
-
-                    attack_actions.append(
-                        (Action(type=ActionType.MOVE, target_index=i), score)
-                    )
-
-            attack_actions.sort(key=lambda x: x[1], reverse=True)
-
-            actions.extend([a[0] for a in attack_actions])
-
-            switch_candidates = [
-                i for i, p in enumerate(team)
-                if p.current_hp > 0 and i != active_idx
+        opp_types = []
+        if opp:
+            opp_types = [
+                PokemonType[t.upper()]
+                for t in getattr(opp, 'types', [])
+                if t.upper() in PokemonType.__members__
             ]
 
-            if active.current_hp <= 0:
-                for c in switch_candidates:
-                    actions.append(Action(type=ActionType.SWITCH, target_index=c))
-            elif switch_candidates and my_cooldown >= 2:
-                for c in switch_candidates:
-                    actions.append(Action(type=ActionType.SWITCH, target_index=c))
+        attack_actions = []
 
-            if not actions:
-                actions.append(Action(type=ActionType.MOVE, target_index=0))
+        if active.current_hp > 0 and getattr(active, "moves", []):
+            for i, move in enumerate(active.moves):
+                if getattr(move, "current_pp", 0) <= 0:
+                    continue
 
-            return actions
+                power = getattr(move, 'power', 0)
+                
+                m_type_str = getattr(move, 'move_type', 'NORMAL').upper()
+                m_enum = PokemonType[m_type_str] if m_type_str in PokemonType.__members__ else PokemonType.NORMAL
+                is_physical = getattr(move, 'category', 'PHYSICAL').upper() == 'PHYSICAL'
+                atk_key = 'attack' if is_physical else 'special_attack'
+                def_key = 'defense' if is_physical else 'special_defense'
+
+                atk_stat = active.attack if is_physical else active.special_attack
+                def_stat = opp.defense if is_physical else getattr(opp, 'special_defense', 1)
+
+                damage, type_mult = calculate_damage(
+                    attacker_base_stat=atk_stat,
+                    defender_base_stat=def_stat,
+                    defender_spd=getattr(opp, 'speed', 0) if opp else 0,
+                    move_power=power,
+                    move_type=m_enum,
+                    defender_types=opp_types,
+                    attacker_stage=active.stat_stages.get(atk_key, 0),
+                    defender_stage=getattr(opp, 'stat_stages', {}).get(def_key, 0) if opp else 0,
+                    attacker_ailment=getattr(active, 'status_ailment', 'NONE')
+                )
+
+                possible_cure = 0
+                drain_val = getattr(move, 'drain', 0)
+                if drain_val > 0:
+                    possible_cure += int(damage * (drain_val / 100.0))
+
+                healing_val = getattr(move, 'healing', 0)
+                if healing_val > 0:
+                    mod_rest = 0.4 if getattr(move, 'name', '').lower() == 'descanso' else 1.0
+                    possible_cure += int(active.max_hp * (healing_val / 100.0) * mod_rest)
+
+                score = damage + possible_cure
+
+                if type_mult == 0.0:
+                    score -= 5000 
+
+                if opp and damage >= opp.current_hp:
+                    score += 5000 
+
+                if getattr(move, 'priority', 0) > 0 and opp and damage >= opp.current_hp:
+                    score += 2000
+
+                attack_actions.append(
+                    (Action(type=ActionType.MOVE, target_index=i), score)
+                )
+
+        attack_actions.sort(key=lambda x: x[1], reverse=True)
+
+        actions.extend([a[0] for a in attack_actions])
+
+        switch_candidates = [
+            i for i, p in enumerate(team)
+            if p.current_hp > 0 and i != active_idx
+        ]
+
+        if active.current_hp <= 0:
+            for c in switch_candidates:
+                actions.append(Action(type=ActionType.SWITCH, target_index=c))
+        elif switch_candidates and my_cooldown >= 2:
+            for c in switch_candidates:
+                actions.append(Action(type=ActionType.SWITCH, target_index=c))
+
+        if not actions:
+            actions.append(Action(type=ActionType.MOVE, target_index=0))
+
+        return actions
 
     def _simulate_full_turn(
         self,
@@ -175,16 +175,16 @@ class Level4Agent(BaseAgent):
         """
         Simula un turno completo de batalla.
 
-         Args:
-             state (BattleState): El estado actual de la batalla.
-             p1_action (Action): La acción a realizar del jugador 1.
-             p2_action (Action): La acción a realizar del jugador 2.
+        Args:
+            state (BattleState): El estado actual de la batalla.
+            p1_action (Action): La acción a realizar del jugador 1.
+            p2_action (Action): La acción a realizar del jugador 2.
 
-         Returns:
-             BattleState: El nuevo estado de la batalla después del turno.
+        Returns:
+            BattleState: El nuevo estado de la batalla después del turno.
 
-         Raises:
-             Exception: Si ocurre un error durante la simulación del turno.
+        Raises:
+            Exception: Si ocurre un error durante la simulación del turno.
         """
         p1_team = self._build_real_team(state.p1_team)
         p2_team = self._build_real_team(state.p2_team)
@@ -212,64 +212,64 @@ class Level4Agent(BaseAgent):
         return new_state
 
     def get_action(self, state: BattleState) -> Action:
-            """
-            Obtiene la acción óptima dada el estado actual de la batalla.
+        """
+        Obtiene la acción óptima dada el estado actual de la batalla.
 
-            Args:
-                state (BattleState): El estado actual de la batalla.
+        Args:
+            state (BattleState): El estado actual de la batalla.
 
-            Returns:
-                Action: La acción óptima a realizar.
+        Returns:
+            Action: La acción óptima a realizar.
 
-            Raises:
-                Exception: Si no se encuentra una acción válida.
-            """
-            team, active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
+        Raises:
+            Exception: Si no se encuentra una acción válida.
+        """
+        team, active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
+        
+        self.turns_since_last_switch += 1
+        opp = opp_team[self._safe_index(opp_active_idx, opp_team)] if opp_team else None
+
+        if opp:
+            current_opp_name = getattr(opp, 'name', None)
+            if self.last_opp_active_name is not None and current_opp_name != self.last_opp_active_name:
+                self.opp_turns_since_last_switch = 0
+            else:
+                self.opp_turns_since_last_switch += 1
+            self.last_opp_active_name = current_opp_name
+
+        legal_actions = self._get_smart_legal_actions(team, active_idx, opp, self.turns_since_last_switch)
+        
+        if len(legal_actions) == 1:
+            if legal_actions[0].type == ActionType.SWITCH: self.turns_since_last_switch = 0
+            return legal_actions[0]
+
+        best_action = legal_actions[0]
+        best_value = -INF
+        alpha = -INF
+        beta = INF
+
+        for my_action in legal_actions:
+            next_my_cooldown = 0 if my_action.type == ActionType.SWITCH else self.turns_since_last_switch + 1
             
-            self.turns_since_last_switch += 1
-            opp = opp_team[self._safe_index(opp_active_idx, opp_team)] if opp_team else None
-
-            if opp:
-                current_opp_name = getattr(opp, 'name', None)
-                if self.last_opp_active_name is not None and current_opp_name != self.last_opp_active_name:
-                    self.opp_turns_since_last_switch = 0
-                else:
-                    self.opp_turns_since_last_switch += 1
-                self.last_opp_active_name = current_opp_name
-
-            legal_actions = self._get_smart_legal_actions(team, active_idx, opp, self.turns_since_last_switch)
+            value = self._min_value(
+                state, 
+                DEPTH - 1, 
+                alpha, 
+                beta, 
+                my_action, 
+                next_my_cooldown, 
+                self.opp_turns_since_last_switch  
+            )
             
-            if len(legal_actions) == 1:
-                if legal_actions[0].type == ActionType.SWITCH: self.turns_since_last_switch = 0
-                return legal_actions[0]
+            if value > best_value:
+                best_value = value
+                best_action = my_action
+            alpha = max(alpha, best_value)
 
-            best_action = legal_actions[0]
-            best_value = -INF
-            alpha = -INF
-            beta = INF
-
-            for my_action in legal_actions:
-                next_my_cooldown = 0 if my_action.type == ActionType.SWITCH else self.turns_since_last_switch + 1
-                
-                value = self._min_value(
-                    state, 
-                    DEPTH - 1, 
-                    alpha, 
-                    beta, 
-                    my_action, 
-                    next_my_cooldown, 
-                    self.opp_turns_since_last_switch  
-                )
-                
-                if value > best_value:
-                    best_value = value
-                    best_action = my_action
-                alpha = max(alpha, best_value)
-
-            if best_action.type == ActionType.SWITCH:
-                self.turns_since_last_switch = 0
-                
-            return best_action
+        if best_action.type == ActionType.SWITCH:
+            self.turns_since_last_switch = 0
+            
+        return best_action
 
     def _max_value(
         self,
@@ -316,7 +316,7 @@ class Level4Agent(BaseAgent):
             my_cooldown
         )
 
-        v = -INF
+        max_utility = -INF
 
         for my_action in legal_actions:
 
@@ -336,14 +336,14 @@ class Level4Agent(BaseAgent):
                 opp_cooldown
             )
 
-            v = max(v, value)
+            max_utility = max(max_utility, value)
 
-            if v >= beta:
-                return v
+            if max_utility >= beta:
+                return max_utility
 
-            alpha = max(alpha, v)
+            alpha = max(alpha, max_utility)
 
-        return v
+        return max_utility
 
     def _min_value(
         self,
@@ -390,7 +390,7 @@ class Level4Agent(BaseAgent):
             opp_cooldown
         )
 
-        v = INF
+        min_utility = INF
 
         for opp_action in opp_actions:
 
@@ -421,11 +421,11 @@ class Level4Agent(BaseAgent):
                 next_opp_cd
             )
 
-            v = min(v, value)
+            min_utility = min(min_utility, value)
 
-            if v <= alpha:
-                return v
+            if min_utility <= alpha:
+                return min_utility
 
-            beta = min(beta, v)
+            beta = min(beta, min_utility)
 
-        return v
+        return min_utility

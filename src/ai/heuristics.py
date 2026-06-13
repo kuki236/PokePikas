@@ -3,6 +3,15 @@ from src.core.damage_calc import get_type_multiplier
 from src.entities.enums import PokemonType
 
 
+L4_WEIGHTS = {
+    "HP": 0.50,
+    "ALIVE": 0.30,
+    "TYPE": 0.15,
+    "SPEED": 0.03,
+    "STATUS": 0.02,
+}
+
+
 def evaluate_level3_state(state: BattleState, player_id: int) -> float:
 
     """
@@ -59,8 +68,7 @@ def evaluate_level3_state(state: BattleState, player_id: int) -> float:
 
 
 def evaluate_level4_state(state: BattleState, player_id: int) -> float:
-    
-    # BALANCEO 
+
     """
     Evaluación del estado de nivel 4 en una batalla de Pokémon.
 
@@ -74,11 +82,6 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     Raises:
         No se lanzan excepciones explícitas, pero puede ocurrir un error si el estado de la batalla o el identificador del jugador son inválidos.
     """
-    HP_WEIGHT = 0.50
-    ALIVE_WEIGHT = 0.30
-    TYPE_WEIGHT = 0.15
-    SPEED_WEIGHT = 0.03
-    STATUS_WEIGHT = 0.02
     if player_id == 1:
         my_team, opp_team = state.p1_team, state.p2_team
         my_idx, opp_idx = state.p1_active_index, state.p2_active_index
@@ -89,8 +92,8 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     my_alive_flag = any(p.current_hp > 0 for p in my_team)
     opp_alive_flag = any(p.current_hp > 0 for p in opp_team)
 
-    if not opp_alive_flag: return 999999.0
-    if not my_alive_flag: return -999999.0
+    if not opp_alive_flag: return 10000.0
+    if not my_alive_flag: return -10000.0
 
     my_active = my_team[my_idx] if my_idx < len(my_team) else my_team[0]
     opp_active = opp_team[opp_idx] if opp_idx < len(opp_team) else opp_team[0]
@@ -133,11 +136,53 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
                 mult = get_type_multiplier(m_enum, my_types)
                 if mult > max_mult_defense: max_mult_defense = mult
         
-        type_score = ((max_mult_offense - 1.0) - (max_mult_defense - 1.0))/3
+        type_score = ((max_mult_offense - 1.0) - (max_mult_defense - 1.0)) / 4.0
+        type_score = _clamp(type_score, -1.0, 1.0)
 
         bad_ailments = ["BURN", "POISON", "PARALYSIS", "FREEZE", "SLEEP"]
         my_ailment = getattr(my_active, 'status_ailment', "NONE")
-        ailment_str = my_ailment.name if hasattr(my_ailment, 'name') else str(my_ailment).split('.')[-1].upper()
-        if ailment_str in bad_ailments: status_score = -1.0
+        my_ailment_str = my_ailment.name if hasattr(my_ailment, 'name') else str(my_ailment).split('.')[-1].upper()
+        opp_ailment = getattr(opp_active, 'status_ailment', "NONE")
+        opp_ailment_str = opp_ailment.name if hasattr(opp_ailment, 'name') else str(opp_ailment).split('.')[-1].upper()
+        if my_ailment_str in bad_ailments:
+            status_score -= 1.0
+        if opp_ailment_str in bad_ailments:
+            status_score += 1.0
 
-    return (HP_WEIGHT * hp_score) + (SPEED_WEIGHT * speed_score) + (TYPE_WEIGHT * type_score) + (STATUS_WEIGHT * status_score) + (ALIVE_WEIGHT * alive_score)
+    return (L4_WEIGHTS["HP"] * hp_score) + (L4_WEIGHTS["SPEED"] * speed_score) + (L4_WEIGHTS["TYPE"] * type_score) + (L4_WEIGHTS["STATUS"] * status_score) + (L4_WEIGHTS["ALIVE"] * alive_score)
+
+
+def calculate_hp_differential_l3(state: BattleState, player_id: int) -> float:
+    """
+    Diferencial absoluto de HP entre los equipos (métrica unificada con Level 2).
+
+    Calcula la diferencia entre la suma de HP actual de todos los Pokémon del
+    jugador y la suma de HP actual de todos los Pokémon del rival. Función
+    puramente lineal y conmensurable con la métrica de daño del motor real:
+    no aplica normalizaciones, pesos ni componentes binarios discontinuos.
+
+    Args:
+        state (BattleState): Estado actual de la batalla.
+        player_id (int): Identificador del jugador (1 o 2).
+
+    Returns:
+        float: Diferencial de HP en puntos de salud reales (`my_hp - opp_hp`).
+    """
+    if player_id == 1:
+        my_team, opp_team = state.p1_team, state.p2_team
+    else:
+        my_team, opp_team = state.p2_team, state.p1_team
+
+    my_hp = sum(max(0, p.current_hp) for p in my_team)
+    opp_hp = sum(max(0, p.current_hp) for p in opp_team)
+
+    return float(my_hp - opp_hp)
+
+
+def _clamp(n: float, minn: float, maxn: float) -> float:
+    """
+    Restringe `n` al intervalo cerrado [`minn`, `maxn`].
+    Se utiliza como red de seguridad analítica en factores heurísticos
+    cuyo rango nominal puede ser excedido en configuraciones atípicas.
+    """
+    return max(min(maxn, n), minn)
