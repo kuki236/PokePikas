@@ -63,8 +63,8 @@ class Level1Agent(BaseAgent):
         valid_moves = []
 
         for i, move in enumerate(moves):
-            pp = getattr(move, "current_pp", None)
-            if pp is None or pp > 0:
+            pp = getattr(move, "current_pp", 0)
+            if pp > 0:
                 valid_moves.append(i)
 
         # Fallback defensivo: si hay movimientos pero todos salen inválidos
