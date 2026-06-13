@@ -2,6 +2,8 @@ import random
 from typing import Optional
 from src.ai.base_agent import BaseAgent
 from src.core.interfaces import Action, ActionType, BattleState
+from src.core.damage_calc import calculate_damage
+from src.entities.enums import PokemonType
 
 class Level2Agent(BaseAgent):
     def __init__(self, player_id: int):
@@ -62,8 +64,26 @@ class Level2Agent(BaseAgent):
         for i, move in enumerate(active.moves):
             if getattr(move, 'current_pp', 0) <= 0: continue
 
-            damage = getattr(move, 'power', 0)
-            
+            if opp is None:
+                damage = 0
+            else:
+                is_physical = getattr(move, 'category', 'PHYSICAL').upper() == 'PHYSICAL'
+                atk_key = 'attack' if is_physical else 'special_attack'
+                def_key = 'defense' if is_physical else 'special_defense'
+                atk_stat = active.attack if is_physical else active.special_attack
+                def_stat = opp.defense if is_physical else getattr(opp, 'special_defense', 1)
+                opp_types = [PokemonType[t.upper()] for t in getattr(opp, 'types', []) if t.upper() in PokemonType.__members__]
+                damage, _ = calculate_damage(
+                    attacker_base_stat=atk_stat,
+                    defender_base_stat=def_stat,
+                    defender_spd=getattr(opp, 'speed', 0),
+                    move_power=getattr(move, 'power', 0),
+                    move_type=move.move_type,
+                    defender_types=opp_types,
+                    attacker_stage=active.stat_stages.get(atk_key, 0),
+                    defender_stage=getattr(opp, 'stat_stages', {}).get(def_key, 0),
+                )
+
             my_hp = active.current_hp
             opp_hp = opp.current_hp if opp else 0
             
