@@ -250,10 +250,15 @@ class LeagueRoom:
                 if event.type == pygame.KEYDOWN:
                     # Interacción al presionar ENTER, ESPACIO o Z
                     if event.key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_z):
-                        dist = ((self.player.rect.centerx - self.npc_x)**2 + (self.player.rect.centery - self.npc_y)**2)**0.5
-                        if dist < 80: # Distancia de interacción
+                        if self.room_index == 5:
+                            # En el Salón de la Fama puedes presionar ENTER desde cualquier lugar
                             self.start_battle = True
                             self.running = False
+                        else:
+                            dist = ((self.player.rect.centerx - self.npc_x)**2 + (self.player.rect.centery - self.npc_y)**2)**0.5
+                            if dist < 80: # Distancia de interacción
+                                self.start_battle = True
+                                self.running = False
                             
             # Obtener inputs del teclado
             keys = pygame.key.get_pressed()
@@ -263,10 +268,8 @@ class LeagueRoom:
             
             # Dibujar NPC o Puerta de avance (Dependiendo del tipo de sala)
             if self.room_index == 5:
-                npc_color = (200, 200, 255) # Representa la consola del Salón de la Fama
                 titulo = "Salón de la Fama"
                 sub_text = "¡Felicidades! Presiona ENTER para registrarte en el Salón"
-                pygame.draw.rect(self.screen, npc_color, (self.npc_x - self.npc_size//2, self.npc_y - self.npc_size//2, self.npc_size, self.npc_size))
             else:
                 titulo = f"Batalla Alto Mando: {self.map_manager.rooms_data[self.room_index]['name'].capitalize()}"
                 sub_text = "Acércate al rival y presiona ENTER para luchar"
@@ -325,11 +328,10 @@ class LeagueManager:
         p2_team = []
         
         team_size = len(self.p1_team_instances)
-        if room_index == 4 and team_size < 6: # Campeón en el índice 4
-            team_size += 1 
-            
-        for _ in range(team_size):
-            pid = random.choice(pool_ids)
+        
+        # Evitar Pokémon repetidos (que daban la ilusión de ser inmortales)
+        selected_ids = random.sample(pool_ids, min(team_size, len(pool_ids)))
+        for pid in selected_ids:
             p2_team.append(self.loader.create_battle_pokemon(pid))
         return p2_team
 
@@ -350,10 +352,26 @@ class LeagueManager:
                 p2_team_instances = self._generate_npc_team(self.current_room)
                 difficulty = self.ai_levels[self.current_room] # Ajuste directo para IA [1,2,3,4,5]
                 
+                # Iniciar música de batalla
+                ruta_musica_batalla = os.path.join(self.map_manager.base_dir, 'assets', 'music', 'battle_theme.mp3')
+                try:
+                    if pygame.mixer.get_init() and os.path.exists(ruta_musica_batalla):
+                        pygame.mixer.music.load(ruta_musica_batalla)
+                        pygame.mixer.music.play(-1)
+                except Exception as e:
+                    print(f"[AVISO] No se pudo reproducir música de batalla en el Alto Mando: {e}")
+
                 battle = BattleScreen(self.screen, self.renderer, self.p1_team_names, difficulty, "Alto Mando", 
                                       p1_team_instances=self.p1_team_instances, p2_team_instances=p2_team_instances)
                 post_battle = battle.run()
                 
+                # Detener música al terminar el combate
+                try:
+                    if pygame.mixer.get_init():
+                        pygame.mixer.music.stop()
+                except Exception:
+                    pass
+
                 if post_battle == "MENU":
                     player_alive = any(p.current_hp > 0 for p in self.p1_team_instances)
                     npc_alive = any(p.current_hp > 0 for p in p2_team_instances)

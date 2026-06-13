@@ -3,6 +3,7 @@ import sys
 import json
 import os
 import random
+import math
 from enum import Enum
 
 # Asegurar que la carpeta raíz del proyecto esté en `sys.path`
@@ -116,6 +117,7 @@ def main():
     bg_modos  = renderer.load_background(os.path.join('assets', 'bg_modos.jpg'), WINDOW_WIDTH, WINDOW_HEIGHT)
     bg_equipo = renderer.load_background(os.path.join('assets', 'bg_equipos.jpg'), WINDOW_WIDTH, WINDOW_HEIGHT)
     bg_nivel  = renderer.load_background(os.path.join('assets', 'bg_nivel.jpg'), WINDOW_WIDTH, WINDOW_HEIGHT)
+    bg_hall_of_fame = renderer.load_background(os.path.join('assets', 'bg_hall_of_fame.png'), WINDOW_WIDTH, WINDOW_HEIGHT)
 
     # 2. ESTADOS Y VARIABLES
     current_state = GameState.START
@@ -401,48 +403,68 @@ def main():
                 
                 if post_league_action == "CHAMPION":
                     # Pantalla de victoria general y Salón de la Fama
-                    screen.fill((20, 20, 30))
-                    renderer.draw_text("¡HAS SUPERADO EL ALTO MANDO!", 'title', (255, 215, 0), WINDOW_WIDTH//2, 150, center=True)
-                    renderer.draw_text("¡Eres el nuevo Campeón Pokémon!", 'subtitle', (200, 255, 200), WINDOW_WIDTH//2, 220, center=True)
-                    
-                    renderer.draw_text("Tu equipo de la victoria:", 'subtitle', (255, 255, 255), WINDOW_WIDTH//2, 320, center=True)
-                    
-                    # Dibujar el equipo ganador
-                    box_width = 80
-                    spacing = 20
-                    total_width = (box_width * len(p1_team)) + (spacing * (len(p1_team) - 1))
-                    start_x = WINDOW_WIDTH // 2 - total_width // 2
-                    start_y = 380
-                    
-                    for i, pkm_name in enumerate(p1_team):
-                        x = start_x + i * (box_width + spacing)
-                        y = start_y
-                        
-                        # Fondo y borde brillante dorado
-                        pygame.draw.rect(screen, (60, 100, 150), (x, y, box_width, box_width), border_radius=10)
-                        pygame.draw.rect(screen, (255, 215, 0), (x, y, box_width, box_width), width=3, border_radius=10)
-                        
-                        # Sprite
-                        img = renderer.image_cache.get(pkm_name)
-                        if img:
-                            # Centramos la imagen de 75x75 en la caja de 80x80
-                            screen.blit(img, (x + (box_width - img.get_width()) // 2, y + (box_width - img.get_height()) // 2))
-                        
-                        # Nombre
-                        display_name = pkm_name.capitalize().replace("-", " ")
-                        renderer.draw_text(display_name, 'subtitle', (220, 220, 220), x + box_width // 2, y + box_width + 20, center=True)
-
-                    renderer.draw_text("Presiona ENTER para volver al menú", 'subtitle', (150, 150, 150), WINDOW_WIDTH//2, WINDOW_HEIGHT - 80, center=True)
-                    pygame.display.flip()
-                    
                     waiting = True
                     while waiting:
+                        tiempo_actual = pygame.time.get_ticks()
                         for event in pygame.event.get():
                             if event.type == pygame.QUIT:
                                 pygame.quit()
                                 sys.exit()
                             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                                 waiting = False
+
+                        if bg_hall_of_fame:
+                            renderer.draw_background(bg_hall_of_fame, apply_dark_overlay=True)
+                        else:
+                            screen.fill((20, 20, 30))
+
+                        # Animación de luces de fondo (Reflectores oscilantes)
+                        for i in range(5):
+                            lx = WINDOW_WIDTH // 2 + math.sin(tiempo_actual * 0.001 + i * 1.5) * 400
+                            ly = WINDOW_HEIGHT // 2 + math.cos(tiempo_actual * 0.0015 + i * 1.5) * 300
+                            radio = 150 + math.sin(tiempo_actual * 0.005 + i) * 30
+                            luz = pygame.Surface((int(radio*2), int(radio*2)), pygame.SRCALPHA)
+                            pygame.draw.circle(luz, (255, 215, 0, 15), (int(radio), int(radio)), int(radio))
+                            screen.blit(luz, (int(lx - radio), int(ly - radio)))
+
+                        renderer.draw_text("¡HAS SUPERADO EL ALTO MANDO!", 'title', (255, 215, 0), WINDOW_WIDTH//2, 150, center=True)
+                        renderer.draw_text("¡Eres el nuevo Campeón Pokémon!", 'subtitle', (200, 255, 200), WINDOW_WIDTH//2, 220, center=True)
+                        renderer.draw_text("Tu equipo de la victoria:", 'subtitle', (255, 255, 255), WINDOW_WIDTH//2, 320, center=True)
+                        
+                        # Dibujar el equipo ganador con animación
+                        box_width = 80
+                        spacing = 300
+                        total_width = (box_width * len(p1_team)) + (spacing * (len(p1_team) - 1))
+                        start_x = WINDOW_WIDTH // 2 - total_width // 2
+                        start_y = 380
+                        
+                        for i, pkm_name in enumerate(p1_team):
+                            x = start_x + i * (box_width + spacing)
+                            y = start_y
+                            
+                            # Animación de rebote/flotación sutil
+                            y += math.sin(tiempo_actual * 0.004 + i) * 10
+                            
+                            # Fondo y borde brillante dorado animado
+                            brillo = 150 + int(math.sin(tiempo_actual * 0.005 + i) * 55)
+                            pygame.draw.rect(screen, (60, 100, 150), (x, y, box_width, box_width), border_radius=10)
+                            pygame.draw.rect(screen, (255, brillo, 0), (x, y, box_width, box_width), width=3, border_radius=10)
+                            
+                            # Sprite
+                            img = renderer.image_cache.get(pkm_name)
+                            if img:
+                                screen.blit(img, (x + (box_width - img.get_width()) // 2, y + (box_width - img.get_height()) // 2))
+                            
+                            # Nombre
+                            display_name = pkm_name.capitalize().replace("-", " ")
+                            renderer.draw_text(display_name, 'subtitle', (220, 220, 220), x + box_width // 2, y + box_width + 20, center=True)
+
+                        # Parpadeo del texto
+                        if tiempo_actual % 1000 < 500:
+                            renderer.draw_text("Presiona ENTER para volver al menú", 'subtitle', (150, 150, 150), WINDOW_WIDTH//2, WINDOW_HEIGHT - 80, center=True)
+                        
+                        pygame.display.flip()
+                        clock.tick(FPS)
                 
                 # Limpiamos y volvemos al menú general
                 current_state = GameState.MODE_SELECT

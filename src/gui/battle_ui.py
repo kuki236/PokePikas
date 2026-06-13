@@ -53,11 +53,22 @@ class BattleScreen:
         self.top_h = int(self.sh * 0.80)
         self.bottom_h = self.sh - self.top_h
 
-        self.bg_battle = self.renderer.load_background(
-            os.path.join('assets', 'bg_battle.jpg'),
-            self.sw,
-            self.top_h
-        )
+        self.bg_battle = None
+        
+        # Fondo especial si estamos en el Alto Mando
+        if self.mode == "Alto Mando":
+            self.bg_battle = self.renderer.load_background(
+                os.path.join('assets', 'bg_alto_mando.png'),
+                self.sw,
+                self.top_h
+            )
+
+        if self.bg_battle is None:
+            self.bg_battle = self.renderer.load_background(
+                os.path.join('assets', 'bg_battle.jpg'),
+                self.sw,
+                self.top_h
+            )
 
         if self.bg_battle is None:
             self.bg_battle = self.renderer.load_background(
@@ -89,8 +100,10 @@ class BattleScreen:
         else:
             pool_ids = [p['poke_id'] for p in self.loader.pokemon_data]
             self.p2_team = []
-            while len(self.p2_team) < len(self.p1_team):
-                pid = random.choice(pool_ids)
+            
+            # Generar equipo enemigo asegurando que no haya repetidos
+            selected_ids = random.sample(pool_ids, min(len(self.p1_team), len(pool_ids)))
+            for pid in selected_ids:
                 self.p2_team.append(self.loader.create_battle_pokemon(pid))
 
         for pkm in self.p1_team + self.p2_team:
