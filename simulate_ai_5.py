@@ -3,7 +3,7 @@ simulate_ai_5.py
 ================
 Torneo de Level5Agent (IA optimizada por algoritmo genetico) contra los
 demas niveles (L1-L4). Alterna perspectiva P1/P2 cada batalla, reporta
-empates explicitamente, calcula IC 95% Wilson y paraleliza con Pool.
+empates explicitamente y paraleliza con Pool.
 
 Uso:
     python simulate_ai_5.py                       # 200 batallas, 3v3 y 4v4
@@ -14,7 +14,6 @@ Uso:
 """
 
 import argparse
-import math
 import os
 import time
 from multiprocessing import Pool, cpu_count
@@ -118,18 +117,6 @@ def _run_battle(args) -> Tuple[int, int, float, float]:
     return winner, turns_played, hp_ratio, alive_ratio
 
 
-def _wilson_interval(wins: int, n: int) -> Tuple[float, float]:
-    """Intervalo de confianza 95% de Wilson para una proporcion."""
-    if n == 0:
-        return 0.0, 0.0
-    z = 1.96
-    p = wins / n
-    denom = 1 + z**2 / n
-    centre = (p + z**2 / (2 * n)) / denom
-    half = (z * math.sqrt(p * (1 - p) / n + z**2 / (4 * n**2))) / denom
-    return (centre - half) * 100, (centre + half) * 100
-
-
 def _run_pairing(
     agent_a_key: str,
     agent_b_key: str,
@@ -158,7 +145,6 @@ def _run_pairing(
 
     wr_a = wins_a / n_battles * 100
     wr_b = wins_b / n_battles * 100
-    ic_lo, ic_hi = _wilson_interval(wins_a, n_battles)
 
     avg_turns = mean(r[1] for r in results)
     avg_hp = mean(r[2] for r in results) * 100
@@ -167,24 +153,15 @@ def _run_pairing(
     return {
         "wins_a": wins_a, "wins_b": wins_b, "draws": draws,
         "wr_a": wr_a, "wr_b": wr_b,
-        "ic_lo": ic_lo, "ic_hi": ic_hi,
         "avg_turns": avg_turns,
         "avg_hp": avg_hp, "avg_alive": avg_alive,
         "elapsed": elapsed,
     }
 
 
-def _verdict(ic_lo: float, ic_hi: float, label_a: str, label_b: str) -> str:
-    if ic_lo > 50.0:
-        return f'{label_a} > {label_b}'
-    if ic_hi < 50.0:
-        return f'{label_b} > {label_a}'
-    return 'Empate tecnico'
-
-
 def imprimir_torneo(team_size: int, n_battles: int, n_cores: int) -> None:
     """Ejecuta y reporta el torneo de L5 contra L1-L4 para un team_size dado."""
-    width = 138
+    width = 96
     print()
     print('=' * width)
     print(f"{f'TORNEO IA5 (Evolutivo) vs L1-L4 ({team_size}v{team_size})':^{width}}")
@@ -195,8 +172,8 @@ def imprimir_torneo(team_size: int, n_battles: int, n_cores: int) -> None:
     header = (
         f"{'EMPAREJAMIENTO':<32} | "
         f"{'WR L5':>6} | {'WR OPP':>6} | {'EMP':>4} | "
-        f"{'IC 95% L5':>16} | {'HP L5':>6} | {'VIVOS':>6} | "
-        f"{'TURNOS':>7} | {'TIEMPO':>8} | {'VEREDICTO':<16}"
+        f"{'HP L5':>6} | {'VIVOS':>6} | "
+        f"{'TURNOS':>7} | {'TIEMPO':>8}"
     )
     print(header)
     print('-' * width)
@@ -210,13 +187,11 @@ def imprimir_torneo(team_size: int, n_battles: int, n_cores: int) -> None:
         m = _run_pairing(key_a, key_b, n_battles, team_size, n_cores)
         total_elapsed += m["elapsed"]
 
-        ic_str = f'[{m["ic_lo"]:>4.1f}, {m["ic_hi"]:>4.1f}]'
-        verdict = _verdict(m['ic_lo'], m['ic_hi'], key_a, key_b)
         print(
             f"{pairing_label:<32} | "
             f"{m['wr_a']:>5.1f}% | {m['wr_b']:>5.1f}% | {m['draws']:>4} | "
-            f"{ic_str:>16} | {m['avg_hp']:>5.1f}% | {m['avg_alive']:>5.1f}% | "
-            f"{m['avg_turns']:>7.1f} | {m['elapsed']:>7.1f}s | {verdict:<16}"
+            f"{m['avg_hp']:>5.1f}% | {m['avg_alive']:>5.1f}% | "
+            f"{m['avg_turns']:>7.1f} | {m['elapsed']:>7.1f}s"
         )
 
     print('-' * width)

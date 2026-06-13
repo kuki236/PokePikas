@@ -3,7 +3,7 @@ simulate_ai_4.py
 ================
 Matriz competitiva completa entre Level1Agent, Level2Agent, Level3Agent y
 Level4Agent. Para cada par alterna quién va de P1/P2 para eliminar el sesgo
-de turno, reporta empates explícitamente y calcula el IC 95% de Wilson.
+de turno y reporta empates explícitamente.
 
 Uso:
     python simulate_ai_4.py                       # 200 batallas, 3v3 y 4v4
@@ -14,7 +14,6 @@ Uso:
 """
 
 import argparse
-import math
 import os
 import time
 from multiprocessing import Pool, cpu_count
@@ -114,18 +113,6 @@ def _run_battle(args) -> Tuple[int, int]:
     return winner, turns_played
 
 
-def _wilson_interval(wins: int, n: int) -> Tuple[float, float]:
-    """Intervalo de confianza 95% de Wilson para una proporción."""
-    if n == 0:
-        return 0.0, 0.0
-    z = 1.96
-    p = wins / n
-    denom = 1 + z**2 / n
-    centre = (p + z**2 / (2 * n)) / denom
-    half = (z * math.sqrt(p * (1 - p) / n + z**2 / (4 * n**2))) / denom
-    return (centre - half) * 100, (centre + half) * 100
-
-
 def _run_pairing(
     agent_a_key: str,
     agent_b_key: str,
@@ -137,7 +124,7 @@ def _run_pairing(
     Ejecuta n_battles entre A y B (alternando perspectiva) y retorna métricas.
 
     Returns:
-        dict con: wins_a, wins_b, draws, wr_a, wr_b, ic_lo, ic_hi,
+        dict con: wins_a, wins_b, draws, wr_a, wr_b,
                   wr_a_as_p1, wr_a_as_p2, avg_turns, elapsed.
     """
     args_list = [
@@ -160,7 +147,6 @@ def _run_pairing(
 
     wr_a = wins_a / n_battles * 100
     wr_b = wins_b / n_battles * 100
-    ic_lo, ic_hi = _wilson_interval(wins_a, n_battles)
 
     a_as_p1 = [r for r, args in zip(results, args_list) if args[3]]
     a_as_p2 = [r for r, args in zip(results, args_list) if not args[3]]
@@ -172,23 +158,14 @@ def _run_pairing(
     return {
         "wins_a": wins_a, "wins_b": wins_b, "draws": draws,
         "wr_a": wr_a, "wr_b": wr_b,
-        "ic_lo": ic_lo, "ic_hi": ic_hi,
         "wr_a_as_p1": wr_a_as_p1, "wr_a_as_p2": wr_a_as_p2,
         "avg_turns": avg_turns, "elapsed": elapsed,
     }
 
 
-def _verdict(ic_lo: float, ic_hi: float, label_a: str, label_b: str) -> str:
-    if ic_lo > 50.0:
-        return f'{label_a} > {label_b}'
-    if ic_hi < 50.0:
-        return f'{label_b} > {label_a}'
-    return 'Empate técnico'
-
-
 def imprimir_matriz(team_size: int, n_battles: int, n_cores: int) -> None:
     """Ejecuta y reporta la matriz competitiva completa para un team_size dado."""
-    width = 124
+    width = 80
     print()
     print('=' * width)
     print(f"{f'MATRIZ COMPETITIVA ({team_size}v{team_size})':^{width}}")
@@ -199,8 +176,7 @@ def imprimir_matriz(team_size: int, n_battles: int, n_cores: int) -> None:
     header = (
         f"{'EMPAREJAMIENTO':<32} | "
         f"{'WR A':>6} | {'WR B':>6} | {'EMP':>4} | "
-        f"{'IC 95% A':>16} | {'TURNOS':>7} | {'TIEMPO':>8} | "
-        f"{'VEREDICTO':<16}"
+        f"{'TURNOS':>7} | {'TIEMPO':>8}"
     )
     print(header)
     print('-' * width)
@@ -214,13 +190,10 @@ def imprimir_matriz(team_size: int, n_battles: int, n_cores: int) -> None:
         m = _run_pairing(key_a, key_b, n_battles, team_size, n_cores)
         total_elapsed += m["elapsed"]
 
-        ic_str = f'[{m["ic_lo"]:>4.1f}, {m["ic_hi"]:>4.1f}]'
-        verdict = _verdict(m['ic_lo'], m['ic_hi'], key_a, key_b)
         print(
             f"{pairing_label:<32} | "
             f"{m['wr_a']:>5.1f}% | {m['wr_b']:>5.1f}% | {m['draws']:>4} | "
-            f"{ic_str:>16} | {m['avg_turns']:>7.1f} | {m['elapsed']:>7.1f}s | "
-            f"{verdict:<16}"
+            f"{m['avg_turns']:>7.1f} | {m['elapsed']:>7.1f}s"
         )
 
     print('-' * width)
