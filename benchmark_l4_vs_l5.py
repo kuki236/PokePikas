@@ -14,14 +14,13 @@ import argparse
 import os
 import time
 from multiprocessing import Pool, cpu_count
-from statistics import mean, stdev
-from typing import List, Tuple
+from statistics import mean
+from typing import Tuple
 
 from src.ai.level4_agent import Level4Agent
 from src.ai.level5_agent import Level5Agent
 from src.core.battle_engine import process_turn
 from src.core.interfaces import BattleState
-from src.entities.pokemon import Pokemon
 from src.utils.move_registry import get_data_loader
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))

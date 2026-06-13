@@ -294,9 +294,6 @@ def process_turn(
                         for stat in ["attack", "special_attack", "speed"]:
                             if attacker.stat_stages[stat] < 6:
                                 attacker.stat_stages[stat] += 1
-                        DEBUG_BATTLE_ENGINE = False
-                        if DEBUG_BATTLE_ENGINE:
-                             print(f"  -> ¡El Vínculo Afectivo de {attacker.name} se fortalece! (Stats +1)")
 
             if move.id == 136 and not hit_success:
                 attacker.take_damage(attacker.max_hp // 2)

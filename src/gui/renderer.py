@@ -291,41 +291,6 @@ class Renderer:
 
         return wrapped_lines
 
-    def draw_dialog_box(self, text):
-        """
-        Dibuja una caja de diálogo en la pantalla con el texto proporcionado.
-
-        Args:
-            text (str): El texto a mostrar en la caja de diálogo.
-
-        Returns:
-            None
-
-        Raises:
-            No se lanzan excepciones explícitas, pero se puede producir un error si el texto proporcionado es demasiado largo para la caja de diálogo o si hay un error al renderizar el texto.
-        """
-        box_rect = pygame.Rect(20, self.screen.get_height() - 120, self.screen.get_width() - 40, 100)
-        pygame.draw.rect(self.screen, (40, 40, 50), box_rect, border_radius=10)
-        pygame.draw.rect(self.screen, (200, 200, 200), box_rect, width=4, border_radius=10)
-
-        if text is None:
-            return
-
-        font = self.font_subtitle
-        max_text_width = box_rect.width - 60
-        wrapped_lines = self._wrap_text(str(text), font, max_text_width)
-
-        max_lines = 3
-        line_height = font.get_height() + 4
-        start_y = box_rect.y + 20
-
-        for i, line in enumerate(wrapped_lines[:max_lines]):
-            y = start_y + i * line_height
-            shadow_surface = font.render(line, True, (20, 20, 20))
-            text_surface = font.render(line, True, (255, 255, 255))
-            self.screen.blit(shadow_surface, (box_rect.x + 32, y + 2))
-            self.screen.blit(text_surface, (box_rect.x + 30, y))
-
     def draw_health_bar(self, x, y, name, hp, max_hp, level, is_player=False, status=AilmentType.NONE):
         """
         Dibuja una barra de salud en la pantalla.

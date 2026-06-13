@@ -1,4 +1,3 @@
-from dataclasses import replace
 from typing import List
 from .enums import PokemonType, AilmentType
 from .move import Move
@@ -78,25 +77,6 @@ class Pokemon:
 
     def is_fainted(self) -> bool:
         return self.current_hp <= 0
-
-    def clone(self) -> "Pokemon":
-        """Crea una copia exacta incluyendo los niveles de stats actuales."""
-        cloned = Pokemon(
-            poke_id         = self.id,
-            name            = self.name,
-            max_hp          = self.max_hp,
-            attack          = self.attack,
-            defense         = self.defense,
-            special_attack  = self.special_attack,  
-            special_defense = self.special_defense, 
-            speed           = self.speed,
-            types           = list(self.types),
-            moves           = [replace(m) for m in self.moves]
-        )
-        cloned.current_hp     = self.current_hp
-        cloned.status_ailment = self.status_ailment
-        cloned.stat_stages    = dict(self.stat_stages)
-        return cloned
 
     def to_state(self):
         """Convierte el objeto a una estructura de datos plana para la IA."""
