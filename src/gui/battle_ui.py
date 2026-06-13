@@ -15,7 +15,7 @@ from src.entities.enums import AilmentType
 
 
 class BattleScreen:
-    def __init__(self, screen, renderer, p1_team, difficulty, mode):
+    def __init__(self, screen, renderer, p1_team, difficulty, mode, p1_team_instances=None, p2_team_instances=None):
         """
         Descripción breve:
             Inicializa un objeto para gestionar una batalla de Pokémon con habilidades básicas como 
@@ -70,30 +70,48 @@ class BattleScreen:
 
         name_to_id = {p['name']: p.get('poke_id', None) for p in self.loader.pokemon_data}
 
-        self.p1_team = []
-        for name in self.p1_team_names:
-            pid = name_to_id.get(name)
-            if pid is None:
-                pid = random.choice(self.loader.pokemon_data)['poke_id']
-            try:
-                self.p1_team.append(self.loader.create_battle_pokemon(pid))
-            except Exception:
-                self.p1_team.append(self.loader.create_battle_pokemon(random.choice(self.loader.pokemon_data)['poke_id']))
+        # Utilizar las instancias del equipo si fueron proporcionadas (esencial para el Alto Mando)
+        if p1_team_instances is not None:
+            self.p1_team = p1_team_instances
+        else:
+            self.p1_team = []
+            for name in self.p1_team_names:
+                pid = name_to_id.get(name)
+                if pid is None:
+                    pid = random.choice(self.loader.pokemon_data)['poke_id']
+                try:
+                    self.p1_team.append(self.loader.create_battle_pokemon(pid))
+                except Exception:
+                    self.p1_team.append(self.loader.create_battle_pokemon(random.choice(self.loader.pokemon_data)['poke_id']))
 
-        pool_ids = [p['poke_id'] for p in self.loader.pokemon_data]
-        self.p2_team = []
-        while len(self.p2_team) < len(self.p1_team):
-            pid = random.choice(pool_ids)
-            self.p2_team.append(self.loader.create_battle_pokemon(pid))
+        if p2_team_instances is not None:
+            self.p2_team = p2_team_instances
+        else:
+            pool_ids = [p['poke_id'] for p in self.loader.pokemon_data]
+            self.p2_team = []
+            while len(self.p2_team) < len(self.p1_team):
+                pid = random.choice(pool_ids)
+                self.p2_team.append(self.loader.create_battle_pokemon(pid))
 
         for pkm in self.p1_team + self.p2_team:
             if pkm.current_hp > pkm.max_hp:
                 pkm.max_hp = pkm.current_hp
 
+        # Buscar el primer Pokémon vivo para iniciar (útil si se conserva HP de batallas previas)
         self.p1_active_idx = 0
+        for i, p in enumerate(self.p1_team):
+            if p.current_hp > 0:
+                self.p1_active_idx = i
+                break
+                
         self.p2_active_idx = 0
-        self.p1_visual_idx = 0
-        self.p2_visual_idx = 0
+        for i, p in enumerate(self.p2_team):
+            if p.current_hp > 0:
+                self.p2_active_idx = i
+                break
+
+        self.p1_visual_idx = self.p1_active_idx
+        self.p2_visual_idx = self.p2_active_idx
 
         def _agent_for_level(pid, lvl):
             """
@@ -131,7 +149,7 @@ class BattleScreen:
             return Level2Agent(player_id=pid)
 
         mode_str = str(self.mode).lower() if self.mode else ""
-        self.human_player = any(k in mode_str for k in ("humano", "1p", "manual", "human"))
+        self.human_player = any(k in mode_str for k in ("humano", "1p", "manual", "human", "alto mando"))
 
         self.agent_p1 = None if self.human_player else _agent_for_level(1, 1)
         self.agent_p2 = _agent_for_level(2, self.difficulty or 1)
@@ -171,6 +189,7 @@ class BattleScreen:
 
         self.btn_replay = pygame.Rect(self.sw // 2 - 250, self.sh // 2, 200, 60)
         self.btn_menu = pygame.Rect(self.sw // 2 + 50, self.sh // 2, 200, 60)
+        self.btn_next = pygame.Rect(self.sw // 2 - 100, self.sh // 2, 200, 60)
 
         self.waiting_for_player_action = False
         self.waiting_for_player_switch = False
@@ -628,12 +647,17 @@ class BattleScreen:
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if self.battle_finished and not self.message_queue and not self.animating_blocking:
-                        if self.btn_replay.collidepoint(event.pos):
-                            self.action_after_battle = "REPLAY"
-                            self.running = False
-                        elif self.btn_menu.collidepoint(event.pos):
-                            self.action_after_battle = "MENU"
-                            self.running = False
+                        if self.mode == "Alto Mando":
+                            if self.btn_next.collidepoint(event.pos):
+                                self.action_after_battle = "MENU" # El gestor de la liga procesará la victoria/derrota
+                                self.running = False
+                        else:
+                            if self.btn_replay.collidepoint(event.pos):
+                                self.action_after_battle = "REPLAY"
+                                self.running = False
+                            elif self.btn_menu.collidepoint(event.pos):
+                                self.action_after_battle = "MENU"
+                                self.running = False
                             
                     else:
                         if self.animating_blocking:
@@ -963,8 +987,11 @@ class BattleScreen:
                 
                 self.renderer.draw_text("FIN DEL COMBATE", 'title', (255, 215, 0), self.sw//2, self.sh//2 - 100, center=True)
 
-                self.renderer.draw_button(self.btn_replay, "Repetir", self.btn_replay.collidepoint(mouse_pos))
-                self.renderer.draw_button(self.btn_menu, "Ir al Menú", self.btn_menu.collidepoint(mouse_pos))
+                if self.mode == "Alto Mando":
+                    self.renderer.draw_button(self.btn_next, "Siguiente", self.btn_next.collidepoint(mouse_pos))
+                else:
+                    self.renderer.draw_button(self.btn_replay, "Repetir", self.btn_replay.collidepoint(mouse_pos))
+                    self.renderer.draw_button(self.btn_menu, "Ir al Menú", self.btn_menu.collidepoint(mouse_pos))
 
             pygame.display.flip()
             self.clock.tick(60)
