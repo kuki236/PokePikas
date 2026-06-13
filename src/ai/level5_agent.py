@@ -3,7 +3,7 @@ import os
 from typing import List
 from src.ai.base_agent import BaseAgent
 from src.core.interfaces import Action, ActionType, BattleState, PokemonState
-from src.core.damage_calc import calculate_damage, get_type_multiplier
+from src.core.damage_calc import calculate_damage
 from src.entities.enums import PokemonType
 from src.entities.pokemon import Pokemon
 from src.core.battle_engine import process_turn

@@ -251,7 +251,8 @@ def process_turn(
 
                     hits = random.randint(3, 5) if move.id == 594 else 1
                     total_damage_accumulator = 0
-                    last_multi = 1.0
+                    multi_accumulator = 0.0
+                    effective_hits = 0
                
                     for _ in range(hits):
                         if defender.current_hp <= 0:
@@ -269,10 +270,11 @@ def process_turn(
                             attacker_ailment=attacker.status_ailment
                         )
                         total_damage_accumulator += hit_damage
-                        last_multi = m
+                        multi_accumulator += m
+                        effective_hits += 1
                     
                     damage = total_damage_accumulator
-                    multi = last_multi
+                    multi = (multi_accumulator / effective_hits) if effective_hits > 0 else 1.0
                     defender.take_damage(damage)
                
                     if move.drain > 0 and damage > 0 and not attacker.is_fainted():
@@ -292,9 +294,6 @@ def process_turn(
                         for stat in ["attack", "special_attack", "speed"]:
                             if attacker.stat_stages[stat] < 6:
                                 attacker.stat_stages[stat] += 1
-                        DEBUG_BATTLE_ENGINE = False
-                        if DEBUG_BATTLE_ENGINE:
-                             print(f"  -> ¡El Vínculo Afectivo de {attacker.name} se fortalece! (Stats +1)")
 
             if move.id == 136 and not hit_success:
                 attacker.take_damage(attacker.max_hp // 2)

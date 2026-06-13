@@ -135,7 +135,6 @@ class BattleScreen:
 
         self.agent_p1 = None if self.human_player else _agent_for_level(1, 1)
         self.agent_p2 = _agent_for_level(2, self.difficulty or 1)
-        self._temp_agent_for_human = _agent_for_level(1, 1)
 
         self.message_queue = []
         self.current_message = ""

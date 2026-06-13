@@ -260,7 +260,7 @@ def calculate_damage(
     atk = get_modified_stat(attacker_base_stat, attacker_stage, attacker_ailment)
     dfe = get_modified_stat(defender_base_stat, defender_stage)
 
-    base_damage = ((atk / max(1, dfe)) * move_power) / 2.75     
+    base_damage = ((atk / max(1, dfe)) * move_power) / 3.5
     speed_factor = defender_spd * FACTOR_K
     
     raw_damage = base_damage - speed_factor

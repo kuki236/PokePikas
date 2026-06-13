@@ -49,7 +49,13 @@ def main():
     ```
     """
     pygame.init()
-    pygame.mixer.init() # Inicializa el módulo de música
+    # Si el audio falla al inicializar, el juego sigue funcionando sin sonido
+    AUDIO_OK = True
+    try:
+        pygame.mixer.init()
+    except pygame.error as e:
+        AUDIO_OK = False
+        print(f"[AVISO] Audio no disponible ({e}); el juego continuará sin sonido.")
 
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("Pokémon Pikas - Menú")
@@ -64,21 +70,31 @@ def main():
 
     # --- CARGA DE SONIDOS ---
     sonido_select = None
-    if os.path.exists(ruta_sonido_select):
-        sonido_select = pygame.mixer.Sound(ruta_sonido_select)
-        sonido_select.set_volume(1.0) # <--- VOLUMEN AL MÁXIMO
+    if AUDIO_OK and os.path.exists(ruta_sonido_select):
+        try:
+            sonido_select = pygame.mixer.Sound(ruta_sonido_select)
+            sonido_select.set_volume(1.0) # <--- VOLUMEN AL MÁXIMO
+        except pygame.error as e:
+            print(f"[AVISO] No se pudo cargar sonido de selección: {e}")
+    elif not AUDIO_OK:
+        print("[AVISO] Audio deshabilitado; sin sonido de selección.")
     else:
         print(f"Advertencia: No se encontró el sonido de selección en {ruta_sonido_select}")
 
     def reproducir_sonido_select():
-        if sonido_select:
+        if sonido_select and AUDIO_OK:
             sonido_select.play()
 
     # --- CARGA Y REPRODUCCIÓN DE MÚSICA DEL MENÚ ---
-    if os.path.exists(ruta_musica_menu):
-        pygame.mixer.music.load(ruta_musica_menu)
-        pygame.mixer.music.set_volume(0.3) # Volumen de 0.0 a 1.0
-        pygame.mixer.music.play(-1) # -1 hace que se repita en bucle infinito
+    if AUDIO_OK and os.path.exists(ruta_musica_menu):
+        try:
+            pygame.mixer.music.load(ruta_musica_menu)
+            pygame.mixer.music.set_volume(0.3) # Volumen de 0.0 a 1.0
+            pygame.mixer.music.play(-1) # -1 hace que se repita en bucle infinito
+        except pygame.error as e:
+            print(f"[AVISO] No se pudo reproducir música del menú: {e}")
+    elif not AUDIO_OK:
+        print("[AVISO] Audio deshabilitado; sin música.")
     else:
         print(f"Advertencia: No se encontró la música del menú en {ruta_musica_menu}")
 

@@ -6,7 +6,6 @@ from src.core.interfaces import Action, ActionType, BattleState
 class Level2Agent(BaseAgent):
     def __init__(self, player_id: int):
         super().__init__(player_id)
-        self.turns_since_last_switch = 0
 
     def _get_team_and_active(self, state: BattleState):
         if self.player_id == 1:
@@ -54,9 +53,7 @@ class Level2Agent(BaseAgent):
         opp = opp_team[self._safe_index(opp_active_idx, opp_team)] if opp_team else None
         
         switch_candidates = [i for i, p in enumerate(team) if getattr(p, 'current_hp', 0) > 0 and i != active_idx]
-        self.turns_since_last_switch += 1
         if getattr(active, 'current_hp', 0) <= 0 and switch_candidates:
-            self.turns_since_last_switch = 0
             return Action(type=ActionType.SWITCH, target_index=random.choice(switch_candidates))
 
         best_index: Optional[int] = None

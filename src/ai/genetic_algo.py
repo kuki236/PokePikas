@@ -5,7 +5,7 @@ import random
 import time
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
-from statistics import mean, stdev
+from statistics import mean
 from typing import Dict, List, Optional, Tuple
 
 from src.ai.level3_agent import Level3Agent
@@ -15,6 +15,7 @@ from src.core.battle_engine import process_turn
 from src.core.interfaces import BattleState
 from src.entities.pokemon import Pokemon
 from src.utils.data_loader import DataLoader
+from src.utils.move_registry import get_data_loader
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 DEFAULT_OUTPUT_PATH = os.path.join(ROOT_DIR, 'data', 'ai', 'level5_weights.json')
@@ -22,23 +23,29 @@ DEFAULT_POKEMON_PATH = os.path.join(ROOT_DIR, 'data', 'pokemon_pool.json')
 DEFAULT_MOVES_PATH = os.path.join(ROOT_DIR, 'data', 'moves_pool.json')
 DEFAULT_LOG_PATH = os.path.join(ROOT_DIR, 'data', 'ai', 'level5_ga.log')
 
+
+def _init_worker() -> None:
+    """Pre-carga el singleton de DataLoader en cada worker spawn de Windows."""
+    get_data_loader(DEFAULT_POKEMON_PATH, DEFAULT_MOVES_PATH)
+
+
 @dataclass
 class GeneticConfig:
     # población y generaciones para permitir una evolución real
-    population_size: int = 40 
+    population_size: int = 40
     elite_size: int = 4
     mutation_rate: float = 0.15
     mutation_strength: float = 0.20
     tournament_size: int = 5
-    max_generations: int = 50 
-    patience: int = 12
+    max_generations: int = 50
+    patience: int = 15
     min_improvement: float = 0.005
     # las batallas para reducir el factor suerte (RNG)
-    battles_phase1: int = 3
-    battles_phase2: int = 6
+    battles_phase1: int = 4
+    battles_phase2: int = 8
     top_fraction: float = 0.35
     team_size: int = 3
-    scenarios_per_opponent: int = 3 
+    scenarios_per_opponent: int = 4
     holdout_scenarios_level4: int = 8
     holdout_battles: int = 4
     max_turns: int = 120
@@ -48,10 +55,10 @@ class GeneticConfig:
     log_path: str = DEFAULT_LOG_PATH
     output_path: str = DEFAULT_OUTPUT_PATH
 
-# El entrenamiento se centra en la IA4 (peso masivo de 10.0)
+# El entrenamiento se centra en la IA4 (peso masivo)
 OPPONENT_MAP = {
     'Level3Agent': (Level3Agent, 1.00),
-    'Level4Agent': (Level4Agent, 10.00),
+    'Level4Agent': (Level4Agent, 15.00),
 }
 
 DEFAULT_BOUNDS: Dict[str, Tuple[float, float]] = {
@@ -262,32 +269,36 @@ def _eval_candidate_on_scenarios(args) -> float:
     Args:
         args (tuple): Tupla que contiene los siguientes parámetros:
             - weights (dict): Conjunto de pesos para el agente.
-            - scenarios (list): Lista de escenarios de batalla, cada uno representado por un tuple con los estados de los Pokémon del jugador 1, los estados de los Pokémon del oponente y el nombre de la clase del oponente.
+            - scenarios (list): Lista de escenarios de batalla. Cada elemento es (scenario_id, p1_states, p2_states, opp_class_name).
             - battles_per_opp (int): Número de batallas por oponente.
             - max_turns (int): Máximo número de turnos por batalla.
             - elites (list): Lista de pesos elitistas.
             - diversity_pressure (float): Presión de diversidad.
+            - generation_seed (int): Semilla base de la generación para anclar el PRNG.
 
     Returns:
         float: Puntuación que refleja el desempeño del candidato en los escenarios de batalla, calculada como la media de las puntuaciones obtenidas en cada batalla, ajustada con una penalización por diversidad.
-
-    Raises:
-        - Si no se pueden calcular las puntuaciones de las batallas, se devuelve infinito negativo.
-        - Excepciones additionales pueden ser lanzadas por las funciones auxiliares _run_headless_battle y _score_battle.
     """
-    weights, scenarios, battles_per_opp, max_turns, elites, diversity_pressure = args
+    weights, scenarios, battles_per_opp, max_turns, elites, diversity_pressure, generation_seed = args
     scores = []
-    for p1_states, p2_states, opp_class_name in scenarios:
+    for scenario_id, p1_states, p2_states, opp_class_name in scenarios:
         opp_class, opp_weight = OPPONENT_MAP[opp_class_name]
-        for _ in range(battles_per_opp):
+        for battle_idx in range(battles_per_opp):
+            # Anclaje determinista del PRNG: misma seed para todos los candidatos
+            # en esta combinación (generación, escenario, batalla). Elimina ruido
+            # estocástico espurio en la comparación de fitness.
+            battle_seed = generation_seed * 100000 + scenario_id * 1000 + battle_idx * 2
+
             # Batalla de Ida
+            random.seed(battle_seed)
             ag1 = Level5Agent(player_id=1)
             ag1.weights = dict(weights)
             ag2 = opp_class(player_id=2)
             w, turns, fp1, fp2 = _run_headless_battle([Pokemon.from_state(s) for s in p1_states], [Pokemon.from_state(s) for s in p2_states], ag1, ag2, max_turns)
             scores.append(_score_battle(w, turns, fp1, fp2, 1, max_turns, opp_weight))
-            
+
             # Batalla de Vuelta (Invertimos equipos)
+            random.seed(battle_seed + 1)
             ag3 = opp_class(player_id=1)
             ag4 = Level5Agent(player_id=2)
             ag4.weights = dict(weights)
@@ -299,8 +310,8 @@ def _eval_candidate_on_scenarios(args) -> float:
 
 def _build_scenarios(loader, team_size: int, n_per_opponent: int) -> List:
     """
-    ```Descripcion
     Crea escenarios para partidas contra oponentes generando equipos aleatorios.
+    Cada escenario incluye un scenario_id estable para anclar el PRNG.
 
     Args:
         loader: objeto que carga y proporciona recursos para la generación de equipos
@@ -308,32 +319,30 @@ def _build_scenarios(loader, team_size: int, n_per_opponent: int) -> List:
         n_per_opponent (int): número de escenarios por oponente
 
     Returns:
-        List: lista de tuplas que contienen los escenarios, donde cada tupla contiene dos equipos (como listas de estados de jugador) y el nombre del oponente
-
-    Raises:
-        TypeError: si loader no es un objeto que tenga el método generate_random_team, o si team_size o n_per_opponent no son números enteros
-    ```
+        List[Tuple[int, list, list, str]]: lista de (scenario_id, p1_states, p2_states, opp_name)
     """
     scenarios = []
+    scenario_id = 0
     for opp_name in OPPONENT_MAP:
         for _ in range(n_per_opponent):
             p1 = [p.to_state() for p in loader.generate_random_team(team_size)]
             p2 = [p.to_state() for p in loader.generate_random_team(team_size)]
-            scenarios.append((p1, p2, opp_name))
+            scenarios.append((scenario_id, p1, p2, opp_name))
+            scenario_id += 1
     return scenarios
 
 def _build_level4_holdout(loader, team_size: int, n_scenarios: int) -> List:
     scenarios = []
-    for _ in range(n_scenarios):
-        scenarios.append(([p.to_state() for p in loader.generate_random_team(team_size)], 
+    for i in range(n_scenarios):
+        scenarios.append((i, [p.to_state() for p in loader.generate_random_team(team_size)],
                           [p.to_state() for p in loader.generate_random_team(team_size)], 'Level4Agent'))
     return scenarios
 
-def _evaluate_population(population: List[Dict], scenarios: List, battles_per_opp: int, n_cores: int, max_turns: int, elites: List[Dict], diversity_pressure: float) -> List[float]:
+def _evaluate_population(population: List[Dict], scenarios: List, battles_per_opp: int, n_cores: int, max_turns: int, elites: List[Dict], diversity_pressure: float, generation_seed: int) -> List[float]:
     """
-    +\":Evaluación de población de candidatos en diferentes escenarios.
+    Evalúa la población en paralelo con anclaje de PRNG por (generación, escenario).
 
-     Args:
+    Args:
         population (List[Dict]): Población de candidatos a evaluar.
         scenarios (List): Escenarios en los que se evaluarán los candidatos.
         battles_per_opp (int): Número de batallas por oponente.
@@ -341,20 +350,19 @@ def _evaluate_population(population: List[Dict], scenarios: List, battles_per_op
         max_turns (int): Número máximo de turnos por batalla.
         elites (List[Dict]): Candidatos de élite.
         diversity_pressure (float): Presión de diversidad.
+        generation_seed (int): Semilla base de la generación para anclar el PRNG.
 
-     Returns:
+    Returns:
         List[float]: Puntuaciones de la población evaluada.
-
-     Raises:
-        Exception: Excepción genérica que puede ser lanzada en caso de error durante la evaluación.\"
     """
-    args_list = [(candidate, scenarios, battles_per_opp, max_turns, elites, diversity_pressure) for candidate in population]
+    args_list = [(candidate, scenarios, battles_per_opp, max_turns, elites, diversity_pressure, generation_seed) for candidate in population]
     if n_cores and n_cores > 1:
-        with Pool(processes=n_cores) as pool: return pool.map(_eval_candidate_on_scenarios, args_list)
+        with Pool(processes=n_cores, initializer=_init_worker) as pool:
+            return pool.map(_eval_candidate_on_scenarios, args_list)
     return [_eval_candidate_on_scenarios(a) for a in args_list]
 
-def _holdout_level4_score(weights: Dict, holdout_scenarios: List, battles_per_opp: int, max_turns: int) -> float:
-    return _eval_candidate_on_scenarios((weights, holdout_scenarios, battles_per_opp, max_turns, [], 0.0))
+def _holdout_level4_score(weights: Dict, holdout_scenarios: List, battles_per_opp: int, max_turns: int, generation_seed: int) -> float:
+    return _eval_candidate_on_scenarios((weights, holdout_scenarios, battles_per_opp, max_turns, [], 0.0, generation_seed))
 
 def _save_weights(path: str, weights: Dict, metadata: Optional[Dict] = None) -> None:
     """
@@ -410,17 +418,20 @@ def run_genetic_algorithm(config: Optional[GeneticConfig] = None) -> Dict[str, f
 
     for generation in range(config.max_generations):
         gen_start = time.time()
+        # Semilla derivada por generación: anclaje del PRNG en fase 1, fase 2 y
+        # holdout. Distintos offsets garantizan que la re-evaluación no sea trivial.
+        generation_seed = config.seed * 10000 + generation
         scenarios = _build_scenarios(loader, config.team_size, config.scenarios_per_opponent)
         holdout_level4 = _build_level4_holdout(loader, config.team_size, config.holdout_scenarios_level4)
 
-        fitnesses_p1 = _evaluate_population(population, scenarios, config.battles_phase1, n_cores, config.max_turns, elites, config.diversity_pressure)
+        fitnesses_p1 = _evaluate_population(population, scenarios, config.battles_phase1, n_cores, config.max_turns, elites, config.diversity_pressure, generation_seed)
 
         n_top = max(1, int(len(population) * config.top_fraction))
         ranked_idx = sorted(range(len(population)), key=lambda i: fitnesses_p1[i], reverse=True)
         
         fitnesses_final = list(fitnesses_p1)
         top_population = [population[i] for i in ranked_idx[:n_top]]
-        top_fitnesses = _evaluate_population(top_population, scenarios, config.battles_phase2, n_cores, config.max_turns, elites, config.diversity_pressure)
+        top_fitnesses = _evaluate_population(top_population, scenarios, config.battles_phase2, n_cores, config.max_turns, elites, config.diversity_pressure, generation_seed + 50000)
         
         for rank, orig_i in enumerate(ranked_idx[:n_top]):
             fitnesses_final[orig_i] = top_fitnesses[rank]
@@ -428,7 +439,7 @@ def run_genetic_algorithm(config: Optional[GeneticConfig] = None) -> Dict[str, f
         ranked_final = sorted(zip(population, fitnesses_final), key=lambda x: x[1], reverse=True)
         current_best_w, current_best_f = ranked_final[0]
 
-        current_holdout = _holdout_level4_score(current_best_w, holdout_level4, config.holdout_battles, config.max_turns)
+        current_holdout = _holdout_level4_score(current_best_w, holdout_level4, config.holdout_battles, config.max_turns, generation_seed + 90000)
 
         improved = (current_holdout > best_holdout + config.min_improvement) or \
                    (current_best_f > best_fitness + config.min_improvement and current_holdout >= best_holdout - 0.01)

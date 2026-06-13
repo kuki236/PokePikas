@@ -58,10 +58,6 @@ def evaluate_level3_state(state: BattleState, player_id: int) -> float:
     )
 
 
-from src.core.interfaces import BattleState
-from src.core.damage_calc import get_type_multiplier
-from src.entities.enums import PokemonType
-
 def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     
     # BALANCEO 
