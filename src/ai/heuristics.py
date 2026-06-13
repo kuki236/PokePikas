@@ -141,3 +141,30 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
         if ailment_str in bad_ailments: status_score = -1.0
 
     return (HP_WEIGHT * hp_score) + (SPEED_WEIGHT * speed_score) + (TYPE_WEIGHT * type_score) + (STATUS_WEIGHT * status_score) + (ALIVE_WEIGHT * alive_score)
+
+
+def calculate_hp_differential_l3(state: BattleState, player_id: int) -> float:
+    """
+    Diferencial absoluto de HP entre los equipos (métrica unificada con Level 2).
+
+    Calcula la diferencia entre la suma de HP actual de todos los Pokémon del
+    jugador y la suma de HP actual de todos los Pokémon del rival. Función
+    puramente lineal y conmensurable con la métrica de daño del motor real:
+    no aplica normalizaciones, pesos ni componentes binarios discontinuos.
+
+    Args:
+        state (BattleState): Estado actual de la batalla.
+        player_id (int): Identificador del jugador (1 o 2).
+
+    Returns:
+        float: Diferencial de HP en puntos de salud reales (`my_hp - opp_hp`).
+    """
+    if player_id == 1:
+        my_team, opp_team = state.p1_team, state.p2_team
+    else:
+        my_team, opp_team = state.p2_team, state.p1_team
+
+    my_hp = sum(max(0, p.current_hp) for p in my_team)
+    opp_hp = sum(max(0, p.current_hp) for p in opp_team)
+
+    return float(my_hp - opp_hp)

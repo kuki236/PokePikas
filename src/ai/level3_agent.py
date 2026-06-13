@@ -1,8 +1,8 @@
 import random
-from typing import List
+from typing import List, Optional
 
 from src.ai.base_agent import BaseAgent
-from src.ai.heuristics import evaluate_level3_state
+from src.ai.heuristics import calculate_hp_differential_l3
 from src.core.interfaces import (Action,ActionType,BattleState,PokemonState)
 from src.core.battle_engine import process_turn
 from src.entities.pokemon import Pokemon
@@ -56,6 +56,31 @@ class Level3Agent(BaseAgent):
         p1_alive = any(p.current_hp > 0 for p in state.p1_team)
         p2_alive = any(p.current_hp > 0 for p in state.p2_team)
         return not (p1_alive and p2_alive)
+
+    def _get_terminal_value(self, state: BattleState) -> Optional[float]:
+        """
+        Retorna un valor centinela de utilidad pura si el estado es terminal
+        (victoria/derrota absoluta). Retorna None si la batalla continúa.
+
+        La magnitud 10000.0 se eligió para superar cualquier valor posible
+        de la heurística `calculate_hp_differential_l3` (cuyo techo teórico
+        en un combate 6v6 nivel 100 ronda ~3000 puntos de HP), garantizando
+        que el algoritmo Minimax siempre prefiera una victoria real
+        inmediata a cualquier ventaja posicional incierta.
+        """
+        p1_alive = any(p.current_hp > 0 for p in state.p1_team)
+        p2_alive = any(p.current_hp > 0 for p in state.p2_team)
+
+        if p1_alive and p2_alive:
+            return None
+        if not p1_alive and not p2_alive:
+            return 0.0
+
+        p1_won = p1_alive and not p2_alive
+        i_am_p1 = (self.player_id == 1)
+        i_win = (p1_won == i_am_p1)
+
+        return 10000.0 if i_win else -10000.0
 
     def _build_real_team(self, state_team):
         return [Pokemon.from_state(p) for p in state_team]
@@ -204,14 +229,16 @@ class Level3Agent(BaseAgent):
                 self.turns_since_last_switch = 0
             return legal_actions[0]
 
-        best_action = legal_actions[0]
-        best_value = -INF
-        alpha = -INF
-        beta = INF
-
         legal_actions.sort(
             key=lambda a: 0 if a.type == ActionType.MOVE else 1
         )
+
+        TERMINAL_LOSS = -10000.0
+        alpha = -10000.0
+        beta = 10000.0
+
+        best_action = legal_actions[0]
+        best_value = TERMINAL_LOSS
 
         for my_action in legal_actions:
             next_my_cooldown = (
@@ -233,7 +260,10 @@ class Level3Agent(BaseAgent):
                 best_value = value
                 best_action = my_action
 
-            alpha = max(alpha, best_value)
+            alpha = max(alpha, value)
+
+        if best_value <= TERMINAL_LOSS:
+            best_action = random.choice(legal_actions)
 
         if best_action.type == ActionType.SWITCH:
             self.turns_since_last_switch = 0
@@ -251,7 +281,7 @@ class Level3Agent(BaseAgent):
     ) -> float:
 
         """
-        Desuelve el valor máximo obtenible en una situación de batalla.
+        Devuelve el valor máximo obtenible en una situación de batalla.
 
         Args:
             state (BattleState): Estado actual de la batalla.
@@ -265,8 +295,11 @@ class Level3Agent(BaseAgent):
         Raises:
             No se especifican excepciones.
         """
-        if depth == 0 or self._is_match_over(state):
-            return evaluate_level3_state(
+        terminal = self._get_terminal_value(state)
+        if terminal is not None:
+            return terminal
+        if depth == 0:
+            return calculate_hp_differential_l3(
                 state,
                 self.player_id
             )
@@ -279,7 +312,7 @@ class Level3Agent(BaseAgent):
             my_cooldown
         )
 
-        v = -INF
+        max_utility = -INF
 
         for my_action in legal_actions:
             next_my_cd = (
@@ -297,14 +330,14 @@ class Level3Agent(BaseAgent):
                 opp_cooldown
             )
 
-            v = max(v, value)
+            max_utility = max(max_utility, value)
 
-            if v >= beta:
-                return v
+            if max_utility >= beta:
+                return max_utility
 
-            alpha = max(alpha, v)
+            alpha = max(alpha, max_utility)
 
-        return v
+        return max_utility
 
     def _min_value(
         self,
@@ -332,11 +365,14 @@ class Level3Agent(BaseAgent):
             float: El valor mínimo de la situación de batalla.
 
         Raises:
-            Exception: No se lanzan excepciones explícitas, pero puede ocurrir un error si el estado de la batalla es inválido o si se produce un error en la evaluación del estado.
+            No se lanzan excepciones explícitas, pero puede ocurrir un error si el estado de la batalla es inválido o si se produce un error en la evaluación del estado.
 
         """
-        if depth == 0 or self._is_match_over(state):
-            return evaluate_level3_state(
+        terminal = self._get_terminal_value(state)
+        if terminal is not None:
+            return terminal
+        if depth == 0:
+            return calculate_hp_differential_l3(
                 state,
                 self.player_id
             )
@@ -355,7 +391,7 @@ class Level3Agent(BaseAgent):
             opp_cooldown
         )
 
-        v = INF
+        min_utility = INF
 
         for opp_action in opp_actions:
             if self.player_id == 1:
@@ -385,11 +421,11 @@ class Level3Agent(BaseAgent):
                 next_opp_cd
             )
 
-            v = min(v, value)
+            min_utility = min(min_utility, value)
 
-            if v <= alpha:
-                return v
+            if min_utility <= alpha:
+                return min_utility
 
-            beta = min(beta, v)
+            beta = min(beta, min_utility)
 
-        return v
+        return min_utility
