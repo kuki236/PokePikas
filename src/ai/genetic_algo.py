@@ -65,15 +65,16 @@ OPPONENT_MAP = {
     'Level4Agent': (Level4Agent, 15.00),
 }
 
+# El cromosoma es EXACTAMENTE el vector de pesos de la heuristica L4.
+# L5 = L4 con estos 5 pesos reemplazados por los evolucionados por AG.
+# Los rangos cubren los valores hand-tuned de L4 (0.50, 0.30, 0.15, 0.03, 0.02)
+# y permiten exploracion mas alla (hasta 1.5x para los mas criticos).
 DEFAULT_BOUNDS: Dict[str, Tuple[float, float]] = {
-    'hp_balance': (0.0, 5.0),
-    'alive_balance': (0.0, 5.0),
-    'type_pressure': (0.0, 8.0),   # Permite castigar fuertemente inmunidades/resistencias
-    'speed_pressure': (0.0, 3.0),
-    'status_pressure': (0.0, 3.0),
-    'move_pressure': (0.0, 5.0),
-    'switch_pressure': (0.0, 4.0),
-    'ko_pressure': (0.0, 10.0),    # Permite priorizar KOs absolutos
+    'hp':     (0.0, 1.5),   # L4 default: 0.50 (componente dominante)
+    'alive':  (0.0, 1.5),   # L4 default: 0.30 (segundo en importancia)
+    'type':   (0.0, 1.0),   # L4 default: 0.15
+    'speed':  (0.0, 0.5),   # L4 default: 0.03
+    'status': (0.0, 0.5),   # L4 default: 0.02
 }
 
 def _setup_logger(log_path: str) -> logging.Logger:

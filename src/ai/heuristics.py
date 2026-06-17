@@ -4,83 +4,33 @@ from src.entities.enums import PokemonType
 
 
 L4_WEIGHTS = {
-    "HP": 0.50,
-    "ALIVE": 0.30,
-    "TYPE": 0.15,
-    "SPEED": 0.03,
-    "STATUS": 0.02,
+    "hp": 0.50,
+    "alive": 0.30,
+    "type": 0.15,
+    "speed": 0.03,
+    "status": 0.02,
 }
 
 
-def evaluate_level3_state(state: BattleState, player_id: int) -> float:
-
-    """
-    Evalúa el estado de batalla de nivel 3 y asigna una puntuación numérica basada en las condiciones actuales de los equipos.
-
-    Args:
-        state (BattleState): El estado actual de la batalla.
-        player_id (int): El identificador del jugador (1 o 2).
-
-    Returns:
-        float: Una puntuación que indica la ventaja o desventaja del jugador en la batalla.
-
-    Raises:
-        No se lanzan excepciones explícitas, pero podría producirse un error si el objeto BattleState no contiene los atributos esperados o si el player_id no es válido.
-    """
-    if player_id == 1:
-        my_team, opp_team = state.p1_team, state.p2_team
-        my_idx = state.p1_active_index
-    else:
-        my_team, opp_team = state.p2_team, state.p1_team
-        my_idx = state.p2_active_index
-
-    my_active = (
-        my_team[my_idx]
-        if my_idx < len(my_team)
-        else my_team[0]
-    )
-
-    my_current_hp = sum(max(0, p.current_hp) for p in my_team)
-    my_max_hp = sum(max(1, p.max_hp) for p in my_team)
-
-    opp_current_hp = sum(max(0, p.current_hp) for p in opp_team)
-    opp_max_hp = sum(max(1, p.max_hp) for p in opp_team)
-
-    hp_score = (
-        (my_current_hp / my_max_hp)
-        -
-        (opp_current_hp / opp_max_hp)
-    )
-
-    ko_score = 0.0
-
-    if my_active.current_hp <= 0:
-        ko_score = -1.0
-
-    HP_WEIGHT = 0.8
-    KO_WEIGHT = 0.2
-
-    return (
-        (HP_WEIGHT * hp_score)
-        +
-        (KO_WEIGHT * ko_score)
-    )
+def _clamp(n: float, minn: float = -1.0, maxn: float = 1.0) -> float:
+    """Restringe `n` al intervalo cerrado [minn, maxn]. Default: [-1.0, 1.0]."""
+    return max(minn, min(maxn, n))
 
 
-def evaluate_level4_state(state: BattleState, player_id: int) -> float:
+def _compute_l4_components(state: BattleState, player_id: int) -> dict:
+    """Calcula los 5 componentes normalizados de la heuristica L4/L5.
 
-    """
-    Evaluación del estado de nivel 4 en una batalla de Pokémon.
+    Retorna un dict con clave 'terminal' (+/- 10000.0) si la batalla termino,
+    o las 5 componentes hp/alive/type/speed/status todas en [-1, 1].
 
     Args:
         state (BattleState): Estado actual de la batalla.
         player_id (int): Identificador del jugador (1 o 2).
 
     Returns:
-        float: Puntuación que refleja la ventaja o desventaja del jugador en la batalla.
-
-    Raises:
-        No se lanzan excepciones explícitas, pero puede ocurrir un error si el estado de la batalla o el identificador del jugador son inválidos.
+        dict: {'terminal': float} en estados terminales, o
+              {'hp': float, 'alive': float, 'type': float, 'speed': float, 'status': float}
+              en estados no terminales.
     """
     if player_id == 1:
         my_team, opp_team = state.p1_team, state.p2_team
@@ -92,8 +42,10 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     my_alive_flag = any(p.current_hp > 0 for p in my_team)
     opp_alive_flag = any(p.current_hp > 0 for p in opp_team)
 
-    if not opp_alive_flag: return 10000.0
-    if not my_alive_flag: return -10000.0
+    if not opp_alive_flag:
+        return {"terminal": 10000.0}
+    if not my_alive_flag:
+        return {"terminal": -10000.0}
 
     my_active = my_team[my_idx] if my_idx < len(my_team) else my_team[0]
     opp_active = opp_team[opp_idx] if opp_idx < len(opp_team) else opp_team[0]
@@ -106,7 +58,7 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
 
     my_alive = sum(1 for p in my_team if p.current_hp > 0)
     opp_alive = sum(1 for p in opp_team if p.current_hp > 0)
-    team_size = max(1, len(my_team)) 
+    team_size = max(1, len(my_team))
     alive_score = (my_alive - opp_alive) / float(team_size)
 
     speed_score = 0.0
@@ -114,19 +66,22 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
     status_score = 0.0
 
     if my_active.current_hp > 0:
-        if my_active.speed > opp_active.speed: speed_score = 1.0
-        elif my_active.speed < opp_active.speed: speed_score = -1.0
+        if my_active.speed > opp_active.speed:
+            speed_score = 1.0
+        elif my_active.speed < opp_active.speed:
+            speed_score = -1.0
 
         opp_types = [PokemonType[t.upper()] for t in getattr(opp_active, 'types', []) if t.upper() in PokemonType.__members__]
         my_types = [PokemonType[t.upper()] for t in getattr(my_active, 'types', []) if t.upper() in PokemonType.__members__]
-        
+
         max_mult_offense = 0.0
         for move in getattr(my_active, 'moves', []):
             if getattr(move, 'current_pp', 0) > 0 and getattr(move, 'power', 0) > 0:
                 m_type_str = getattr(move, 'move_type', 'NORMAL').upper()
                 m_enum = PokemonType[m_type_str] if m_type_str in PokemonType.__members__ else PokemonType.NORMAL
                 mult = get_type_multiplier(m_enum, opp_types)
-                if mult > max_mult_offense: max_mult_offense = mult
+                if mult > max_mult_offense:
+                    max_mult_offense = mult
 
         max_mult_defense = 0.0
         for move in getattr(opp_active, 'moves', []):
@@ -134,10 +89,10 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
                 m_type_str = getattr(move, 'move_type', 'NORMAL').upper()
                 m_enum = PokemonType[m_type_str] if m_type_str in PokemonType.__members__ else PokemonType.NORMAL
                 mult = get_type_multiplier(m_enum, my_types)
-                if mult > max_mult_defense: max_mult_defense = mult
-        
-        type_score = ((max_mult_offense - 1.0) - (max_mult_defense - 1.0)) / 4.0
-        type_score = _clamp(type_score, -1.0, 1.0)
+                if mult > max_mult_defense:
+                    max_mult_defense = mult
+
+        type_score = _clamp(((max_mult_offense - 1.0) - (max_mult_defense - 1.0)) / 4.0)
 
         bad_ailments = ["BURN", "POISON", "PARALYSIS", "FREEZE", "SLEEP"]
         my_ailment = getattr(my_active, 'status_ailment', "NONE")
@@ -149,12 +104,52 @@ def evaluate_level4_state(state: BattleState, player_id: int) -> float:
         if opp_ailment_str in bad_ailments:
             status_score += 1.0
 
-    return (L4_WEIGHTS["HP"] * hp_score) + (L4_WEIGHTS["SPEED"] * speed_score) + (L4_WEIGHTS["TYPE"] * type_score) + (L4_WEIGHTS["STATUS"] * status_score) + (L4_WEIGHTS["ALIVE"] * alive_score)
+    return {
+        "hp": hp_score,
+        "alive": alive_score,
+        "type": type_score,
+        "speed": speed_score,
+        "status": status_score,
+    }
+
+
+def evaluate_level4_state(state: BattleState, player_id: int, weights: dict = None) -> float:
+    """Evalua el estado de batalla con la heuristica compuesta normalizada (L4 o L5).
+
+    Misma estructura que L4: 5 componentes normalizados en [-1, 1] ponderados
+    por un vector de pesos. L4 usa pesos hard-tuned; L5 usa pesos evolucionados
+    por Algoritmo Genetico. Los estados terminales devuelven +/- 10000.0 para
+    forzar la convergencia del Minimax.
+
+    Args:
+        state (BattleState): Estado actual de la batalla.
+        player_id (int): Identificador del jugador (1 o 2).
+        weights (dict, optional): Diccionario de pesos con claves
+            {'hp', 'alive', 'type', 'speed', 'status'}. Si es None,
+            usa L4_WEIGHTS (defaults hand-tuned de L4).
+
+    Returns:
+        float: Puntuacion que refleja la ventaja o desventaja del jugador.
+               +/- 10000.0 en estados terminales, [-1, 1] aprox. en juego.
+    """
+    if weights is None:
+        weights = L4_WEIGHTS
+
+    components = _compute_l4_components(state, player_id)
+    if "terminal" in components:
+        return components["terminal"]
+
+    return (
+        weights["hp"] * components["hp"]
+        + weights["alive"] * components["alive"]
+        + weights["type"] * components["type"]
+        + weights["speed"] * components["speed"]
+        + weights["status"] * components["status"]
+    )
 
 
 def calculate_hp_differential_l3(state: BattleState, player_id: int) -> float:
-    """
-    Diferencial absoluto de HP entre los equipos (métrica unificada con Level 2).
+    """Diferencial absoluto de HP entre los equipos (métrica unificada con Level 2).
 
     Calcula la diferencia entre la suma de HP actual de todos los Pokémon del
     jugador y la suma de HP actual de todos los Pokémon del rival. Función
@@ -177,17 +172,3 @@ def calculate_hp_differential_l3(state: BattleState, player_id: int) -> float:
     opp_hp = sum(max(0, p.current_hp) for p in opp_team)
 
     return float(my_hp - opp_hp)
-
-
-def _clamp(n: float, minn: float, maxn: float) -> float:
-    """Restringe `n` al intervalo cerrado [minn, maxn].
-
-    Args:
-        n (float): Valor a limitar.
-        minn (float): Cota inferior.
-        maxn (float): Cota superior.
-
-    Returns:
-        float: Valor recortado al rango valido.
-    """
-    return max(min(maxn, n), minn)
