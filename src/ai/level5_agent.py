@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import List
 
@@ -11,9 +12,12 @@ from src.core.battle_engine import process_turn
 from src.ai.heuristics import evaluate_level4_state, L4_WEIGHTS
 from config import AI_LEVEL4_DEPTH, INF
 
-# Misma profundidad que L4: la inteligencia superior de L5 viene de los pesos,
-# no de buscar mas profundo.
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+DEFAULT_WEIGHTS_PATH = os.path.join(ROOT_DIR, 'data', 'ai', 'level5_weights.json')
+
 DEPTH = AI_LEVEL4_DEPTH
+
 
 
 class Level5Agent(BaseAgent):
@@ -69,23 +73,54 @@ class Level5Agent(BaseAgent):
         return dict(L4_WEIGHTS)
 
     def _get_team_and_active(self, state: BattleState):
-        """Devuelve (mi_equipo, mi_activo, equipo_rival, activo_rival) desde la perspectiva del agente."""
+        """Devuelve los equipos e indices activos desde la perspectiva del agente.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            tuple: (mi_equipo, mi_activo, equipo_rival, activo_rival).
+        """
         if self.player_id == 1:
             return state.p1_team, state.p1_active_index, state.p2_team, state.p2_active_index
         return state.p2_team, state.p2_active_index, state.p1_team, state.p1_active_index
 
     def _safe_index(self, idx: int, seq) -> int:
-        """Devuelve un indice valido dentro de `seq`, o 0 si es invalido/vacio."""
+        """Devuelve un indice valido dentro de una secuencia.
+
+        Args:
+            idx (int): Indice propuesto.
+            seq: Secuencia sobre la que se indexara.
+
+        Returns:
+            int: Indice seguro. Si seq esta vacia o idx es None/fuera de
+                rango, devuelve 0.
+        """
         if not seq or idx is None or idx < 0 or idx >= len(seq):
             return 0
         return idx
 
     def _build_real_team(self, state_team):
-        """Reconstruye instancias de Pokemon a partir de PokemonState."""
+        """Reconstruye una lista de objetos Pokemon reales a partir de PokemonState.
+
+        Args:
+            state_team (list): Lista de PokemonState del estado serializado.
+
+        Returns:
+            list: Lista de instancias de Pokemon listas para usar en process_turn.
+        """
         return [Pokemon.from_state(p) for p in state_team]
 
     def _is_match_over(self, state: BattleState) -> bool:
-        """Indica si la batalla ha finalizado (algun equipo sin Pokemon con HP > 0)."""
+        """Indica si la batalla ha terminado.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            bool: True si algun equipo no tiene Pokemon con HP > 0,
+                False en caso contrario.
+        """
         p1_alive = any(p.current_hp > 0 for p in state.p1_team)
         p2_alive = any(p.current_hp > 0 for p in state.p2_team)
         return not (p1_alive and p2_alive)
@@ -220,7 +255,24 @@ class Level5Agent(BaseAgent):
         p1_action: Action,
         p2_action: Action
     ) -> BattleState:
-        """Simula un turno completo y devuelve el nuevo BattleState."""
+        """Simula un turno completo de batalla y devuelve el nuevo estado serializado.
+
+        Reconstruye los equipos reales, llama a process_turn y re-serializa
+        el resultado como BattleState.
+
+        Args:
+            state (BattleState): Estado antes del turno.
+            p1_action (Action): Accion del jugador 1.
+            p2_action (Action): Accion del jugador 2.
+
+        Returns:
+            BattleState: Nuevo estado tras aplicar ambas acciones, con
+                turn_number incrementado en 1.
+
+        Raises:
+            Exception: Si el estado serializado es invalido y no puede
+                reconstruirse (propagado desde Pokemon.from_state).
+        """
         p1_team = self._build_real_team(state.p1_team)
         p2_team = self._build_real_team(state.p2_team)
 
@@ -246,7 +298,26 @@ class Level5Agent(BaseAgent):
         my_cd: int,
         opp_cd: int
     ) -> float:
-        """Nodo MAX del Minimax con poda alfa-beta."""
+        """Nodo MAX del Minimax con poda alfa-beta (perspectiva del agente).
+
+        Recorre todas las acciones legales propias, las expande contra el
+        nodo MIN y devuelve la mejor utilidad garantizada bajo la ventana
+        [alpha, beta]. Corta por beta apenas un nodo MAX encuentra un valor
+        que la supera.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+            depth (int): Profundidad restante de busqueda.
+            alpha (float): Cota inferior de la ventana alfa-beta.
+            beta (float): Cota superior de la ventana alfa-beta.
+            my_cd (int): Turnos desde el ultimo cambio propio.
+            opp_cd (int): Turnos desde el ultimo cambio rival.
+
+        Returns:
+            float: Mejor valor que el maximizador puede garantizar.
+
+
+        """
         if depth == 0 or self._is_match_over(state):
             return self._evaluate_state(state)
 
@@ -272,7 +343,26 @@ class Level5Agent(BaseAgent):
         my_cd: int,
         opp_cd: int
     ) -> float:
-        """Nodo MIN del Minimax con poda alfa-beta."""
+        """Nodo MIN del Minimax con poda alfa-beta (perspectiva del rival).
+
+        Recibe la accion propia ya elegida por MAX y simula el turno contra
+        cada respuesta rival posible, devolviendo el valor MIN que el
+        oponente puede imponer. Corta por alpha apenas lo consigue.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+            depth (int): Profundidad restante de busqueda.
+            alpha (float): Cota inferior de la ventana alfa-beta.
+            beta (float): Cota superior de la ventana alfa-beta.
+            my_action (Action): Accion propia ya seleccionada por MAX.
+            my_cd (int): Turnos desde el ultimo cambio propio.
+            opp_cd (int): Turnos desde el ultimo cambio rival.
+
+        Returns:
+            float: Mejor valor que el minimizador puede garantizar.
+
+
+        """
         if depth == 0 or self._is_match_over(state):
             return self._evaluate_state(state)
 
