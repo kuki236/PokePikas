@@ -16,5 +16,12 @@ class BaseAgent(ABC):
 
     @abstractmethod
     def get_action(self, state: BattleState) -> Action:
-        """Devuelve un `Action` válido según el `BattleState` recibido."""
+        """Decide la proxima accion del agente en funcion del estado de batalla.
+
+        Args:
+            state (BattleState): Estado actual completo de la batalla.
+
+        Returns:
+            Action: Accion legal a ejecutar (MOVE o SWITCH).
+        """
         raise NotImplementedError()

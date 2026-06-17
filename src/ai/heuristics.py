@@ -180,9 +180,14 @@ def calculate_hp_differential_l3(state: BattleState, player_id: int) -> float:
 
 
 def _clamp(n: float, minn: float, maxn: float) -> float:
-    """
-    Restringe `n` al intervalo cerrado [`minn`, `maxn`].
-    Se utiliza como red de seguridad analítica en factores heurísticos
-    cuyo rango nominal puede ser excedido en configuraciones atípicas.
+    """Restringe `n` al intervalo cerrado [minn, maxn].
+
+    Args:
+        n (float): Valor a limitar.
+        minn (float): Cota inferior.
+        maxn (float): Cota superior.
+
+    Returns:
+        float: Valor recortado al rango valido.
     """
     return max(min(maxn, n), minn)

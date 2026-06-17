@@ -45,7 +45,19 @@ class DataLoader:
             )
 
     def create_battle_pokemon(self, target_poke_id: int) -> Pokemon:
-        """Busca el Pokémon, le asigna 4 ataques aleatorios de su pool e instancia con stats especiales."""
+        """Crea una instancia de Pokemon lista para combate.
+
+        Args:
+            target_poke_id (int): ID del Pokemon en el pool.
+
+        Returns:
+            Pokemon: Pokemon con HP al maximo y 4 movimientos seleccionados
+                al azar de su pool (filtrando los que existan en el catalogo
+                de moves).
+
+        Raises:
+            ValueError: Si el poke_id no existe en el pool.
+        """
         p_data = next((p for p in self.pokemon_data if p["poke_id"] == target_poke_id), None)
         if not p_data:
             raise ValueError(f"No se encontró el Pokémon con ID {target_poke_id}")
@@ -72,7 +84,17 @@ class DataLoader:
         )
 
     def generate_random_team(self, team_size: int = 3) -> list[Pokemon]:
-        """Genera un equipo de Pokémon sin repetir especies (nombres)."""
+        """Genera un equipo aleatorio sin especies repetidas.
+
+        Args:
+            team_size (int): Cantidad de Pokemon en el equipo.
+
+        Returns:
+            list[Pokemon]: Lista de instancias de Pokemon (4 moves cada una).
+
+        Raises:
+            ValueError: Si el pool no tiene suficientes especies unicas.
+        """
         unique_species = {}
         for p in self.pokemon_data:
             if p["name"] not in unique_species:

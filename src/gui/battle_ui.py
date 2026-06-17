@@ -285,17 +285,14 @@ class BattleScreen:
         )
 
     def _advance_message(self):
-        """
-        Avanza al siguiente mensaje en la cola de mensajes.
+        """Procesa el siguiente mensaje de la cola y aplica sus efectos.
 
-        Args:
-            None: Esta función no acepta argumentos.
+        Maneja textos del dialogo, actualizaciones de HP, disparadores de
+        animaciones (dano, faint, switch, ataque elemental, transformacion
+        de Greninja) y el fin de batalla.
 
         Returns:
-            None: No devuelve ningún valor.
-
-        Raises:
-            None: No lanza excepciones explícitas.
+            None: Modifica atributos internos del BattleScreen.
         """
         if self.animating_blocking:
             return
@@ -631,26 +628,11 @@ class BattleScreen:
         return moves
 
     def run(self):
-        """
-        Descripción breve
-        -----------------
+        """Loop principal de la batalla: procesa eventos, IA, turnos y render.
 
-        Ejecuta el loop principal de la batalla, procesando eventos, actualizando la lógica de la batalla y renderizando la pantalla.
-
-        Args
-        ----
-
-        * Sin argumentos explícitos, ya que es un método de una clase.
-
-        Returns
-        -------
-
-        * `self.action_after_battle` (str): La acción que se realizará después de que termine la batalla.
-
-        Raises
-        ------
-
-        * No se describen excepciones específicas, pero puede lanzar excepciones relacionadas con la inicialización de Pygame, el manejo de eventos o la renderización de la pantalla.
+        Returns:
+            str: Accion post-batalla (`MENU`, `REPLAY`, etc.) que el menu
+                principal interpretara.
         """
         while self.running:
             now = perf_counter()
@@ -1029,17 +1011,10 @@ class BattleScreen:
         return self.action_after_battle
 
     def _draw_main_dialog_box(self):
-        """
-        Dibuja el cuadro de diálogo principal en la pantalla.
+        """Dibuja el cuadro de dialogo principal con el mensaje actual.
 
-        Args:
-            None: Este método no recibe parámetros.
-
-        Returns:
-            None: No devuelve ningún valor.
-
-        Raises:
-            None: No lanza excepciones conocidas.
+        Si hay mensaje activo lo ajusta con `_wrap_text` y muestra hasta
+        3 lineas centradas verticalmente con sombra.
         """
         pygame.draw.rect(self.screen, (240, 240, 240), self.main_dialog_rect, border_radius=10)
         pygame.draw.rect(self.screen, (50, 50, 150), self.main_dialog_rect, width=6, border_radius=10)
@@ -1061,17 +1036,10 @@ class BattleScreen:
                 self.screen.blit(text_surface, (self.main_dialog_rect.x + 20, y))
 
     def _draw_full_dialog_box(self):
-        """
-        Dibuja un cuadro de diálogo completo en la pantalla.
+        """Dibuja el cuadro de dialogo expandido (modo switch/equipos).
 
-         Args:
-             self: Instancia de la clase que llama a este método.
-
-         Returns:
-             None
-
-         Raises:
-             None: No se lanzan excepciones explícitas en esta función. Sin embargo, puede haber errores relacionados con la configuración de Pygame o la renderización de fuentes.
+        Cubre casi todo el panel inferior y muestra la lista de Pokemon
+        del jugador con su HP cuando eligen cambiar.
         """
         full_rect = pygame.Rect(20, self.top_h + 20, self.sw - 40, self.bottom_h - 40)
         pygame.draw.rect(self.screen, (240, 240, 240), full_rect, border_radius=10)

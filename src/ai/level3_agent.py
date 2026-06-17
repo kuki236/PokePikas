@@ -80,15 +80,17 @@ class Level3Agent(BaseAgent):
         return not (p1_alive and p2_alive)
 
     def _get_terminal_value(self, state: BattleState) -> Optional[float]:
-        """
-        Retorna un valor centinela de utilidad pura si el estado es terminal
-        (victoria/derrota absoluta). Retorna None si la batalla continúa.
+        """Calcula el valor centinela de un estado terminal de la batalla.
 
-        La magnitud 10000.0 se eligió para superar cualquier valor posible
-        de la heurística `calculate_hp_differential_l3` (cuyo techo teórico
-        en un combate 6v6 nivel 100 ronda ~3000 puntos de HP), garantizando
-        que el algoritmo Minimax siempre prefiera una victoria real
-        inmediata a cualquier ventaja posicional incierta.
+        Args:
+            state (BattleState): Estado actual a evaluar.
+
+        Returns:
+            Optional[float]: None si la batalla continua. Si termina, devuelve
+                +10000.0 si gano el agente, -10000.0 si perdio, o 0.0 en
+                empate simultaneo. El valor 10000 se elige para superar el
+                techo de la heuristica l3 y que Minimax siempre prefiera
+                una victoria real.
         """
         p1_alive = any(p.current_hp > 0 for p in state.p1_team)
         p2_alive = any(p.current_hp > 0 for p in state.p2_team)
@@ -191,20 +193,18 @@ class Level3Agent(BaseAgent):
         p1_action: Action,
         p2_action: Action
     ) -> BattleState:
+        """Simula un turno completo de batalla y devuelve el nuevo estado.
 
-        """
-        Simula un turno completo de una batalla, aplicando las acciones de ambos jugadores y actualizando el estado de la batalla.
+        Reconstruye los equipos reales, llama a process_turn y re-serializa
+        el resultado como BattleState.
 
         Args:
-            state (BattleState): El estado actual de la batalla.
-            p1_action (Action): La acción tomada por el jugador 1.
-            p2_action (Action): La acción tomada por el jugador 2.
+            state (BattleState): Estado antes del turno.
+            p1_action (Action): Accion del jugador 1.
+            p2_action (Action): Accion del jugador 2.
 
         Returns:
-            BattleState: El nuevo estado de la batalla después de aplicar las acciones de ambos jugadores.
-
-        Raises:
-            No se lanzan excepciones explícitas en esta función, pero puede propagar excepciones de las funciones llamadas, como `_build_real_team` o `process_turn`.
+            BattleState: Nuevo estado tras aplicar ambas acciones.
         """
         p1_team = self._build_real_team(state.p1_team)
         p2_team = self._build_real_team(state.p2_team)

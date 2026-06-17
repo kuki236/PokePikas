@@ -6,17 +6,13 @@ import random
 from src.entities.enums import AilmentType
 
 class Renderer:
+    """Helpers de dibujo compartidos por todas las pantallas del juego."""
+
     def __init__(self, screen):
-        """
-        Inicializa un objeto para manejar la renderización de texto en una pantalla de Pygame.
+        """Carga fuentes y crea la cache de imagenes del renderer.
 
         Args:
-            screen: La pantalla de Pygame en la que se renderizará el texto.
-
-        Raises:
-            No lanza excepciones explícitamente, pero puede fallar si no se encuentra la fuente especificada o si hay un error al inicializar Pygame.
-
-        Nota: Esta función es un constructor y no devuelve nada explícitamente (equivale a None). Se utiliza para inicializar los atributos de la clase, incluyendo fuentes de texto y una caché de imágenes.
+            screen (pygame.Surface): Superficie principal de pygame.
         """
         self.screen = screen
 
@@ -268,20 +264,15 @@ class Renderer:
             self.draw_text(display_name, 'small', (200, 200, 200), x + 30, y + 65, center=True)
 
     def _wrap_text(self, text, font, max_width):
-        """
-        Descripción breve:
-            Esta función envuelve un texto dentro de un ancho máximo, considerando el tamaño de la fuente.
+        """Ajusta un texto a multiples lineas segun un ancho maximo en pixeles.
 
         Args:
-            text (str): El texto a envolver.
-            font: La fuente utilizada para medir el tamaño del texto.
-            max_width (int): El ancho máximo permitido para el texto.
+            text (str): Texto a envolver. Se respeta '\\n' como corte explicito.
+            font (pygame.font.Font): Fuente usada para medir.
+            max_width (int): Ancho maximo en pixeles por linea.
 
         Returns:
-            list: Una lista de cadenas, cada una representando una línea del texto envuelto.
-
-        Raises:
-            None: No se lanzan excepciones explícitas. Sin embargo, es posible que se produzcan errores si el objeto font no tiene el método size o si max_width no es numérico.
+            list[str]: Lista de lineas resultantes.
         """
         wrapped_lines = []
         paragraphs = str(text).split('\n')
@@ -370,7 +361,15 @@ class Renderer:
     # EL NUEVO MOTOR DE PARTÍCULAS (Acepta imágenes descargadas)
     # =========================================================================
     def load_effect_sprite(self, move_type):
-        """Busca una imagen PNG del usuario para las partículas del ataque"""
+        """Carga y cachea el sprite de particulas para un tipo de movimiento.
+
+        Args:
+            move_type (str | PokemonType): Nombre o enum del tipo.
+
+        Returns:
+            pygame.Surface | None: Superficie 30x30 lista para usar como
+                particula, o None si no hay asset disponible.
+        """
         move_type = move_type.name if hasattr(move_type, 'name') else str(move_type).split('.')[-1]
         cache_key = f"effect_{move_type}"
         if cache_key not in self.image_cache:
@@ -390,7 +389,14 @@ class Renderer:
         return self.image_cache[cache_key]
 
     def draw_attack_effect(self, move_type, tx, ty, progress):
-        """Genera una explosión de físicas sobre el enemigo"""
+        """Renderiza una explosion de particulas sobre el objetivo.
+
+        Args:
+            move_type (str | PokemonType): Tipo elemental que define el sprite.
+            tx (int): Coordenada X del objetivo (centro de la explosion).
+            ty (int): Coordenada Y del objetivo.
+            progress (float): Progreso de la animacion en [0.0, 1.0].
+        """
         move_type = move_type.name if hasattr(move_type, 'name') else str(move_type).split('.')[-1]
         surf = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
         

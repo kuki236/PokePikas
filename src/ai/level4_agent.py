@@ -38,21 +38,15 @@ class Level4Agent(BaseAgent):
         else: return state.p2_team, state.p2_active_index, state.p1_team, state.p1_active_index
 
     def _safe_index(self, idx: int, seq) -> int:
-        """
-        Descripción breve:
-        Esta función devuelve un índice seguro para acceder a una secuencia, 
-         manifoldiando índices fuera de rango o None a un índice 0 válido.
+        """Devuelve un indice valido dentro de una secuencia.
 
         Args:
-            idx (int): El índice a verificar.
-            seq: La secuencia sobre la que se aplicará el índice.
+            idx (int): Indice propuesto.
+            seq: Secuencia sobre la que se indexara.
 
         Returns:
-            int: Un índice seguro para acceder a la secuencia.
-
-        Raises:
-            No lanza excepciones. En su lugar, devuelve un índice válido para 
-            cualquier entrada inválida.
+            int: Indice seguro. Si seq esta vacia o idx es None/fuera de
+                rango, devuelve 0.
         """
         if not seq: return 0
         if idx is None or idx < 0 or idx >= len(seq): return 0
@@ -386,26 +380,19 @@ class Level4Agent(BaseAgent):
         my_cooldown: int,
         opp_cooldown: int
     ) -> float:
-
-        """
-        Descripción breve:
-            Esta función calcula el valor mínimo de una acción en un estado dado de la batalla, 
-            considerando las posibles acciones del oponente y su cooldown.
+        """Nodo MIN del Minimax con poda alfa-beta.
 
         Args:
-            state (BattleState): El estado actual de la batalla.
-            depth (int): La profundidad de la búsqueda.
-            alpha (float): El límite inferior de la ventana de búsqueda.
-            beta (float): El límite superior de la ventana de búsqueda.
-            my_action (Action): La acción que va a tomar el jugador actual.
-            my_cooldown (int): El cooldown del jugador actual.
-            opp_cooldown (int): El cooldown del oponente.
+            state (BattleState): Estado actual de la batalla.
+            depth (int): Profundidad restante de busqueda.
+            alpha (float): Cota inferior de la ventana alfa-beta.
+            beta (float): Cota superior de la ventana alfa-beta.
+            my_action (Action): Accion propia ya seleccionada por MAX.
+            my_cooldown (int): Turnos desde el ultimo cambio propio.
+            opp_cooldown (int): Turnos desde el ultimo cambio rival.
 
         Returns:
-            float: El valor mínimo de la acción.
-
-        Raises:
-            No se especifican excepciones explícitas, pero puede lanzar errores si los parámetros no son válidos o si ocurre un error en la simulación de la batalla.
+            float: Mejor valor que el minimizador puede garantizar.
         """
         if depth == 0 or self._is_match_over(state):
             return evaluate_level4_state(state, self.player_id)

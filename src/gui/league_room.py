@@ -48,7 +48,15 @@ class PlayerSprite(pygame.sprite.Sprite):
         self.frame_rate = 150 # Tiempo en milisegundos entre cada fotograma
 
     def load_sprites(self, path):
-        """Carga y extrae (slice) la hoja de sprites."""
+        """Carga el spritesheet y lo divide en frames de animacion.
+
+        Args:
+            path (str): Ruta al archivo PNG con la hoja de sprites.
+
+        Returns:
+            list: Lista de superficies (una por frame) indexada por
+                [direccion][frame].
+        """
         if os.path.exists(path):
             print(f"[INFO] Cargando hoja de sprites desde: {path}")
             # Usar convert_alpha() garantiza un canal alfa (transparencia real)
@@ -92,7 +100,12 @@ class PlayerSprite(pygame.sprite.Sprite):
                 self.animations[directions[row]].append(image)
                 
     def update(self, keys, bounds_rect):
-        """Actualiza la posición y calcula la dirección del jugador."""
+        """Procesa input y actualiza la posicion del jugador.
+
+        Args:
+            keys (pygame.key.ScancodeWrapper): Estado del teclado.
+            bounds_rect (pygame.Rect): Rectangulo delimitador del mapa.
+        """
         self.is_moving = False
         dx = 0
         dy = 0
@@ -130,7 +143,7 @@ class PlayerSprite(pygame.sprite.Sprite):
         self.animate()
 
     def animate(self):
-        """Maneja el cambio de fotogramas (animación) con el temporizador."""
+        """Avanza el frame de animacion segun el temporizador `frame_rate`."""
         now = pygame.time.get_ticks()
         
         if self.is_moving:
@@ -171,9 +184,13 @@ class MapManager:
         self.loaded_backgrounds = {}
 
     def get_current_room_surface(self, target_size: tuple) -> pygame.Surface:
-        """
-        Obtiene la imagen de la sala actual cargándola desde su archivo individual, 
-        y la escala para encajar limpiamente en la pantalla del juego.
+        """Carga y escala el fondo de la sala actual.
+
+        Args:
+            target_size (tuple): (ancho, alto) al que se debe escalar la imagen.
+
+        Returns:
+            pygame.Surface: Fondo escalado listo para blitear.
         """
         room_name = self.rooms_data[self.current_room_index]["name"]
         
@@ -199,9 +216,15 @@ class MapManager:
         return pygame.transform.scale(room_surface, target_size)
 
     def transition_to_next_room(self, player_sprite, screen_width, screen_height):
-        """
-        Función de Transición/Carga: Se ejecuta bajo condición de VICTORIA.
-        Aumenta el índice de la sala y reinicia la posición lógica del jugador.
+        """Avanza a la siguiente sala del Alto Mando tras una victoria.
+
+        Args:
+            player_sprite (PlayerSprite | None): Sprite del jugador a reposicionar.
+            screen_width (int): Ancho de la pantalla.
+            screen_height (int): Alto de la pantalla.
+
+        Returns:
+            bool: True si avanzo de sala, False si ya estaba en la ultima.
         """
         if self.current_room_index < len(self.rooms_data) - 1:
             self.current_room_index += 1

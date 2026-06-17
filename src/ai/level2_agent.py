@@ -31,37 +31,29 @@ class Level2Agent(BaseAgent):
             return state.p2_team, state.p2_active_index, state.p1_team, state.p1_active_index
 
     def _safe_index(self, idx: int, seq) -> int:
-        """
-        ##### Descripción
-        Obtiene un índice seguro dentro de una secuencia, devolviendo 0 si el índice proporcionado no es válido.
+        """Devuelve un indice valido dentro de una secuencia, o 0 si no lo es.
 
-        ##### Args
-        * `idx` (int): El índice a verificar.
-        * `seq`: La secuencia de la que se derivará la validez del índice.
+        Args:
+            idx (int): Indice propuesto.
+            seq: Secuencia sobre la que se indexara.
 
-        ##### Returns
-        * (int): El índice seguro dentro de la secuencia. Si el índice proporcionado no es válido o la secuencia está vacía, se devuelve 0.
-
-        ##### Raises
-        * No se lanzan excepciones explícitas. Sin embargo, se asume que el manejo de tipos incorrectos para `idx` o `seq` puede generar comportamientos impredecibles.
+        Returns:
+            int: Indice seguro (0..len(seq)-1). Devuelve 0 si seq esta vacia
+                o si idx esta fuera de rango.
         """
         if not seq: return 0
         if idx is None or idx < 0 or idx >= len(seq): return 0
         return idx
 
     def get_action(self, state: BattleState) -> Action:
-        """
-        Descripción breve:
-        Obtiene la acción óptima para tomar en un estado de batalla específico.
+        """Selecciona la mejor accion greedy para el estado actual.
 
         Args:
-            state (BattleState): El estado actual de la batalla.
+            state (BattleState): Estado actual de la batalla.
 
         Returns:
-            Action: La acción óptima encontrada.
-
-        Raises:
-            Exception: Si ocurre un error inesperado al procesar el estado de la batalla.
+            Action: Movimiento que maximiza la diferencia de HP esperada.
+                Si no hay movimientos validos, devuelve MOVE 0 como fallback.
         """
         team, active_idx, opp_team, opp_active_idx = self._get_team_and_active(state)
         if not team: return Action(type=ActionType.MOVE, target_index=0)

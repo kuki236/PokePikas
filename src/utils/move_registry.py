@@ -15,7 +15,19 @@ def get_data_loader(
     pokemon_path: str = DEFAULT_POKEMON_PATH,
     moves_path: str = DEFAULT_MOVES_PATH,
 ) -> DataLoader:
-    """Devuelve la instancia compartida de DataLoader (singleton por proceso)."""
+    """Devuelve (y cachea) una instancia compartida de DataLoader.
+
+    Usa `lru_cache` para que cada proceso tenga un unico DataLoader.
+    Util cuando los workers de `multiprocessing.Pool` necesitan el mismo
+    catalogo de movimientos sin recargar los JSON.
+
+    Args:
+        pokemon_path (str): Ruta al JSON de Pokemon.
+        moves_path (str): Ruta al JSON de movimientos.
+
+    Returns:
+        DataLoader: Instancia cacheada de DataLoader.
+    """
     return DataLoader(pokemon_path, moves_path)
 
 

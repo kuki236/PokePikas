@@ -39,7 +39,15 @@ class Level5Agent(BaseAgent):
         self.weights = self._load_weights(weights_path)
 
     def _load_weights(self, path: str) -> dict:
-        """Carga los pesos evolucionados. Si no existen, usa valores neutrales por defecto."""
+        """Carga los pesos evolucionados del algoritmo genetico desde un JSON.
+
+        Args:
+            path (str): Ruta al archivo JSON con la clave 'weights'.
+
+        Returns:
+            dict: Diccionario {nombre_peso: valor}. Si el archivo no existe
+                o esta corrupto, devuelve pesos neutrales (1.0) por defecto.
+        """
         default_weights = {
             'hp_balance': 1.0, 'alive_balance': 1.0, 'type_pressure': 1.0, 
             'speed_pressure': 1.0, 'status_pressure': 1.0, 'move_pressure': 1.0, 
@@ -104,16 +112,24 @@ class Level5Agent(BaseAgent):
         return not (p1_alive and p2_alive)
 
     def _evaluate_state(self, state: BattleState) -> float:
-        """Heurística final dinamizada por el Algoritmo Genético."""
+        """Evalua un estado aplicando los pesos evolucionados del AG.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            float: Suma ponderada de los factores (HP, vivos, KO) usando
+                los pesos cargados desde level5_weights.json.
+        """
         my_team, _, opp_team, _ = self._get_team_and_active(state)
-        
+
         my_hp = sum(max(0, p.current_hp) / max(1, p.max_hp) for p in my_team)
         opp_hp = sum(max(0, p.current_hp) / max(1, p.max_hp) for p in opp_team)
-        
+
         my_alive = sum(1 for p in my_team if p.current_hp > 0)
         opp_alive = sum(1 for p in opp_team if p.current_hp > 0)
-        
-        # Se aplican los genes de balance descubiertos por la evolución
+
+        # Pesos descubiertos por la evolucion genetica
         score = (my_hp - opp_hp) * 1000 * self.weights.get('hp_balance', 1.0)
         score += (my_alive - opp_alive) * 2000 * self.weights.get('alive_balance', 1.0)
         

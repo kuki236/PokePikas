@@ -75,20 +75,22 @@ def determine_turn_order(
     p2_pokemon: Pokemon,
     p2_action: Action
 ) -> list[tuple[int, Pokemon, Action]]:
-    """
-    Determina el orden de turno de los pokemon en base a sus acciones.
+    """Determina el orden de actuacion en un turno segun velocidad y tipo de accion.
+
+    Reglas:
+        1. Los switches se aplican primero.
+        2. Entre dos movimientos, ataca primero el Pokemon con mayor speed.
+        3. En empate de speed, se elige al azar.
 
     Args:
-        p1_pokemon (Pokemon): El pokemon del jugador 1.
-        p1_action (Action): La acción del pokemon del jugador 1.
-        p2_pokemon (Pokemon): El pokemon del jugador 2.
-        p2_action (Action): La acción del pokemon del jugador 2.
+        p1_pokemon (Pokemon): Pokemon activo del jugador 1.
+        p1_action (Action): Accion del jugador 1.
+        p2_pokemon (Pokemon): Pokemon activo del jugador 2.
+        p2_action (Action): Accion del jugador 2.
 
     Returns:
-        list[tuple[int, Pokemon, Action]]: Una lista de tuplas que contienen el orden de turno, el pokemon y la acción correspondientes.
-
-    Raises:
-        No se contempla explícitamente ninguna excepción en esta función, aunque puede generar errores si los parámetros no son del tipo esperado o si no se cumplen ciertas condiciones en la lógica de determinación del orden de turno.
+        list[tuple[int, Pokemon, Action]]: Lista ordenada de tuplas
+            (actor_id, pokemon, accion) a ejecutar en secuencia.
     """
     order = []
 

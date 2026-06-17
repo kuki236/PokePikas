@@ -61,7 +61,10 @@ class Pokemon:
         }
 
     def reset_stages(self):
-        """Reinicia las estadísticas al cambiar de Pokémon"""
+        """Reinicia todos los stat_stages a 0.
+
+        Se invoca al cambiar de Pokemon para limpiar buffs/debuffs acumulados.
+        """
         for stat in self.stat_stages:
             self.stat_stages[stat] = 0
 
@@ -94,7 +97,12 @@ class Pokemon:
         return self.current_hp <= 0
 
     def to_state(self):
-        """Convierte el objeto a una estructura de datos plana para la IA."""
+        """Serializa el Pokemon a un PokemonState inmutable para la IA.
+
+        Returns:
+            PokemonState: Estructura plana con HP, stats, tipos, movimientos
+                (como MoveState), stat_stages y estado alterado actual.
+        """
         from src.core.interfaces import PokemonState, MoveState
 
         move_states = []
@@ -131,11 +139,19 @@ class Pokemon:
         )
     @staticmethod
     def from_state(state):
-        """
-        Reconstruye un Pokemon real desde PokemonState
-        para simulaciones reales del minimax.
-        """
+        """Reconstruye una instancia de Pokemon a partir de un PokemonState.
 
+        Usado por los agentes Minimax para simular turnos futuros con
+        objetos Pokemon reales (no serializados) que el motor de batalla
+        pueda mutar (HP, PP, stat_stages, etc.).
+
+        Args:
+            state (PokemonState): Estado serializado producido por to_state().
+
+        Returns:
+            Pokemon: Instancia con HP actual, PP actuales, stat_stages y
+                status_ailment restaurados desde el snapshot.
+        """
         import copy
 
         from src.entities.enums import PokemonType, AilmentType

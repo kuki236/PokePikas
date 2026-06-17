@@ -25,7 +25,11 @@ DEFAULT_LOG_PATH = os.path.join(ROOT_DIR, 'data', 'ai', 'level5_ga.log')
 
 
 def _init_worker() -> None:
-    """Pre-carga el singleton de DataLoader en cada worker spawn de Windows."""
+    """Inicializa el singleton de DataLoader en cada worker de multiprocessing.
+
+    Usado como `initializer` de `multiprocessing.Pool` para que cada proceso
+    hijo tenga su propia instancia compartida (singleton via `lru_cache`).
+    """
     get_data_loader(DEFAULT_POKEMON_PATH, DEFAULT_MOVES_PATH)
 
 
@@ -207,22 +211,18 @@ def _diversity_penalty(candidate: Dict, elites: List[Dict], pressure: float) -> 
     return -pressure * max(0.0, 0.25 - normalized)
 
 def _run_headless_battle(p1_team, p2_team, agent1, agent2, max_turns: int = 120):
-    """
-    Descripción breve:
-     Ejecuta una batalla entre dos equipos de forma headless utilizando dos agentes que toman decisiones.
+    """Ejecuta una batalla completa entre dos equipos sin interfaz grafica.
 
     Args:
-        p1_team (list): Equipo del jugador 1.
-        p2_team (list): Equipo del jugador 2.
-        agent1: Agente que toma decisiones para el equipo del jugador 1.
-        agent2: Agente que toma decisiones para el equipo del jugador 2.
-        max_turns (int): Número máximo de turnos que puede durar la batalla. Por defecto es 120.
+        p1_team (list): Lista de Pokemon del jugador 1.
+        p2_team (list): Lista de Pokemon del jugador 2.
+        agent1: Agente que controla al jugador 1.
+        agent2: Agente que controla al jugador 2.
+        max_turns (int): Tope de turnos antes de declarar empate. Por defecto 120.
 
     Returns:
-        tuple: Una tupla que contiene el ganador de la batalla, el número de turnos jugados y los equipos finales de ambos jugadores.
-
-    Raises:
-        No se especifican excepciones explícitas en esta función, pero puede lanzar excepciones si los agentes o los equipos no están correctamente configurados.
+        tuple: (ganador, turnos_jugados, p1_team_final, p2_team_final).
+            ganador es 1, 2 o None (empate/timeout).
     """
     p1_idx, p2_idx = 0, 0
     winner = None
