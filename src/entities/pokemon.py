@@ -66,16 +66,31 @@ class Pokemon:
             self.stat_stages[stat] = 0
 
     def take_damage(self, amount: int) -> None:
+        """Aplica dano al Pokemon reduciendo su HP actual sin bajar de 0.
+
+        Args:
+            amount (int): Cantidad de dano a aplicar (se ignora si es <= 0).
+        """
         if amount <= 0:
             return
         self.current_hp = max(0, self.current_hp - amount)
 
     def heal(self, amount: int) -> None:
+        """Cura al Pokemon aumentando su HP actual sin superar el maximo.
+
+        Args:
+            amount (int): Cantidad de HP a recuperar. Si esta debilitado o amount <= 0, no hace nada.
+        """
         if self.is_fainted() or amount <= 0:
             return
         self.current_hp = min(self.max_hp, self.current_hp + amount)
 
     def is_fainted(self) -> bool:
+        """Indica si el Pokemon esta debilitado.
+
+        Returns:
+            bool: True si current_hp <= 0.
+        """
         return self.current_hp <= 0
 
     def to_state(self):

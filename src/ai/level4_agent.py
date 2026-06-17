@@ -11,14 +11,29 @@ from config import AI_LEVEL4_DEPTH, INF
 DEPTH = AI_LEVEL4_DEPTH 
 
 class Level4Agent(BaseAgent):
+    """Agente Minimax con heuristica compuesta normalizada y ordenacion inteligente de acciones."""
+
     def __init__(self, player_id: int):
+        """Inicializa el agente avanzado.
+
+        Args:
+            player_id (int): Identificador del jugador (1 o 2).
+        """
         super().__init__(player_id)
         self.turns_since_last_switch = 0
-        
-        self.opp_turns_since_last_switch = 2  
-        self.last_opp_active_name = None     
+
+        self.opp_turns_since_last_switch = 2
+        self.last_opp_active_name = None
 
     def _get_team_and_active(self, state: BattleState):
+        """Devuelve los equipos e indices activos desde la perspectiva del agente.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            tuple: (mi_equipo, mi_activo, equipo_rival, activo_rival).
+        """
         if self.player_id == 1: return state.p1_team, state.p1_active_index, state.p2_team, state.p2_active_index
         else: return state.p2_team, state.p2_active_index, state.p1_team, state.p1_active_index
 
@@ -44,9 +59,25 @@ class Level4Agent(BaseAgent):
         return idx
 
     def _build_real_team(self, state_team):
+        """Reconstruye una lista de Pokemon reales a partir de PokemonState.
+
+        Args:
+            state_team (list): Lista de estados serializados.
+
+        Returns:
+            list: Lista de instancias de Pokemon listas para el motor de batalla.
+        """
         return [Pokemon.from_state(p) for p in state_team]
 
     def _is_match_over(self, state: BattleState) -> bool:
+        """Indica si la batalla ha terminado.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            bool: True si algun equipo no tiene Pokemon vivos.
+        """
         p1_alive = any(p.current_hp > 0 for p in state.p1_team)
         p2_alive = any(p.current_hp > 0 for p in state.p2_team)
         return not (p1_alive and p2_alive)

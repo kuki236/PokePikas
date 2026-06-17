@@ -266,10 +266,16 @@ class BattleScreen:
             self._set_default_message()
 
     def _set_default_message(self):
+        """Establece el mensaje por defecto del cuadro de dialogo usando el Pokemon activo actual."""
         active_pkm = self.p1_team[self.p1_visual_idx]
         self.current_message = f"¿Qué debería\nhacer {active_pkm.name.capitalize()}?"
 
     def _build_battle_state(self) -> BattleState:
+        """Serializa el estado actual de la batalla a una estructura inmutable para los agentes.
+
+        Returns:
+            BattleState: Snapshot del estado de ambos equipos, indices activos y turno.
+        """
         return BattleState(
             p1_team=[p.to_state() for p in self.p1_team],
             p2_team=[p.to_state() for p in self.p2_team],
@@ -331,19 +337,25 @@ class BattleScreen:
                         self.p2_fainted_id = msg.get("id")
                         self.animating_blocking = True
                     elif trigger == "p1_switch":
-                        self.p1_fainted = False 
+                        self.p1_fainted = False
                         self.p1_visual_idx = msg.get("idx")
                         self.p1_switching_anim = True
                         self.switch_anim_start = perf_counter()
                         self.animating_blocking = True
                         self.p1_next_id = msg.get("id")
+                        new_p1 = self.p1_team[self.p1_visual_idx]
+                        self.p1_target_hp = new_p1.current_hp
+                        self.p1_display_hp = new_p1.current_hp
                     elif trigger == "p2_switch":
-                        self.p2_fainted = False 
+                        self.p2_fainted = False
                         self.p2_visual_idx = msg.get("idx")
                         self.p2_switching_anim = True
                         self.switch_anim_start = perf_counter()
                         self.animating_blocking = True
                         self.p2_next_id = msg.get("id")
+                        new_p2 = self.p2_team[self.p2_visual_idx]
+                        self.p2_target_hp = new_p2.current_hp
+                        self.p2_display_hp = new_p2.current_hp
                     elif trigger == "attack":
                         # NUEVO: Activa la animación del ataque elemental
                         self.attack_animating = True
@@ -609,6 +621,11 @@ class BattleScreen:
                 self.message_queue.append({"text": f"¡Las drenadoras restan salud\na {current_p2_name.capitalize()}!"})
 
     def _get_active_move_data(self):
+        """Devuelve la lista de movimientos del Pokemon activo del jugador 1.
+
+        Returns:
+            list: Lista de objetos Move del Pokemon activo, o lista vacia si no hay equipo.
+        """
         active = self.p1_team[self.p1_active_idx] if self.p1_team else None
         moves = getattr(active, 'moves', []) if active else []
         return moves
@@ -1078,9 +1095,14 @@ class BattleScreen:
 
 
     def _draw_action_buttons(self, mouse_pos):
+        """Dibuja los botones principales 'LUCHA' y 'POKéMON' del panel inferior.
+
+        Args:
+            mouse_pos (tuple): Coordenadas (x, y) actuales del raton para resaltar hover.
+        """
         is_hovered_lucha = self.btn_lucha.collidepoint(mouse_pos)
         self._draw_colored_button(self.btn_lucha, "LUCHA", is_hovered_lucha, (210, 60, 60))
-        
+
         is_hovered_pokemon = self.btn_pokemon.collidepoint(mouse_pos)
         self._draw_colored_button(self.btn_pokemon, "POKéMON", is_hovered_pokemon, (60, 210, 60))
 

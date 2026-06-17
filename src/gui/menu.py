@@ -84,6 +84,7 @@ def main():
         print(f"Advertencia: No se encontró el sonido de selección en {ruta_sonido_select}")
 
     def reproducir_sonido_select():
+        """Reproduce el efecto de sonido de seleccion si el audio esta disponible."""
         if sonido_select and AUDIO_OK:
             sonido_select.play()
 

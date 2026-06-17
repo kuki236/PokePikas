@@ -100,12 +100,39 @@ def _setup_logger(log_path: str) -> logging.Logger:
     return logger
 
 def _clamp(v: float, lo: float, hi: float) -> float:
+    """Restringe un valor numerico al intervalo cerrado [lo, hi].
+
+    Args:
+        v (float): Valor a limitar.
+        lo (float): Cota inferior.
+        hi (float): Cota superior.
+
+    Returns:
+        float: Valor recortado al rango valido.
+    """
     return max(lo, min(hi, v))
 
 def _random_weights() -> Dict[str, float]:
+    """Genera un vector de pesos aleatorios dentro de los limites definidos en DEFAULT_BOUNDS.
+
+    Returns:
+        Dict[str, float]: Diccionario {nombre_peso: valor_aleatorio_redondeado}.
+    """
     return {k: round(random.uniform(lo, hi), 4) for k, (lo, hi) in DEFAULT_BOUNDS.items()}
 
 def _tournament_select(population: List[Dict], fitnesses: List[float], size: int) -> Dict:
+    """Selecciona un individuo por seleccion de torneo.
+
+    Toma `size` candidatos al azar y devuelve una copia del que tenga mayor fitness.
+
+    Args:
+        population (List[Dict]): Poblacion de candidatos.
+        fitnesses (List[float]): Fitness asociado a cada candidato.
+        size (int): Tamanio del torneo.
+
+    Returns:
+        Dict: Copia del candidato ganador del torneo.
+    """
     idx = random.sample(range(len(population)), k=min(size, len(population)))
     best = max(idx, key=lambda i: fitnesses[i])
     return dict(population[best])
@@ -214,11 +241,27 @@ def _run_headless_battle(p1_team, p2_team, agent1, agent2, max_turns: int = 120)
     return winner, turns_played, p1_team, p2_team
 
 def _normalized_team_hp(team) -> float:
+    """Calcula la fraccion de HP total restante de un equipo (0.0 a 1.0).
+
+    Args:
+        team (list): Lista de objetos Pokemon.
+
+    Returns:
+        float: Suma de HP actuales / suma de HP maximos. Devuelve 0.0 si el equipo esta vacio.
+    """
     cur = sum(max(0, p.current_hp) for p in team)
     mx = sum(max(1, p.max_hp) for p in team)
     return cur / mx
 
 def _alive_ratio(team) -> float:
+    """Calcula la fraccion de miembros vivos de un equipo.
+
+    Args:
+        team (list): Lista de objetos Pokemon.
+
+    Returns:
+        float: Numero de Pokemon con HP > 0 dividido por el tamanio del equipo (minimo 1).
+    """
     return sum(1 for p in team if p.current_hp > 0) / max(1, len(team))
 
 def _score_battle(winner, turns, p1_team, p2_team, perspective: int, max_turns: int, opp_weight: float = 1.0) -> float:
@@ -332,6 +375,16 @@ def _build_scenarios(loader, team_size: int, n_per_opponent: int) -> List:
     return scenarios
 
 def _build_level4_holdout(loader, team_size: int, n_scenarios: int) -> List:
+    """Construye un conjunto de escenarios de validacion contra Level4Agent.
+
+    Args:
+        loader (DataLoader): Cargador con el pool de Pokemon.
+        team_size (int): Tamanio de cada equipo generado.
+        n_scenarios (int): Numero de escenarios a generar.
+
+    Returns:
+        list: Lista de tuplas (scenario_id, p1_states, p2_states, 'Level4Agent').
+    """
     scenarios = []
     for i in range(n_scenarios):
         scenarios.append((i, [p.to_state() for p in loader.generate_random_team(team_size)],
@@ -362,6 +415,18 @@ def _evaluate_population(population: List[Dict], scenarios: List, battles_per_op
     return [_eval_candidate_on_scenarios(a) for a in args_list]
 
 def _holdout_level4_score(weights: Dict, holdout_scenarios: List, battles_per_opp: int, max_turns: int, generation_seed: int) -> float:
+    """Evalua un candidato unicamente contra Level4Agent en el set de holdout.
+
+    Args:
+        weights (Dict): Pesos a evaluar.
+        holdout_scenarios (list): Escenarios reservados para validacion.
+        battles_per_opp (int): Batallas por escenario.
+        max_turns (int): Limite de turnos por batalla.
+        generation_seed (int): Semilla para anclar el PRNG.
+
+    Returns:
+        float: Fitness promedio en el set de holdout.
+    """
     return _eval_candidate_on_scenarios((weights, holdout_scenarios, battles_per_opp, max_turns, [], 0.0, generation_seed))
 
 def _save_weights(path: str, weights: Dict, metadata: Optional[Dict] = None) -> None:

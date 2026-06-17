@@ -6,7 +6,16 @@ from src.gui.battle_ui import BattleScreen
 from src.entities.enums import AilmentType
 
 class PlayerSprite(pygame.sprite.Sprite):
+    """Sprite animado del jugador para la exploracion 2D del Alto Mando."""
+
     def __init__(self, x, y, sprite_sheet_path):
+        """Carga el spritesheet y posiciona al jugador en (x, y).
+
+        Args:
+            x (int): Posicion horizontal inicial.
+            y (int): Posicion vertical inicial.
+            sprite_sheet_path (str): Ruta al spritesheet con los frames de animacion.
+        """
         super().__init__()
         
         # Detalles de los cuadros de animación (frames)
@@ -140,6 +149,11 @@ class MapManager:
     Carga imágenes individuales de alta calidad para cada escenario.
     """
     def __init__(self, base_dir: str):
+        """Inicializa el gestor cargando los fondos y la paleta de cada sala del Alto Mando.
+
+        Args:
+            base_dir (str): Directorio base del proyecto para resolver rutas de assets.
+        """
         self.base_dir = base_dir
         
         # Nombres asignados directamente como el archivo .png del escenario respectivo
@@ -202,7 +216,17 @@ class MapManager:
         return False
 
 class LeagueRoom:
+    """Pantalla de exploracion 2D de una sala del Alto Mando antes de cada batalla."""
+
     def __init__(self, screen, renderer, room_index, map_manager):
+        """Carga los recursos graficos y posiciona jugador y NPC en la sala indicada.
+
+        Args:
+            screen (pygame.Surface): Superficie principal de pygame.
+            renderer (Renderer): Renderizador compartido para fondos y sprites.
+            room_index (int): Indice de la sala actual (0-4).
+            map_manager (MapManager): Gestor de mapas que provee los fondos.
+        """
         self.screen = screen
         self.renderer = renderer
         self.room_index = room_index
@@ -235,6 +259,11 @@ class LeagueRoom:
         self.start_battle = False
         
     def run(self):
+        """Loop principal de la sala: procesa movimiento, colision con NPC y transicion a batalla.
+
+        Returns:
+            bool: True si el jugador decidio enfrentar al NPC (inicia batalla), False si salio.
+        """
         while self.running:
             # 1. Dibujar el fondo gestionado por MapManager
             room_bg = self.map_manager.get_current_room_surface((self.screen.get_width(), self.screen.get_height()))
@@ -295,7 +324,16 @@ class LeagueRoom:
         return self.start_battle
 
 class LeagueManager:
+    """Orquestador del modo Alto Mando: encadena las 5 batallas del Elite 4 + Campeon."""
+
     def __init__(self, screen, renderer, p1_team_names):
+        """Prepara los recursos y conserva el equipo del jugador entre batallas.
+
+        Args:
+            screen (pygame.Surface): Superficie principal de pygame.
+            renderer (Renderer): Renderizador compartido.
+            p1_team_names (list): Nombres de los Pokemon del equipo del jugador.
+        """
         self.screen = screen
         self.renderer = renderer
         self.p1_team_names = p1_team_names
@@ -324,6 +362,14 @@ class LeagueManager:
         self.map_manager = MapManager(base_dir)
         
     def _generate_npc_team(self, room_index):
+        """Genera el equipo rival para una sala del Alto Mando.
+
+        Args:
+            room_index (int): Indice de la sala (no usado para variar la composicion actual).
+
+        Returns:
+            list: Lista de instancias de Pokemon que conformaran el equipo NPC.
+        """
         pool_ids = [p['poke_id'] for p in self.loader.pokemon_data]
         p2_team = []
         
@@ -336,6 +382,11 @@ class LeagueManager:
         return p2_team
 
     def run(self):
+        """Loop principal del Alto Mando: encadena salas, batallas y transiciones hasta completar la liga.
+
+        Returns:
+            str: 'CHAMPION' si el jugador supero todas las salas, 'MENU' si decidio salir.
+        """
         while self.current_room < self.max_rooms:
             # Sincronizamos la máquina de estados del gestor visual con la real
             self.map_manager.current_room_index = self.current_room

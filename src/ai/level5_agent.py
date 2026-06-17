@@ -55,17 +55,50 @@ class Level5Agent(BaseAgent):
         return default_weights
 
     def _get_team_and_active(self, state: BattleState):
+        """Devuelve los equipos e indices activos desde la perspectiva del agente.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            tuple: (mi_equipo, mi_activo, equipo_rival, activo_rival).
+        """
         if self.player_id == 1: return state.p1_team, state.p1_active_index, state.p2_team, state.p2_active_index
         else: return state.p2_team, state.p2_active_index, state.p1_team, state.p1_active_index
 
     def _safe_index(self, idx: int, seq) -> int:
+        """Devuelve un indice valido dentro de una secuencia, o 0 si es invalida.
+
+        Args:
+            idx (int): Indice propuesto.
+            seq: Secuencia sobre la que se indexara.
+
+        Returns:
+            int: Indice seguro (0..len(seq)-1).
+        """
         if not seq or idx is None or idx < 0 or idx >= len(seq): return 0
         return idx
 
     def _build_real_team(self, state_team):
+        """Reconstruye instancias de Pokemon a partir de sus estados serializados.
+
+        Args:
+            state_team (list): Lista de PokemonState.
+
+        Returns:
+            list: Lista de Pokemon listos para usar en el motor.
+        """
         return [Pokemon.from_state(p) for p in state_team]
 
     def _is_match_over(self, state: BattleState) -> bool:
+        """Indica si la batalla ha finalizado.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            bool: True si algun equipo no tiene Pokemon con HP > 0.
+        """
         p1_alive = any(p.current_hp > 0 for p in state.p1_team)
         p2_alive = any(p.current_hp > 0 for p in state.p2_team)
         return not (p1_alive and p2_alive)
@@ -179,6 +212,16 @@ class Level5Agent(BaseAgent):
         return actions
 
     def _simulate_full_turn(self, state: BattleState, p1_action: Action, p2_action: Action) -> BattleState:
+        """Simula un turno completo y devuelve el BattleState resultante.
+
+        Args:
+            state (BattleState): Estado actual antes del turno.
+            p1_action (Action): Accion del jugador 1.
+            p2_action (Action): Accion del jugador 2.
+
+        Returns:
+            BattleState: Nuevo estado tras aplicar ambas acciones.
+        """
         p1_team = self._build_real_team(state.p1_team)
         p2_team = self._build_real_team(state.p2_team)
         _, new_p1_idx, new_p2_idx = process_turn(p1_team, state.p1_active_index, p1_action, p2_team, state.p2_active_index, p2_action)

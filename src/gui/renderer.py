@@ -34,9 +34,24 @@ class Renderer:
         self.image_cache = {}
 
     def clear_screen(self, color=(30, 30, 40)):
+        """Rellena la pantalla completa con un color solido.
+
+        Args:
+            color (tuple): Color RGB a aplicar. Por defecto azul oscuro (30, 30, 40).
+        """
         self.screen.fill(color)
 
     def load_background(self, filepath, width, height):
+        """Carga y escala una imagen de fondo desde disco.
+
+        Args:
+            filepath (str): Ruta al archivo de imagen.
+            width (int): Ancho objetivo al que escalar.
+            height (int): Alto objetivo al que escalar.
+
+        Returns:
+            pygame.Surface | None: Superficie escalada o None si el archivo no existe.
+        """
         if os.path.exists(filepath):
             img = pygame.image.load(filepath).convert()
             return pygame.transform.scale(img, (width, height))

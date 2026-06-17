@@ -6,10 +6,25 @@ from src.core.damage_calc import calculate_damage
 from src.entities.enums import PokemonType
 
 class Level2Agent(BaseAgent):
+    """Agente greedy: elige el movimiento que maximiza la diferencia de HP."""
+
     def __init__(self, player_id: int):
+        """Inicializa el agente heuristico basico.
+
+        Args:
+            player_id (int): Identificador del jugador (1 o 2).
+        """
         super().__init__(player_id)
 
     def _get_team_and_active(self, state: BattleState):
+        """Obtiene equipo propio, activo propio, equipo rival y activo rival.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            tuple: (mi_equipo, mi_activo, equipo_rival, activo_rival).
+        """
         if self.player_id == 1:
             return state.p1_team, state.p1_active_index, state.p2_team, state.p2_active_index
         else:

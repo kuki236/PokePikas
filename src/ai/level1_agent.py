@@ -16,9 +16,22 @@ class Level1Agent(BaseAgent):
     """
 
     def __init__(self, player_id: int):
+        """Inicializa el agente aleatorio para el jugador indicado.
+
+        Args:
+            player_id (int): Identificador del jugador (1 o 2).
+        """
         super().__init__(player_id)
 
     def _get_team_and_active(self, state: BattleState):
+        """Obtiene el equipo y el indice del Pokemon activo del agente.
+
+        Args:
+            state (BattleState): Estado actual de la batalla.
+
+        Returns:
+            tuple: (equipo_del_agente, indice_del_activo).
+        """
         if self.player_id == 1:
             return state.p1_team, state.p1_active_index
         return state.p2_team, state.p2_active_index

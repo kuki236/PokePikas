@@ -32,6 +32,15 @@ def _is_valid_switch(team: List[Pokemon], current_idx: int, target_idx: int) -> 
 
 
 def _is_valid_move(pokemon: Pokemon, move_idx: int) -> bool:
+    """Indica si un movimiento concreto es ejecutable por el Pokemon dado.
+
+    Args:
+        pokemon (Pokemon): Pokemon que intentaria usar el movimiento.
+        move_idx (int): Indice del movimiento en su lista.
+
+    Returns:
+        bool: True si el indice es valido, el movimiento existe y tiene PP disponible.
+    """
     if move_idx < 0 or move_idx >= len(getattr(pokemon, "moves", [])):
         return False
     move = pokemon.moves[move_idx]
