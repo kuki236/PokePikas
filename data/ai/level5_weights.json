@@ -1,16 +1,13 @@
 {
   "weights": {
-    "hp_balance": 3.7271,
-    "alive_balance": 0.0,
-    "type_pressure": 3.8719,
-    "speed_pressure": 1.6046,
-    "status_pressure": 0.22,
-    "move_pressure": 2.1796,
-    "switch_pressure": 2.1601,
-    "ko_pressure": 4.1487
+    "hp": 1.2708,
+    "alive": 0.9711,
+    "type": 0.533,
+    "speed": 0.1077,
+    "status": 0.0692
   },
   "metadata": {
     "generation": 28,
-    "best_holdout": 5.29294031839741
+    "best_holdout": 2.262334553823615
   }
 }

@@ -1,32 +1,33 @@
-2026-06-12 15:24:54,853 | INFO | GA start | cores=15 | pop=40 | max_gen=50
-2026-06-12 15:31:55,430 | INFO | Gen 0 | best=1.9408 | holdoutL4=-0.7021 | stagnation=0 | 420.6s
-2026-06-12 15:39:53,515 | INFO | Gen 1 | best=2.1581 | holdoutL4=-0.5429 | stagnation=0 | 478.1s
-2026-06-12 15:46:19,813 | INFO | Gen 2 | best=1.6594 | holdoutL4=-1.1530 | stagnation=1 | 386.3s
-2026-06-12 15:52:16,914 | INFO | Gen 3 | best=0.9386 | holdoutL4=2.9933 | stagnation=0 | 357.1s
-2026-06-12 15:59:07,155 | INFO | Gen 4 | best=1.0905 | holdoutL4=2.3756 | stagnation=1 | 410.2s
-2026-06-12 16:06:47,238 | INFO | Gen 5 | best=1.0186 | holdoutL4=-0.0340 | stagnation=2 | 460.1s
-2026-06-12 16:12:58,071 | INFO | Gen 6 | best=1.6679 | holdoutL4=1.1483 | stagnation=3 | 370.8s
-2026-06-12 16:19:19,552 | INFO | Gen 7 | best=2.1439 | holdoutL4=0.7072 | stagnation=4 | 381.5s
-2026-06-12 16:26:01,098 | INFO | Gen 8 | best=0.8786 | holdoutL4=1.0000 | stagnation=5 | 401.5s
-2026-06-12 16:33:44,247 | INFO | Gen 9 | best=0.5508 | holdoutL4=0.6848 | stagnation=6 | 463.1s
-2026-06-12 16:40:14,475 | INFO | Gen 10 | best=1.5826 | holdoutL4=-0.3473 | stagnation=7 | 390.2s
-2026-06-12 16:47:08,916 | INFO | Gen 11 | best=1.3270 | holdoutL4=1.0896 | stagnation=8 | 414.4s
-2026-06-12 16:55:22,433 | INFO | Gen 12 | best=1.0030 | holdoutL4=0.7422 | stagnation=9 | 493.5s
-2026-06-12 17:02:05,730 | INFO | Gen 13 | best=1.8218 | holdoutL4=5.2929 | stagnation=0 | 403.3s
-2026-06-12 17:11:37,479 | INFO | Gen 14 | best=0.4690 | holdoutL4=1.7251 | stagnation=1 | 571.7s
-2026-06-12 17:26:38,301 | INFO | Gen 15 | best=1.0688 | holdoutL4=1.2232 | stagnation=2 | 900.8s
-2026-06-12 17:32:27,381 | INFO | Gen 16 | best=0.6218 | holdoutL4=0.5429 | stagnation=3 | 349.1s
-2026-06-12 17:38:50,792 | INFO | Gen 17 | best=0.5824 | holdoutL4=-1.6827 | stagnation=4 | 383.4s
-2026-06-12 17:45:17,881 | INFO | Gen 18 | best=1.2552 | holdoutL4=2.6246 | stagnation=5 | 387.1s
-2026-06-12 17:53:18,214 | INFO | Gen 19 | best=1.1662 | holdoutL4=-0.1067 | stagnation=6 | 480.3s
-2026-06-12 18:00:18,952 | INFO | Gen 20 | best=1.6257 | holdoutL4=-1.8451 | stagnation=7 | 420.7s
-2026-06-12 18:09:33,460 | INFO | Gen 21 | best=1.9922 | holdoutL4=1.7697 | stagnation=8 | 554.5s
-2026-06-12 18:17:42,545 | INFO | Gen 22 | best=2.0117 | holdoutL4=-1.1477 | stagnation=9 | 489.1s
-2026-06-12 18:25:37,210 | INFO | Gen 23 | best=0.9219 | holdoutL4=1.2826 | stagnation=10 | 474.7s
-2026-06-12 18:33:13,402 | INFO | Gen 24 | best=1.5547 | holdoutL4=1.1462 | stagnation=11 | 456.2s
-2026-06-12 18:41:09,067 | INFO | Gen 25 | best=1.0926 | holdoutL4=-0.7854 | stagnation=12 | 475.7s
-2026-06-12 18:48:10,507 | INFO | Gen 26 | best=1.5576 | holdoutL4=-2.7879 | stagnation=13 | 421.4s
-2026-06-12 18:57:09,554 | INFO | Gen 27 | best=1.5666 | holdoutL4=-1.0932 | stagnation=14 | 539.0s
-2026-06-12 19:04:11,693 | INFO | Gen 28 | best=1.0973 | holdoutL4=2.2901 | stagnation=15 | 422.1s
-2026-06-12 19:04:11,694 | INFO | Early stop | stagnation=15
-2026-06-12 19:04:11,702 | INFO | GA finished | best_holdout_level4=5.2929
+2026-06-17 02:27:13,753 | INFO | GA start | cores=15 | pop=40 | max_gen=50
+2026-06-17 02:29:50,064 | INFO | GA start | cores=15 | pop=40 | max_gen=50
+2026-06-17 02:46:55,879 | INFO | Gen 0 | best=1.0529 | holdoutL4=-0.6099 | stagnation=0 | 1025.8s
+2026-06-17 03:01:35,207 | INFO | Gen 1 | best=1.6219 | holdoutL4=0.2055 | stagnation=0 | 879.3s
+2026-06-17 03:15:25,429 | INFO | Gen 2 | best=1.3032 | holdoutL4=0.8408 | stagnation=0 | 830.2s
+2026-06-17 03:34:02,783 | INFO | Gen 3 | best=1.4830 | holdoutL4=0.4567 | stagnation=1 | 1117.4s
+2026-06-17 03:48:09,886 | INFO | Gen 4 | best=0.6966 | holdoutL4=-2.0467 | stagnation=2 | 847.1s
+2026-06-17 04:01:58,618 | INFO | Gen 5 | best=1.2045 | holdoutL4=0.0889 | stagnation=3 | 828.7s
+2026-06-17 04:14:57,125 | INFO | Gen 6 | best=1.3492 | holdoutL4=0.2489 | stagnation=4 | 778.5s
+2026-06-17 04:28:55,568 | INFO | Gen 7 | best=2.2917 | holdoutL4=-0.1096 | stagnation=5 | 838.4s
+2026-06-17 04:44:35,929 | INFO | Gen 8 | best=1.3693 | holdoutL4=-3.1633 | stagnation=6 | 940.4s
+2026-06-17 04:55:22,707 | INFO | Gen 9 | best=1.4984 | holdoutL4=1.3069 | stagnation=0 | 646.8s
+2026-06-17 05:11:49,741 | INFO | Gen 10 | best=1.1236 | holdoutL4=0.4765 | stagnation=1 | 987.0s
+2026-06-17 05:27:17,761 | INFO | Gen 11 | best=1.3051 | holdoutL4=1.4349 | stagnation=0 | 928.0s
+2026-06-17 05:40:22,103 | INFO | Gen 12 | best=1.0582 | holdoutL4=1.6580 | stagnation=0 | 784.3s
+2026-06-17 05:55:14,049 | INFO | Gen 13 | best=1.2429 | holdoutL4=2.2623 | stagnation=0 | 891.9s
+2026-06-17 06:10:19,504 | INFO | Gen 14 | best=1.8563 | holdoutL4=1.7650 | stagnation=1 | 905.5s
+2026-06-17 06:22:34,518 | INFO | Gen 15 | best=0.8400 | holdoutL4=-0.1132 | stagnation=2 | 735.0s
+2026-06-17 06:36:11,975 | INFO | Gen 16 | best=1.3968 | holdoutL4=-0.1322 | stagnation=3 | 817.5s
+2026-06-17 06:49:46,623 | INFO | Gen 17 | best=1.8191 | holdoutL4=-0.5351 | stagnation=4 | 814.6s
+2026-06-17 07:03:10,165 | INFO | Gen 18 | best=2.1530 | holdoutL4=0.3187 | stagnation=5 | 803.5s
+2026-06-17 07:18:11,580 | INFO | Gen 19 | best=1.6043 | holdoutL4=1.1015 | stagnation=6 | 901.4s
+2026-06-17 07:30:52,118 | INFO | Gen 20 | best=1.1300 | holdoutL4=-0.2800 | stagnation=7 | 760.5s
+2026-06-17 07:45:57,992 | INFO | Gen 21 | best=1.5682 | holdoutL4=-1.3110 | stagnation=8 | 905.9s
+2026-06-17 07:58:00,884 | INFO | Gen 22 | best=0.6141 | holdoutL4=-1.6394 | stagnation=9 | 722.9s
+2026-06-17 08:11:44,098 | INFO | Gen 23 | best=2.8710 | holdoutL4=0.8338 | stagnation=10 | 823.2s
+2026-06-17 08:33:21,522 | INFO | Gen 24 | best=1.9348 | holdoutL4=1.2680 | stagnation=11 | 1297.4s
+2026-06-17 08:53:31,111 | INFO | Gen 25 | best=1.4343 | holdoutL4=-0.3620 | stagnation=12 | 1209.6s
+2026-06-17 09:08:03,909 | INFO | Gen 26 | best=1.9319 | holdoutL4=-3.5288 | stagnation=13 | 872.8s
+2026-06-17 09:21:00,838 | INFO | Gen 27 | best=1.3848 | holdoutL4=1.0426 | stagnation=14 | 776.9s
+2026-06-17 09:35:03,969 | INFO | Gen 28 | best=1.2120 | holdoutL4=0.1749 | stagnation=15 | 843.1s
+2026-06-17 09:35:03,970 | INFO | Early stop | stagnation=15
+2026-06-17 09:35:03,979 | INFO | GA finished | best_holdout_level4=2.2623

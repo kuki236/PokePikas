@@ -4,11 +4,11 @@ from src.entities.enums import PokemonType
 
 
 L4_WEIGHTS = {
-    "hp": 0.50,
-    "alive": 0.30,
-    "type": 0.15,
-    "speed": 0.03,
-    "status": 0.02,
+    "hp": 0.20,
+    "alive": 0.20,
+    "type": 0.20,
+    "speed": 0.20,
+    "status": 0.20,
 }
 
 
