@@ -154,6 +154,8 @@ class Level3Agent(BaseAgent):
                             target_index=i
                         )
                     )
+            if len(actions) > 2:
+                actions = actions[:2]
 
         switch_candidates = [
             i for i, p in enumerate(team)
