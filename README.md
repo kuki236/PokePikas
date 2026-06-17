@@ -23,8 +23,7 @@ PokePikas es un simulador de batallas Pokémon por turnos implementado en Python
 11. [Simulaciones, benchmarks y resultados](#11-simulaciones-benchmarks-y-resultados)
 12. [Datos y persistencia](#12-datos-y-persistencia)
 13. [Reproducibilidad](#13-reproducibilidad)
-14. [Limitaciones conocidas](#14-limitaciones-conocidas)
-15. [Referencias](#15-referencias)
+14. [Referencias](#15-referencias)
 
 ---
 
@@ -206,7 +205,7 @@ Todos los agentes implementan la interfaz `BaseAgent` (`get_action(state) -> Act
 | **L2** | `Level2Agent` | Greedy: elige el movimiento que maximiza `my_hp − (opp_hp − daño)`. | 1 |
 | **L3** | `Level3Agent` | Minimax con α-β. Heurística: diferencia absoluta de HP. | 2 (`AI_LEVEL3_DEPTH`) |
 | **L4** | `Level4Agent` | Minimax con α-β. Heurística compuesta normalizada (HP, ALIVE, TYPE, SPEED, STATUS). Acciones pre-ordenadas por score. | 3 (`AI_LEVEL4_DEPTH`) |
-| **L5** | `Level5Agent` | Mismo motor que L4, pero los pesos (`hp_balance`, `type_pressure`, `ko_pressure`, ...) son los **evolucionados por AG**. | 3 |
+| **L5** | `Level5Agent` | Mismo motor que L4, pero los pesos (`hp`, `alive`, `type`, `speed`, `status`) son los **evolucionados por AG**. | 3 |
 
 Las profundidades se configuran en `config.py` y son modificables sin tocar el código de los agentes.
 
@@ -217,9 +216,8 @@ Las profundidades se configuran en `config.py` y son modificables sin tocar el c
 | Función | Uso | Factores |
 |---|---|---|
 | `calculate_hp_differential_l3` | L3, terminal y hojas de Minimax L3. | `Σ HP_actual(equipo)` propio − rival. |
-| `evaluate_level3_state` (en `level3_agent`) | Hojas de L3 con peso. | HP (0.8) + KO flag (0.2). |
-| `evaluate_level4_state` | Hojas de L4 y L5. | HP (0.50), ALIVE (0.30), TYPE (0.15), SPEED (0.03), STATUS (0.02). |
-| `_evaluate_state` (L5) | Suma ponderada de factores pre-evaluados. | Pesos leídos de `level5_weights.json`. |
+| `evaluate_level4_state` | Hojas de L4 y L5. | HP (0.20), ALIVE (0.20), TYPE (0.20), SPEED (0.20), STATUS (0.20). |
+| `_evaluate_state` (L5) | Suma ponderada de factores pre-evaluados. | Pesos leídos de `level5_weights.json` (los 5 anteriores, evolucionados). |
 
 Todos los factores están normalizados al rango [-1, 1] mediante `_clamp` y divisiones por `max_hp` o `team_size`.
 
@@ -242,16 +240,13 @@ Pesos producidos por la última corrida (ver `data/ai/level5_weights.json`):
 
 | Gen | Factor | Valor |
 |---|---|---|
-| 28 | hp_balance | 3.73 |
-| 28 | type_pressure | 3.87 |
-| 28 | speed_pressure | 1.60 |
-| 28 | status_pressure | 0.22 |
-| 28 | move_pressure | 2.18 |
-| 28 | switch_pressure | 2.16 |
-| 28 | ko_pressure | 4.15 |
-| 28 | alive_balance | 0.00 |
+| 28 | hp | 1.2708 |
+| 28 | alive | 0.9711 |
+| 28 | type | 0.5330 |
+| 28 | speed | 0.1077 |
+| 28 | status | 0.0692 |
 
-L5 anula `alive_balance` (lo descubrió el AG) y sobrepondera `ko_pressure` y `type_pressure`.
+El AG converge a pesos donde `hp` y `alive` dominan, `type` aporta un boost tactico moderado, y `speed`/`status` quedan casi anulados (el efecto de `status_pressure` aporta poco porque las ailments son infrecuentes en 3v3/4v4 cortos).
 
 ### 9.3 Reentrenar los pesos
 
@@ -287,7 +282,7 @@ Campos más relevantes de `GeneticConfig`:
 | `max_generations` | 50 | Tope duro de generaciones. |
 | `patience` | 15 | Generaciones sin mejora antes de paro anticipado. |
 | `seed` | 42 | Semilla base para reproducibilidad. |
-| `team_size` | 3 | Tamaño de los equipos en el fitness. |
+| `team_size` | 4 | Tamaño de los equipos en el fitness. |
 | `n_cores` | `None` | Workers de `multiprocessing.Pool` (None = `cpu_count()−1`). |
 
 ## 10. Interfaz gráfica
@@ -311,9 +306,7 @@ Campos más relevantes de `GeneticConfig`:
 - 5 efectos elementales (`FIRE`, `WATER`, `GRASS`, `ELECTRIC`, `DARK`).
 - 3 pistas de música (`menu`, `battle`, `ikuze` para transformación) + efecto de selección.
 
-## 11. Simulaciones, benchmarks y resultados
-
-### 11.1 Scripts
+## 11. Simulaciones
 
 | Script | Función | Salida |
 |---|---|---|
@@ -323,18 +316,6 @@ Campos más relevantes de `GeneticConfig`:
 
 Las simulaciones paralelizan con `multiprocessing.Pool` y alternan la perspectiva P1/P2 cada batalla para eliminar el sesgo de orden de turno.
 
-### 11.2 Resultados representativos
-
-Datos de `data/tests/level5_vs_all_stats.json` (≈100 batallas por par):
-
-| Matchup | Win rate L5 | Empates |
-|---|---|---|
-| L5 vs L1 (azar) | ≈ 83% | — |
-| L5 vs L2 (greedy) | ≈ 74% | — |
-| L5 vs L3 (Minimax simple) | ≈ 60% | — |
-| L5 vs L4 (Minimax avanzado) | ≈ 48% | — |
-
-`Level5Agent` domina claramente las IAs débiles y se acerca a paridad con `Level4Agent` (su referencia de entrenamiento). Las partidas promedian entre 6 y 9 turnos en escenarios 3v3/4v4.
 
 ## 12. Datos y persistencia
 
@@ -362,15 +343,7 @@ python simulate_ai_5.py --n 200 --size both
 python benchmark_l4_vs_l5.py --n 500
 ```
 
-## 14. Limitaciones conocidas
-
-- **`FACTOR_K = 0.0`** desactiva el término de esquivar de la fórmula del enunciado. Decisión de balance; podría activarse para estudiar su efecto.
-- El **divisor 3.5** en la fórmula de daño es propio del proyecto (no proviene de la fórmula original de la tarea).
-- Los datos están **en español** y provienen de PokéAPI; no directamente de Pokémon Showdown (aunque el esquema es compatible).
-- **No hay experimento explícito** que barra `AI_LEVEL3_DEPTH` / `AI_LEVEL4_DEPTH` y reporte resultados: las profundidades son configurables, pero producir una curva profundidad vs. win rate vs. tiempo queda como trabajo futuro.
-- `move.priority` no se modela en `process_turn` (se usa para bonificar en heurísticas de L4/L5 pero no altera el orden de turnos).
-
-## 15. Referencias
+## 14. Referencias
 
 - [PokéAPI](https://pokeapi.co/) — fuente original de los datos de Pokémon y movimientos.
 - [Pygame](https://www.pygame.org/) — framework de rendering y audio.
