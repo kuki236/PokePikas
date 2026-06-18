@@ -78,9 +78,11 @@ Equivalente directo: `python src/gui/menu.py`.
 python simulate_ai_4.py            # Matriz competitiva L1-L4 (3v3 y 4v4)
 python simulate_ai_5.py            # Torneo L5 vs L1-L4
 python benchmark_l4_vs_l5.py       # Benchmark L4 vs L5 con IC 95%
+python depth_sweep.py              # Barrido de profundidad L3/L4 vs L2
 ```
 
 Opciones CLI comunes: `--n` (batallas por par), `--size 3|4|both`, `--cores N`.
+`depth_sweep.py` acepta además `--l3-depths` y `--l4-depths` para acotar las profundidades a evaluar.
 
 ## 4. Modos de juego
 
@@ -100,6 +102,7 @@ PokePikas/
 ├── config.py                     # Constantes (FACTOR_K, profundidades Minimax, INF)
 ├── requirements.txt
 ├── benchmark_l4_vs_l5.py         # Benchmark directo L4 vs L5 con IC 95%
+├── depth_sweep.py                # Barrido de profundidad L3/L4 vs L2 (3v3 y 4v4)
 ├── simulate_ai_4.py              # Matriz L1-L4 (3v3 y 4v4)
 ├── simulate_ai_5.py              # Torneo L5 contra L1-L4
 ├── src/
@@ -313,6 +316,7 @@ Campos más relevantes de `GeneticConfig`:
 | `simulate_ai_4.py` | Matriz competitiva L1-L2, L1-L3, L1-L4, L2-L3, L2-L4, L3-L4. | Win rate, empates, turnos promedio, tiempo. |
 | `simulate_ai_5.py` | Torneo L5 contra L1, L2, L3, L4. | Win rate L5, HP restante, vivos, turnos. |
 | `benchmark_l4_vs_l5.py` | Comparación directa L4 vs L5. | Win rate L5 + intervalo de confianza 95% (Wilson), desglose por perspectiva P1/P2. |
+| `depth_sweep.py` | Barrido paramétrico de `AI_LEVEL3_DEPTH` ∈ {1,2,3} y `AI_LEVEL4_DEPTH` ∈ {1,2,3,4} contra L2. | Win rate por profundidad, turnos, ms/batalla. |
 
 Las simulaciones paralelizan con `multiprocessing.Pool` y alternan la perspectiva P1/P2 cada batalla para eliminar el sesgo de orden de turno.
 
